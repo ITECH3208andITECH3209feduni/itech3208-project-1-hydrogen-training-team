@@ -1,7 +1,0 @@
-test by Caleb McLean
-
-<<<<<<< HEAD
-changed text
-=======
-reworked text
->>>>>>> b879e5f37190fd994234f9c2cc09442d0971ea1f
