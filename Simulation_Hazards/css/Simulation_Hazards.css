@@ -1,0 +1,16 @@
+#mouseover {
+	display: inline-block;
+	position: relative;
+	cursor: pointer;
+}
+
+#popup {
+	display: none;
+	position: absolute;
+	top: 320px;
+	left: 170px;
+	background-color: #555;
+	color: #fff;
+	padding: 8px;
+	border-radius: 5px;
+}
