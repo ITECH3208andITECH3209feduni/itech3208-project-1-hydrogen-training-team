@@ -1,16 +1,21 @@
-#mouseover {
+/* The image to mouse over */
+.mouseover {
 	display: inline-block;
-	position: relative;
 	cursor: pointer;
 }
 
-#popup {
-	display: none;
+/* The textbox that appears upon the mouseover */
+.popup {
 	position: absolute;
-	top: 320px;
-	left: 170px;
-	background-color: #555;
+	background: #333;
 	color: #fff;
-	padding: 8px;
+	padding: 8px 10px;
 	border-radius: 5px;
+	font-size: 14px;
+	line-height: 1.4;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+	white-space: normal; /* Allows wrapping */
+	max-width: 250px; /* Controls wrapping width (i.e. How wide the textbox can be) */
+	z-index: 9999; /* Ensures it appears in front */
+	display: none; /* Textbox hidden by default */
 }
