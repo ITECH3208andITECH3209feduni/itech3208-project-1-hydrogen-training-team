@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hydrogen Lab Safety</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>Interactive Hydrogen Lab</h1>
+<p>Click on highlighted areas to identify hazards.</p>
+
+<div class="lab-container">
+  <img src="lab.jpg" alt="Hydrogen Lab" class="lab-image">
+
+  <!-- Hotspots -->
+  <div class="hotspot" style="top: 18%; left: 12%;" onclick="showInfo('gas')"></div>
+  <div class="hotspot" style="top: 28%; left: 45%;" onclick="showInfo('ventilation')"></div>
+  <div class="hotspot" style="top: 52%; left: 78%;" onclick="showInfo('cylinder')"></div>
+  <div class="hotspot" style="top: 68%; left: 70%;" onclick="showInfo('chemical')"></div>
+  <div class="hotspot" style="top: 55%; left: 40%;" onclick="showInfo('equipment')"></div>
+</div>
+
+<!-- Popup Modal -->
+<div id="popup" class="popup hidden">
+  <div class="popup-content">
+    <span class="close-btn" onclick="closePopup()">×</span>
+    <h2 id="popup-title"></h2>
+    <p id="popup-text"></p>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
