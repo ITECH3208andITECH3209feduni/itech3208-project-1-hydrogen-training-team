@@ -44,3 +44,10 @@ window.onclick = function(event) {
     popup.classList.add("hidden");
   }
 }
+
+// Exit Button
+const exitBtn = document.getElementById('exitBtn');
+
+exitBtn.addEventListener('click', () => {
+	window.location.href = "../Dashboard/dashboard.html";
+});

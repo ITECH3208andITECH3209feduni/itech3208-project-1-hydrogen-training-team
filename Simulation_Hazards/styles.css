@@ -123,6 +123,25 @@ p {
   cursor: pointer;
 }
 
+/* Exit Button */
+#exitContainer {
+	text-align: center;
+}
+
+#exitBtn {
+	margin-top: 10px;
+	padding: 8px 12px;
+	border: 2px solid #3f6db5;
+	background: transparent;
+	cursor: pointer;
+	display: inline-block;
+}
+
+#exitBtn:hover {
+	background: #3f6db5;
+	color: white;
+}
+
 /* Animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-25px); }

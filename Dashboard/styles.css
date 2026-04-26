@@ -1,0 +1,150 @@
+body {
+	font-family: 'Segoe UI', sans-serif;
+	margin: 0;
+	background: linear-gradient(135deg, #eaf2ff, #f7f9fc);
+	color: #333;
+}
+
+/* Top Bar */
+.topbar {
+	display: flex;
+	justify-content: space-between; /* All sections are equally spread apart */
+	align-items: center;
+	background: #3f6db5;
+	color: white;
+	padding: 10px 20px;
+}
+
+.topbar .left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.title {
+	font-weight: bold;
+}
+
+.topbar .right {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.topbar button {
+	background: transparent;
+	border: 1px solid white;
+	color: white;
+	padding: 6px 12px;
+	cursor: pointer;
+}
+
+.topbar button:hover {
+	background: white;
+	color: #3f6db5;
+}
+
+/* Cards */
+.cards {
+	display: flex;
+	justify-content: space-around; /* Equal space before and after each card */
+	margin: 40px 20px;
+	gap: 20px;
+}
+
+.card {
+	background: white;
+	border: 2px solid #1aa6b7;
+	width: 30%;
+	text-align: center;
+	padding: 20px;
+	box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+	background: #1aa6b7;
+	color: white;
+	margin: -20px -20px 20px -20px;
+	padding: 10px;
+}
+
+.icon {
+	font-size: 40px;
+	margin: 10px 0;
+}
+
+/* Buttons */
+.cta {
+	margin-top: 10px;
+	padding: 8px 12px;
+	border: 2px solid #3f6db5;
+	background: transparent;
+	cursor: pointer;
+}
+
+.cta:hover {
+	background: #3f6db5;
+	color: white;
+}
+
+/* Bottom Section */
+.bottom {
+	display: flex;
+	justify-content: space-between; /* All sections are equally spread apart... */
+	width: 70%; /* ...within the available space */
+	max-width: 1200px;
+	margin: 20px auto; /* 'auto' centers the section */
+	gap: 100px;
+}
+
+.progress-box, .certificate-box {
+	background: white;
+	padding: 20px;
+	width: 50%;
+	border: 2px solid #3f6db5;
+}
+
+/* Progress Bar */
+.progress-bar {
+	background: #ddd;
+	height: 20px;
+	border-radius: 10px;
+	margin: 15px 0;
+}
+
+.progress-fill {
+	background: #3f6db5;
+	height: 100%;
+	border-radius: 10px;
+	width: 20%; /* Change this to adjust how filled progress bar is */
+}
+
+/* Certificate */
+.cert-content {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.cert-icon {
+	font-size: 40px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+	.cards {
+		flex-direction: column;
+	}
+
+	.card {
+		width: 100%;
+	}
+
+	.bottom {
+		flex-direction: column;
+	}
+
+	.progress-box, .certificate-box {
+		width: 100%;
+	}
+}
