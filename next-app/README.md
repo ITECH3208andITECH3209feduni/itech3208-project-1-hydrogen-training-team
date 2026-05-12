@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hydrogen Lab Safety – Next.js
+
+Translated from vanilla HTML/CSS/JS to a **Next.js 14 App Router** application with TypeScript.
+
+## Project Structure
+
+```
+hydrogen-lab/
+├── app/
+│   ├── globals.css      # Translated from styles.css
+│   ├── layout.tsx       # Root layout (replaces <head> in index.html)
+│   └── page.tsx         # Main page (replaces index.html body)
+├── components/
+│   ├── LabImage.tsx     # Lab image + hotspot buttons
+│   └── HazardPopup.tsx  # Modal popup (replaces the #popup div + JS)
+├── lib/
+│   └── hazards.ts       # Hazard data + hotspot config (replaces switch in script.js)
+├── public/
+│   └── lab.jpg          # ← Place your lab image here
+├── next.config.js
+├── tsconfig.json
+└── package.json
+```
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Add your lab image**
+   Copy `lab.jpg` into the `public/` folder. If your image is a different size, update the `width` and `height` props on the `<Image>` component in `components/LabImage.tsx`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Run the dev server**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Build for production**
+   ```bash
+   npm run build
+   npm start
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What Changed from Vanilla JS
 
-## Learn More
+| Original                        | Next.js equivalent                        |
+|---------------------------------|-------------------------------------------|
+| `index.html` body               | `app/page.tsx` (React component)          |
+| `styles.css`                    | `app/globals.css` (unchanged CSS)         |
+| `script.js` `showInfo()`        | `useState` in `page.tsx`                  |
+| `script.js` `closePopup()`      | `setActiveHazard(null)` in `page.tsx`     |
+| `window.onclick` backdrop close | `onClick` on overlay div in `HazardPopup` |
+| `switch(type)` data             | `hazardData` object in `lib/hazards.ts`   |
+| Hardcoded hotspot `div`s        | `hotspots` array mapped in `LabImage.tsx` |
+| `<img>` tag                     | `next/image` `<Image>` component          |
 
-To learn more about Next.js, take a look at the following resources:
+## Customising Hotspot Positions
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Edit the `hotspots` array in `lib/hazards.ts` to move hotspots, and add new entries to `hazardData` for additional hazard types.
