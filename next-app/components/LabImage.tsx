@@ -33,8 +33,7 @@ export default function LabImage({ onHotspotClick }: LabImageProps) {
 				priority   // Tells Next.js to preload image
 			/>
 			
-			// Renders each hotspot in its stated position (from lib/hazards.ts)
-			{hotspots.map(({ type, top, left }) => (
+			{hotspots.map(({ type, top, left }) => (   // Renders each hotspot in its stated position (from lib/hazards.ts)
 				<button
 					key={type}   // Identifies individual hazards
 					className="hotspot"

@@ -6,7 +6,7 @@ import './globals.css';   // Applies css file to all pages in app
 // Defines metadata for page (Equivalent to <head> in html)
 export const metadata: Metadata = {
 	title: 'Hydrogen Lab Safety',
-	description: 'Interactive Hydrogen Lab Safety Training',
+	description: 'Hydrogen Training Platform',
 };
 
 // Root layout component (wraps every page in app)
@@ -15,9 +15,15 @@ export default function RootLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return (   // Renders html
+	return (   // Renders html and injects current page's content
 		<html lang="en">
-			<body>{children}</body>   // Current page's content injected here
+			<head>
+				<link
+					href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Inter:wght@300;400;500&display=swap"
+					rel="stylesheet"
+				/>
+			</head>
+			<body>{children}</body>
 		</html>
 	);
 }

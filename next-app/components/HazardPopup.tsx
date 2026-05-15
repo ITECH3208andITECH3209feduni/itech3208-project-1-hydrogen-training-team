@@ -22,8 +22,8 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 	}, [onClose]);
 	
 	return (
-		// Darken & blur background
 		<div
+			// Darken & blur background
 			className="popup-overlay"
 			onClick={(e) => {
 				// Popup only closes if click outside popup
@@ -33,14 +33,12 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 			aria-modal="true"
 			aria-labelledby="popup-title"
 		>
-			// Popup
 			<div className="popup-content">
-				// Popup close button
 				<button className="close-btn" onClick={onClose} aria-label="Close">
 					×
 				</button>
-				<h2 id="popup-title">{info.title}</h2>   // Hazard title
-				<p id="popup-text">{info.text}</p>   // Hazard text
+				<h2 id="popup-title">{info.title}</h2>
+				<p id="popup-text">{info.text}</p>
 			</div>
 		</div>
 	);
