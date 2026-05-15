@@ -1,10 +1,16 @@
+// Hazard text and hotspot positions
+
+// TypeScript union type listing every hazard identifier
+// Means TypeScript catches typos or invalid hazard names at compile time, not runtime
 export type HazardType = 'gas' | 'ventilation' | 'cylinder' | 'chemical' | 'equipment';
 
+// Define hazard data
 export interface HazardInfo {
   title: string;
   text: string;
 }
 
+// Hazard text
 export const hazardData: Record<HazardType, HazardInfo> = {
   gas: {
     title: '⚠️ Gas Leak Detection',
@@ -28,12 +34,14 @@ export const hazardData: Record<HazardType, HazardInfo> = {
   },
 };
 
+// Define hazard type and position of each hotspot
 export interface HotspotConfig {
   type: HazardType;
   top: string;
   left: string;
 }
 
+// Hotspot types and positions
 export const hotspots: HotspotConfig[] = [
   { type: 'gas',         top: '18%', left: '12%' },
   { type: 'ventilation', top: '28%', left: '45%' },

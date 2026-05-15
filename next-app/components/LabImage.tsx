@@ -1,50 +1,48 @@
-'use client';
+// Renders the lab image and overlays the clickable hotspots.
 
-import Image from 'next/image';
-import { HazardType, hotspots } from '@/lib/hazards';
+'use client';   // Marks as Client Component, makes interactive
+
+import Image from 'next/image';   // Next.js optimised Image component (replaces <img> tag)
+import { HazardType, hotspots } from '@/lib/hazards';   // Imports hotspots & hazard info from data file
 
 interface LabImageProps {
-  onHotspotClick: (type: HazardType) => void;
+	onHotspotClick: (type: HazardType) => void;
 }
 
 export default function LabImage({ onHotspotClick }: LabImageProps) {
-  return (
-    <div
-      style={{
-        position: 'relative',
-        width: '70%',
-        maxWidth: '900px',
-        margin: '30px auto',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
-        padding: '20px',
-        background: 'white',
-      }}
-    >
-      {/*
-        Replace the src below with your actual lab image.
-        Place lab.jpg inside the /public folder and update src="/lab.jpg".
-        The width/height props are required by next/image; adjust to match your image.
-      */}
-      <Image
-        src="/lab.jpg"
-        alt="Hydrogen Lab"
-        width={900}
-        height={600}
-        style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }}
-        priority
-      />
-
-      {hotspots.map(({ type, top, left }) => (
-        <button
-          key={type}
-          className="hotspot"
-          style={{ top, left }}
-          onClick={() => onHotspotClick(type)}
-          aria-label={`Inspect ${type} hazard`}
-        />
-      ))}
-    </div>
-  );
+	return (
+		<div
+			style={{
+			position: 'relative',
+			width: '70%',
+			maxWidth: '900px',
+			margin: '30px auto',
+			borderRadius: '12px',
+			overflow: 'hidden',
+			boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
+			padding: '20px',
+			background: 'white',
+			}}
+		>
+			<Image   // Auto-optimises image file size and format
+				src="/lab.jpg"   // From public folder
+				alt="Hydrogen Lab"
+				width={900}   // Required to prevent layout shift while image loads
+				height={600}
+				style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '8px' }}
+				priority   // Tells Next.js to preload image
+			/>
+			
+			// Renders each hotspot in its stated position (from lib/hazards.ts)
+			{hotspots.map(({ type, top, left }) => (
+				<button
+					key={type}   // Identifies individual hazards
+					className="hotspot"
+					style={{ top, left }}   // Each hotspot positioned absolutely
+					onClick={() => onHotspotClick(type)}   // Bubbles up to page.tsx to open popup
+					aria-label={`Inspect ${type} hazard`}   // Adds description for screen readers
+				/>
+			))}
+		</div>
+	);
 }
