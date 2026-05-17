@@ -1,22 +1,29 @@
 # Hydrogen Lab Safety – Next.js
 
-Translated from vanilla HTML/CSS/JS to a **Next.js 14 App Router** application with TypeScript.
+A **Next.js 14 App Router** application with TypeScript for hydrogen technology training. Features an interactive lab safety simulation and a dashboard tracking modules, scenarios, and quizzes.
 
 ## Project Structure
 
 ```
 hydrogen-lab/
 ├── app/
-│   ├── globals.css      # Translated from styles.css
-│   ├── layout.tsx       # Root layout (replaces <head> in index.html)
-│   └── page.tsx         # Main page (replaces index.html body)
+│   ├── globals.css        # Shared styles for all pages
+│   ├── layout.tsx         # Root layout — renders Navbar and wraps all pages
+│   ├── page.tsx           # Dashboard (primary page)
+│   ├── template/
+│   │   └── page.tsx       # Template page to create new pages (Not part of navigation)
+│   ├── lab/
+│   │   └── page.tsx       # Interactive hydrogen lab (secondary page)
+│   ├── modules/
+│   └── quizzes/
 ├── components/
-│   ├── LabImage.tsx     # Lab image + hotspot buttons
-│   └── HazardPopup.tsx  # Modal popup (replaces the #popup div + JS)
+│   ├── Navbar.tsx         # Reusable navigation bar
+│   ├── LabImage.tsx       # Lab image + hotspot buttons
+│   └── HazardPopup.tsx    # Modal popup for hazard info
 ├── lib/
-│   └── hazards.ts       # Hazard data + hotspot config (replaces switch in script.js)
+│   └── hazards.ts         # Hazard data + hotspot positions
 ├── public/
-│   └── lab.jpg          # ← Place your lab image here
+│   └── lab.jpg            # Lab image
 ├── next.config.js
 ├── tsconfig.json
 └── package.json
@@ -29,34 +36,46 @@ hydrogen-lab/
    npm install
    ```
 
-2. **Add your lab image**
-   Copy `lab.jpg` into the `public/` folder. If your image is a different size, update the `width` and `height` props on the `<Image>` component in `components/LabImage.tsx`.
-
-3. **Run the dev server**
+2. **Run the dev server**
    ```bash
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-4. **Build for production**
+3. **Build for production**
    ```bash
    npm run build
    npm start
    ```
 
-## What Changed from Vanilla JS
+## Pages
 
-| Original                        | Next.js equivalent                        |
-|---------------------------------|-------------------------------------------|
-| `index.html` body               | `app/page.tsx` (React component)          |
-| `styles.css`                    | `app/globals.css` (unchanged CSS)         |
-| `script.js` `showInfo()`        | `useState` in `page.tsx`                  |
-| `script.js` `closePopup()`      | `setActiveHazard(null)` in `page.tsx`     |
-| `window.onclick` backdrop close | `onClick` on overlay div in `HazardPopup` |
-| `switch(type)` data             | `hazardData` object in `lib/hazards.ts`   |
-| Hardcoded hotspot `div`s        | `hotspots` array mapped in `LabImage.tsx` |
-| `<img>` tag                     | `next/image` `<Image>` component          |
+| Route  | File                  | Description                                                       |
+|--------|-----------------------|-------------------------------------------------------------------|
+| `/`    | `app/page.tsx`        | Dashboard with modules, scenarios, quizzes, and training progress |
+| `/lab` | `app/lab/page.tsx`    | Interactive lab with clickable hazard hotspots                    |
+
+## Adding a New Page
+
+1. Create a new folder under `app/` named after the route (e.g. `app/modules/`)
+2. Copy `template/page.tsx` into it
+3. Update the `active` class on the correct nav link in `Navbar.tsx`
+4. Replace the placeholder content with your page content
 
 ## Customising Hotspot Positions
 
-Edit the `hotspots` array in `lib/hazards.ts` to move hotspots, and add new entries to `hazardData` for additional hazard types.
+Edit the `hotspots` array in `lib/hazards.ts` to move hotspots. Add new entries to both `hotspots` and `hazardData` for additional hazard types, making sure the new key is also added to the `HazardType` union at the top of the file.
+
+## Customising the Dashboard
+
+Training progress, module statuses, stat card counts, and certificate details are currently hardcoded in `app/page.tsx`. Replace these with data fetched from an API or database to make the dashboard dynamic.
+
+## Fonts
+
+The app uses **Exo 2** and **Inter** from Google Fonts, imported in `layout.tsx`. To self-host the fonts instead (recommended for performance), replace the `<link>` tag with `next/font/google`:
+
+```tsx
+import { Exo_2, Inter } from 'next/font/google';
+```
+
+See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) for setup details.
