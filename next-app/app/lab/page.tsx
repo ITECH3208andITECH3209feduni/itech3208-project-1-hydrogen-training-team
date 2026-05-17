@@ -17,39 +17,22 @@ export default function LabPage() {
 	
 	// The actual page
 	return (
-		<div className="page-wrap">
-			<nav className="nav">
-				<div className="logo">
-					<span>Hydrogen Lab Safety</span>
-				</div>
-				<div className="nav-links">
-					<Link href="/"        className="nav-link">Home</Link>
-					<Link href="/modules" className="nav-link">Modules</Link>
-					<Link href="/lab"     className="nav-link active">Scenarios</Link>
-					<Link href="/quizzes" className="nav-link">Quizzes</Link>
-				</div>
-				<div className="nav-right">
-					<div className="avatar" title="My Account">JD</div>
-				</div>
-			</nav>
+		<main className="main">
+			<h1 style={{ marginTop: '20px', fontSize: '28px', textAlign: 'center', color: 'var(--white)' }}>
+				Interactive Hydrogen Lab
+			</h1>
+			<p style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '8px' }}>
+				Click on highlighted areas to identify hazards.
+			</p>
 			
-			<main className="main">
-				<h1 style={{ marginTop: '20px', fontSize: '28px', textAlign: 'center', color: 'var(--white)' }}>
-					Interactive Hydrogen Lab
-				</h1>
-				<p style={{ color: 'var(--muted)', textAlign: 'center', marginTop: '8px' }}>
-					Click on highlighted areas to identify hazards.
-				</p>
-				
-				<LabImage onHotspotClick={handleHotspotClick} />
-				
-				{activeHazard && (
-					<HazardPopup
-						info={hazardData[activeHazard]}
-						onClose={handleClose}
-					/>
-				)}
-			</main>
-		</div>
+			<LabImage onHotspotClick={handleHotspotClick} />
+			
+			{activeHazard && (
+				<HazardPopup
+					info={hazardData[activeHazard]}
+					onClose={handleClose}
+				/>
+			)}
+		</main>
 	);
 }

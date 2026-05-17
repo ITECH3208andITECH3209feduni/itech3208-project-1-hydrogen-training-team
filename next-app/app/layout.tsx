@@ -2,6 +2,7 @@
 
 import type { Metadata } from 'next';   // Used to type metadata object
 import './globals.css';   // Applies css file to all pages in app
+import Navbar from '@/components/Navbar';   // Applies navigation bar to all pages
 
 // Defines metadata for page (Equivalent to <head> in html)
 export const metadata: Metadata = {
@@ -23,7 +24,12 @@ export default function RootLayout({
 					rel="stylesheet"
 				/>
 			</head>
-			<body>{children}</body>
+			<body>
+				<div className="page-wrap">
+					<Navbar />
+					{children}
+				</div>
+			</body>
 		</html>
 	);
 }

@@ -12,16 +12,14 @@ interface LabImageProps {
 export default function LabImage({ onHotspotClick }: LabImageProps) {
 	return (
 		<div
+			className="panel"
 			style={{
-			position: 'relative',
-			width: '70%',
-			maxWidth: '900px',
-			margin: '30px auto',
-			borderRadius: '12px',
-			overflow: 'hidden',
-			boxShadow: '0 15px 40px rgba(0,0,0,0.15)',
-			padding: '20px',
-			background: 'white',
+				position: 'relative',
+				width: '70%',
+				maxWidth: '900px',
+				margin: '30px auto',
+				padding: '20px',
+				background: 'white',
 			}}
 		>
 			<Image   // Auto-optimises image file size and format
