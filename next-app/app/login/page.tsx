@@ -149,7 +149,7 @@ export default function LoginPage() {
 
       await login(email, password);
 
-      router.push("/dashboard");
+      router.push("/");
 
     } catch (err: any) {
 

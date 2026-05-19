@@ -185,7 +185,7 @@ export default function RegisterPage() {
         form.name
       );
 
-      router.push("/dashboard");
+      router.push("/");
 
     } catch (err: any) {
 
