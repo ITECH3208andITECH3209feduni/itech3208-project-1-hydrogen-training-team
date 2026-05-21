@@ -631,6 +631,35 @@ body::after {
 	margin-top: 2px;
 }
 
+/* ─── Lab page – hotspot list add/delete buttons ───────────────────────────── */
+.hotspot-add-btn {
+	background: rgba(0,180,216,0.15);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	color: var(--teal);
+	cursor: pointer;
+	font-size: 1rem;
+	line-height: 1;
+	padding: 2px 8px;
+}
+
+.hotspot-delete-btn {
+	flex-shrink: 0;
+	background: rgba(239,68,68,0.1);
+	border: 1px solid rgba(239,68,68,0.3);
+	border-radius: 6px;
+	color: #ef4444;
+	cursor: pointer;
+	font-size: 0.8rem;
+	padding: 4px 7px;
+	line-height: 1;
+	transition: all 0.15s;
+}
+
+.hotspot-delete-btn:hover {
+	background: rgba(239,68,68,0.25);
+}
+
 /* ─── Lab page – hotspot editor panel ──────────────────────────────────────── */
 .hotspot-editor {
 	width: 70%;

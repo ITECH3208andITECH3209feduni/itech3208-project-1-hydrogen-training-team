@@ -27,6 +27,8 @@ export default function LabPage() {
 		handleDragStart,
 		updateInfo,
 		updatePosition,
+		addHotspot,
+		deleteHotspot,
 		saveToSupabase,
 		resetDefaults,
 		liveHazardData,
@@ -85,6 +87,8 @@ export default function LabPage() {
 					onSelect={setSelected}
 					onUpdateInfo={updateInfo}
 					onUpdatePosition={updatePosition}
+					onAdd={addHotspot}
+					onDelete={deleteHotspot}
 				/>
 			)}
 			

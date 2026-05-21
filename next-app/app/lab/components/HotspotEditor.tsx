@@ -6,11 +6,13 @@ import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '../styles';
 
 interface HotspotEditorProps {
-	hotspots:       EditableHotspot[];
-	selected:       number | null;
-	onSelect:       (index: number) => void;
-	onUpdateInfo:   (index: number, field: keyof HazardInfo, value: string) => void;
-	onUpdatePosition: (index: number, field: 'top' | 'left', value: string) => void;
+	hotspots:			EditableHotspot[];
+	selected:			number | null;
+	onSelect:			(index: number) => void;
+	onUpdateInfo:		(index: number, field: keyof HazardInfo, value: string) => void;
+	onUpdatePosition:	(index: number, field: 'top' | 'left', value: string) => void;
+	onAdd:				() => void;
+	onDelete:			(index: number) => void;
 }
 
 export default function HotspotEditor({
@@ -19,26 +21,58 @@ export default function HotspotEditor({
 	onSelect,
 	onUpdateInfo,
 	onUpdatePosition,
+	onAdd,
+	onDelete,
 }: HotspotEditorProps) {
 	return (
 		<div className="hotspot-editor">
 			
 			{/* Hotspot list */}
 			<div className="panel" style={{ overflow: 'hidden' }}>
-				<div className="panel-header">🎯 Hotspots</div>
+				<div className="panel-header" style={{ justifyContent: 'space-between' }}>
+					<span>🎯 Hotspots</span>
+					{/* Add Hotspot button */}
+					<button
+						onClick={onAdd}
+						title="Add new hotspot"
+						className="hotspot-add-btn"
+					>
+						+
+					</button>
+				</div>
 				<div style={{ padding: '10px' }}>
 					{hotspots.map((hs, index) => (
-						<button
+						<div
 							key={hs.type}
-							onClick={() => onSelect(index)}
-							className={`hotspot-list-item ${selected === index ? 'hotspot-list-item--active' : ''}`}
+							style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}
 						>
-							{hs.info.title.split(' ')[0]} {hs.type.charAt(0).toUpperCase() + hs.type.slice(1)}
-							<div className="hotspot-list-item-position">
-								top {hs.top} · left {hs.left}
-							</div>
-						</button>
+							<button
+								onClick={() => onSelect(index)}
+								className={`hotspot-list-item ${selected === index ? 'hotspot-list-item--active' : ''}`}
+								style={{ marginBottom: 0, flex: 1 }}
+							>
+								{hs.info.title.split(' ')[0]} {hs.type.charAt(0).toUpperCase() + hs.type.slice(1)}
+								<div className="hotspot-list-item-position">
+									top {hs.top} · left {hs.left}
+								</div>
+							</button>
+							
+							{/* Delete Hotspot button */}
+							<button
+								onClick={() => onDelete(index)}
+								title="Delete hotspot"
+								className="hotspot-delete-btn"
+							>
+								✕
+							</button>
+						</div>
 					))}
+					
+					{hotspots.length === 0 && (
+						<p style={{ color: 'var(--muted)', fontSize: '0.82rem', padding: '8px 4px' }}>
+							No hotspots. Click + to add one.
+						</p>
+					)}
 				</div>
 			</div>
 			
@@ -55,6 +89,19 @@ export default function HotspotEditor({
 					) : (
 						<div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 						
+							{/* Type key (read-only) */}
+							<div>
+								<label style={labelStyle}>Type key</label>
+								<input
+									style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
+									value={hotspots[selected].type}
+									readOnly
+								/>
+								<p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '4px' }}>
+									Auto-generated identifier — cannot be changed after creation.
+								</p>
+							</div>
+			  
 							{/* Position fields */}
 							<div style={{ display: 'flex', gap: '12px' }}>
 								{(['top', 'left'] as const).map((field) => (

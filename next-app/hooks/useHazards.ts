@@ -37,6 +37,14 @@ function clamp(val: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, val));
 }
 
+// Generate a unique type key that doesn't clash with existing hotspots
+function generateType(existing: EditableHotspot[]): string {
+	const existingTypes = new Set(existing.map((hs) => hs.type));
+	let i = 1;
+	while (existingTypes.has(`hazard_${i}`)) i++;
+	return `hazard_${i}`;
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>) {
 	// States
@@ -158,19 +166,44 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		[editMode, containerRef]
 	);
 	
-	// ── Text editing ────────────────────────────────────────────────────────
-	// Updates either the title or text field for a chosen hotspot in state (i.e. not saved to Supabase)
+	// ── Hotspot editing ────────────────────────────────────────────────────────
+	// Updates either the title or text field for a chosen hotspot in state (i.e. not yet saved to Supabase)
 	const updateInfo = useCallback((index: number, field: keyof HazardInfo, value: string) => {
 		setHotspots((prev) =>
 			prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, [field]: value } } : hs))
 		);
 	}, []);
 	
-	// Updates the position of a chosen hotspot in state (i.e. not saved to Supabase)
+	// Updates the position of a chosen hotspot in state (i.e. not yet saved to Supabase)
 	const updatePosition = useCallback((index: number, field: 'top' | 'left', value: string) => {
 		setHotspots((prev) =>
 			prev.map((hs, i) => (i === index ? { ...hs, [field]: value } : hs))
 		);
+	}, []);
+	
+	// ── Add hotspot ─────────────────────────────────────────────────────────
+	const addHotspot = useCallback(() => {
+		setHotspots((prev) => {
+			const newHotspot: EditableHotspot = {
+				type: generateType(prev) as HazardType,
+				top:  '50%',
+				left: '50%',
+				info: {
+					title: '⚠️ New Hazard',
+					text:  'Describe this hazard here.',
+				},
+			};
+			const next = [...prev, newHotspot];
+			// Auto-select the new hotspot
+			setTimeout(() => setSelected(next.length - 1), 0);
+			return next;
+		});
+	}, []);
+	
+	// ── Delete hotspot ──────────────────────────────────────────────────────
+	const deleteHotspot = useCallback((index: number) => {
+		setHotspots((prev) => prev.filter((_, i) => i !== index));
+		setSelected(null);
 	}, []);
 	
 	// ── Save to Supabase ────────────────────────────────────────────────────
@@ -218,6 +251,8 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		handleDragStart,
 		updateInfo,
 		updatePosition,
+		addHotspot,
+		deleteHotspot,
 		saveToSupabase,
 		resetDefaults,
 		liveHazardData,
