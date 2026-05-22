@@ -47,11 +47,11 @@ hydrogen-lab/
 │   │   ├── load-hazards/
 │   │   │   └── route.ts			# GET route — loads hazard data from Supabase
 │   │   ├── save-hazards/
-│   │   │   └── route.ts             # POST route — saves hazard data to Supabase
+│   │   │   └── route.ts			# POST route — saves hazard data to Supabase
 │   │   ├── load-image/
-│   │   │   └── route.ts             # GET route — returns lab image URL from Supabase Storage
+│   │   │   └── route.ts			# GET route — returns lab image URL from Supabase Storage
 │   │   └── upload-image/
-│   │       └── route.ts             # POST route — uploads lab image to Supabase Storage
+│   │       └── route.ts			# POST route — uploads lab image to Supabase Storage
 │   ├── modules/
 │   └── quizzes/
 ├── components/
@@ -232,7 +232,7 @@ npm start
 
 ---
 
-## Editing Hotspots
+## Edit Mode
 
 Hotspot positions and text are stored in Supabase and can be edited directly in the browser via a hidden edit mode.
 

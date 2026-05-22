@@ -4,9 +4,10 @@
 
 'use client';
 
+import './lab.css';	// css specific to this page
 import { useRef, useState } from 'react';
 import Image from 'next/image';
-import HazardPopup from '@/components/HazardPopup';
+import HazardPopup from './components/HazardPopup';
 import EditBanner from './components/EditBanner';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from './components/SaveBar';
