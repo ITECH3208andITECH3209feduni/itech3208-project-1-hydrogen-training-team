@@ -240,11 +240,19 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 **In edit mode:**
 
+### Hotspots
 - Hotspots turn blue — drag them to reposition
-- Click a hotspot (or select from the list) to edit its title and description
+- Click a hotspot on the image, or select one from the list, to edit its title and description
 - Position values update automatically as you drag, or can be typed directly
-- Click **Save Changes** to write to Supabase — changes persist everywhere immediately
-- Click **Reset to Defaults** to revert to the values in `lib/hazards.ts` (does not affect the lab image)
+- Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image and is auto-selected for editing
+- Click **✕** next to a hotspot in the list to delete it
+- Click **Save Changes** to write all hotspot changes to Supabase — changes persist everywhere immediately
+- Click **Reset to Defaults** to revert hotspots to the values in `lib/hazards.ts` (does not affect the lab image)
+
+### Lab image
+- Click **Change Lab Image** to upload a replacement image — it is saved to Supabase Storage immediately and loads on every subsequent visit
+- The original `public/lab.jpg` is used as a fallback if no image has been uploaded to Supabase
+- Changing the lab image is independent of the hotspot save/reset flow — it takes effect immediately on upload and is not affected by **Reset to Defaults**
 
 The edit mode is invisible to regular users — no button or link exposes it.
 
