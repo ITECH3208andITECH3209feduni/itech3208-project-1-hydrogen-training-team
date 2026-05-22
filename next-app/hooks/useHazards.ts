@@ -1,5 +1,5 @@
 // hooks/useHazards.ts
-// Manages all hotspot state, Supabase load/save, drag logic, and secret key sequence
+// Manages all hotspot state, Supabase load/save, drag logic, secret key sequence and lab image URL state and upload
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
@@ -16,13 +16,14 @@ export interface EditableHotspot extends HotspotConfig {
 	info: HazardInfo;
 }
 
-// Export save and load status' so page file can use them
+// Export save, load and upload states so page file can use them
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 export type LoadStatus = 'loading' | 'ready' | 'error';
+export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'error';
 
-// ─── Secret Key Sequence ──────────────────────────────────────────────────────
-// Keypresses needed to unlock edit mode
-const SECRET_SEQUENCE = ['h', 'z', 'e', 'd', 'i', 't'];
+// ─── Constants ──────────────────────────────────────────────────────
+const SECRET_SEQUENCE = ['h', 'z', 'e', 'd', 'i', 't'];	// Secret key sequence to unlock edit mode
+const DEFAULT_IMAGE   = '/lab.jpg';						// Default name of image file
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Combines position data from defaultHotspots & text from defaultHazardData into editable array
@@ -32,6 +33,7 @@ export function buildDefaultHotspots(): EditableHotspot[] {
 		info: { ...defaultHazardData[hs.type] },
 	}));
 }
+
 // Prevents dragging hotspots outside image boundaries
 function clamp(val: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, val));
@@ -54,11 +56,15 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	const [selected, setSelected]     = useState<number | null>(null);						// Index of hotspot currently being edited
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');						// Handles appearance of save button in edit mode
 	
+	// Image state — starts with the local fallback, replaced by Supabase URL after load
+	const [imageUrl, setImageUrl]           = useState<string>(DEFAULT_IMAGE);
+	const [uploadStatus, setUploadStatus]   = useState<UploadStatus>('idle');
+	
 	// Refs
 	const seqRef     = useRef<string[]>([]);								// Tracks keypresses that have been typed for edit mode key sequence
 	const seqTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);	// Timer to reset edit mode key sequence
 	
-	// ── Load from Supabase on mount ─────────────────────────────────────────
+	// ── Load hazards from Supabase on mount ─────────────────────────────────────────
 	// Runs once when page first loads
 	useEffect(() => {
 		async function loadHazards() {
@@ -91,6 +97,24 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			}
 		}
 		loadHazards();
+	}, []);
+	
+	// ── Load image URL from Supabase on mount ──────────────────────
+	useEffect(() => {
+		async function loadImage() {
+			try {
+				const res = await fetch('/api/load-image', { cache: 'no-store' });
+				const json = await res.json();
+				if (json.ok && json.url) {
+					// Append timestamp to bust browser cache on each load
+					setImageUrl(`${json.url}?t=${Date.now()}`);
+				}
+				// If no image in storage yet, keep the local /lab.jpg fallback
+			} catch {
+				console.error('Failed to load image URL — using default');
+			}
+		}
+		loadImage();
 	}, []);
 	
 	// ── Secret key listener ─────────────────────────────────────────────────
@@ -206,7 +230,33 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		setSelected(null);
 	}, []);
 	
-	// ── Save to Supabase ────────────────────────────────────────────────────
+	// ── Upload image ────────────────────────────────────────────────────────
+	const uploadImage = useCallback(async (file: File) => {
+		setUploadStatus('uploading');
+		try {
+			const formData = new FormData();
+			formData.append('image', file);
+			
+			const res = await fetch('/api/upload-image', {
+				method: 'POST',
+				body: formData,
+			});
+			
+			const json = await res.json();
+			if (!json.ok) throw new Error(json.error);
+			
+			// Update the displayed image immediately, with cache-busting timestamp
+			setImageUrl(`${json.url}?t=${Date.now()}`);
+			setUploadStatus('uploaded');
+			setTimeout(() => setUploadStatus('idle'), 2500);
+		} catch (err) {
+			console.error('Image upload failed:', err);
+			setUploadStatus('error');
+			setTimeout(() => setUploadStatus('idle'), 3000);
+		}
+	}, []);
+	
+	// ── Save hazards to Supabase ────────────────────────────────────────────────────
 	// Save current hotspots to Supabase
 	const saveToSupabase = useCallback(async () => {
 		setSaveStatus('saving');	// Updated over course of function to show progress
@@ -253,6 +303,9 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		updatePosition,
 		addHotspot,
 		deleteHotspot,
+		imageUrl,
+		uploadStatus,
+		uploadImage,
 		saveToSupabase,
 		resetDefaults,
 		liveHazardData,

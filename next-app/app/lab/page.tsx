@@ -29,6 +29,9 @@ export default function LabPage() {
 		updatePosition,
 		addHotspot,
 		deleteHotspot,
+		imageUrl,
+		uploadStatus,
+		uploadImage,
 		saveToSupabase,
 		resetDefaults,
 		liveHazardData,
@@ -56,11 +59,12 @@ export default function LabPage() {
 				style={{ opacity: loadStatus === 'loading' ? 0.5 : 1 }}
 			>
 				<Image
-					src="/lab.jpg"
+					src={imageUrl}
 					alt="Hydrogen Lab"
 					width={900}
 					height={600}
 					className="lab-image"
+					unoptimized
 					priority
 				/>
 				
@@ -84,11 +88,13 @@ export default function LabPage() {
 				<HotspotEditor
 					hotspots={hotspots}
 					selected={selected}
+					uploadStatus={uploadStatus}
 					onSelect={setSelected}
 					onUpdateInfo={updateInfo}
 					onUpdatePosition={updatePosition}
 					onAdd={addHotspot}
 					onDelete={deleteHotspot}
+					onUploadImage={uploadImage}
 				/>
 			)}
 			

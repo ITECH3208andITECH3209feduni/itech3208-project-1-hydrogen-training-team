@@ -605,6 +605,68 @@ body::after {
 	font-size: 0.78rem;
 }
 
+/* ─── Lab page – Editor wrapper ─────────────────────────────────────── */
+.editor-wrap {
+	width: 70%;
+	max-width: 900px;
+	margin: 0 auto 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* ─── Lab page – image upload panel ────────────────────────────────────────── */
+.image-upload-panel {
+	padding: 16px 20px;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.image-upload-description {
+	flex: 1;
+	font-size: 0.85rem;
+	color: var(--muted);
+	margin: 0;
+}
+
+.image-upload-btn {
+	padding: 9px 20px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 0.88rem;
+	cursor: pointer;
+	transition: all 0.2s;
+	white-space: nowrap;
+}
+
+.image-upload-btn--idle {
+	border: 1px solid var(--border);
+	background: rgba(0,180,216,0.08);
+	color: var(--teal);
+}
+
+.image-upload-btn--uploading {
+	border: 1px solid var(--border);
+	background: rgba(0,180,216,0.08);
+	color: var(--teal);
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.image-upload-btn--uploaded {
+	border: 1px solid rgba(5,150,105,0.4);
+	background: rgba(5,150,105,0.15);
+	color: #10b981;
+}
+
+.image-upload-btn--error {
+	border: 1px solid rgba(185,28,28,0.4);
+	background: rgba(185,28,28,0.15);
+	color: #ef4444;
+}
+
 /* ─── Lab page – hotspot list ──────────────────────────────────────────────── */
 .hotspot-list-item {
 	display: block;
@@ -691,10 +753,18 @@ body::after {
 	.main { padding: 24px 20px 40px; }
 	.stat-cards  { grid-template-columns: 1fr; }
 	.bottom-grid { grid-template-columns: 1fr; }
-	.hotspot { width: 28px; height: 28px; }
+	.hotspot {
+		width: 28px;
+		height: 28px;
+	}
 	.lab-image-container { width: 95%; }
 	.hotspot-editor {
 		width: 95%;
 		grid-template-columns: 1fr;
+	}
+	.editor-wrap { width: 95%; }
+	.image-upload-panel {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 }
