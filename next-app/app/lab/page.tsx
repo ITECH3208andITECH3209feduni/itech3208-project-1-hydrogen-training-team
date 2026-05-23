@@ -12,11 +12,10 @@ import EditBanner from './components/EditBanner';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from './components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
-import { HazardType } from '@/lib/hazards';
 
 export default function LabPage() {
 	const containerRef = useRef<HTMLDivElement>(null);							// Attached to image container div, so drag logic knows its position & size
-	const [activeHazard, setActiveHazard] = useState<HazardType | null>(null);	// Which hotspot's popup is currently open (default none/null)
+	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
 	
 	const {
 		hotspots,

@@ -12,7 +12,8 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 // Bundles hazard info together with hotspot position for easier state management
-export interface EditableHotspot extends HotspotConfig {
+export interface EditableHotspot extends Omit<HotspotConfig, 'type'> {
+	type: string;
 	info: HazardInfo;
 }
 
@@ -209,7 +210,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	const addHotspot = useCallback(() => {
 		setHotspots((prev) => {
 			const newHotspot: EditableHotspot = {
-				type: generateType(prev) as HazardType,
+				type: generateType(prev),
 				top:  '50%',
 				left: '50%',
 				info: {
