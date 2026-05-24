@@ -1,6 +1,6 @@
 'use client';
 
-
+import './lab.css';
 
 import { useRef, useState, useEffect } from 'react';
 
@@ -26,28 +26,6 @@ export default function LabPage() {
 
 	const router = useRouter();
 
-	useEffect(() => {
-
-		if (!loading && !user) {
-
-			router.replace("/login");
-
-		}
-
-	}, [user, loading, router]);
-
-	if (loading) {
-
-		return <div>Loading...</div>;
-
-	}
-
-	if (!user) {
-
-		return null;
-
-	}
-
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	const [activeHazard, setActiveHazard] =
@@ -72,6 +50,28 @@ export default function LabPage() {
 		resetDefaults,
 		liveHazardData,
 	} = useHazards(containerRef);
+
+	useEffect(() => {
+
+		if (!loading && !user) {
+
+			router.replace("/login");
+
+		}
+
+	}, [user, loading, router]);
+
+	if (loading) {
+
+		return <div>Loading...</div>;
+
+	}
+
+	if (!user) {
+
+		return null;
+
+	}
 
 	return (
 
