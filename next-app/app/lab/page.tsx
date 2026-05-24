@@ -1,6 +1,6 @@
 'use client';
 
-import './lab.css';
+
 
 import { useRef, useState, useEffect } from 'react';
 
