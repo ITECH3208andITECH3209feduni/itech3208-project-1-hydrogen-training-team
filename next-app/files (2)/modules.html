@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hydrogen Lab Safety – Modules</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    .page-header { margin-bottom: 28px; animation: fadeUp 0.5s ease both; }
+    .page-header h1 { font-family:'Exo 2',sans-serif; font-size:2rem; font-weight:700; color:var(--white); margin-bottom:4px; }
+    .page-header p { font-size:0.9rem; color:var(--muted); }
+
+    .filter-bar {
+      display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+      animation: fadeUp 0.5s ease 0.05s both;
+    }
+    .filter-btn {
+      padding: 6px 16px; border-radius: 99px; font-size: 0.82rem;
+      font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); transition: all 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--teal); border-color: var(--teal); color: white;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .module-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex; flex-direction: column;
+      transition: all 0.25s;
+      animation: fadeUp 0.5s ease both;
+      position: relative;
+    }
+    .module-card:hover { transform: translateY(-4px); border-color: var(--teal); background: rgba(0,180,216,0.07); }
+
+    .card-top-bar { height: 5px; width: 100%; }
+    .bar-done     { background: #00E5A0; }
+    .bar-progress { background: var(--teal); }
+    .bar-todo     { background: rgba(255,255,255,0.1); }
+
+    .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+
+    .card-head {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 12px;
+    }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .icon-bg-1 { background: rgba(0,180,216,0.15); }
+    .icon-bg-2 { background: rgba(0,229,160,0.12); }
+    .icon-bg-3 { background: rgba(255,190,80,0.12); }
+    .icon-bg-4 { background: rgba(255,107,107,0.12); }
+    .icon-bg-5 { background: rgba(180,100,255,0.12); }
+
+    .status-badge {
+      font-size: 0.72rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 99px;
+    }
+    .badge-done     { background: rgba(0,229,160,0.15); color: #00E5A0; }
+    .badge-progress { background: rgba(0,180,216,0.15); color: var(--teal); }
+    .badge-todo     { background: rgba(255,255,255,0.07); color: var(--muted); }
+
+    .card-title {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      color: var(--white); margin-bottom: 6px;
+    }
+    .card-desc {
+      font-size: 0.82rem; color: var(--muted);
+      line-height: 1.5; margin-bottom: 16px; flex: 1;
+    }
+
+    .card-progress-bar {
+      height: 5px; background: rgba(255,255,255,0.08);
+      border-radius: 99px; overflow: hidden; margin-bottom: 8px;
+    }
+    .card-progress-fill { height: 100%; border-radius: 99px; }
+    .fill-done     { background: #00E5A0; width: 100%; }
+    .fill-progress { background: var(--teal); }
+    .fill-todo     { width: 0%; }
+
+    .card-meta {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; color: var(--muted);
+    }
+
+    .card-link {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem; font-weight: 600;
+      color: var(--teal);
+      transition: background 0.2s;
+    }
+    .module-card:hover .card-link { background: rgba(0,180,216,0.08); }
+
+    .hazard-badge {
+      position: absolute; top: 14px; left: 14px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(220,50,50,0.9);
+      border: 2px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 700; color: white;
+      font-family: 'Exo 2', sans-serif;
+    }
+
+    @media (max-width: 900px) {
+      .modules-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <nav>
+    <div class="logo">
+      <div class="logo-icon" style="font-size:0.7rem;">HLS</div>
+      <span>Hydrogen <span>Lab Safety</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="modules.html" class="active">Modules</a>
+      <a href="scenarios.html">Scenarios</a>
+      <a href="quizzes.html">Quizzes</a>
+    </div>
+    <div class="nav-right">
+      <div class="notif-bell" id="notifBell">🔔<span class="notif-badge" id="notifBadge">3</span></div>
+      <div class="avatar" id="avatarBtn">JD</div>
+      <div class="avatar-dropdown" id="avatarDropdown">
+        <a href="#">👤 My Profile</a>
+        <a href="#">⚙️ Settings</a>
+        <a href="#">📜 My Certificates</a>
+        <hr/>
+        <a href="#" class="logout">🚪 Log Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>Hydrogen Safety Modules</h1>
+      <p>5 modules · Each linked to a real lab hazard · Learn, identify, respond</p>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterModules('all', this)">All</button>
+      <button class="filter-btn" onclick="filterModules('done', this)">Completed</button>
+      <button class="filter-btn" onclick="filterModules('progress', this)">In Progress</button>
+      <button class="filter-btn" onclick="filterModules('todo', this)">Not Started</button>
+    </div>
+
+    <div class="modules-grid" id="modulesGrid">
+
+      <!-- Module 1 -->
+      <a href="module1.html" class="module-card" data-status="done">
+        <div class="card-top-bar bar-done"></div>
+        <div class="hazard-badge">1</div>
+        <div class="card-body">
+          <div class="card-head">
+            <div class="card-icon icon-bg-1">💨</div>
+            <span class="status-badge badge-done">✓ Completed</span>
+          </div>
+          <div class="card-title">Gas Leak Detection</div>
+          <div class="card-desc">Understand how hydrogen leaks occur, why they are dangerous, and how to detect and respond to them safely.</div>
+          <div class="card-progress-bar"><div class="card-progress-fill fill-done"></div></div>
+          <div class="card-meta"><span>5 sections</span><span>100%</span></div>
+        </div>
+        <div class="card-link">View Module →</div>
+      </a>
+
+      <!-- Module 2 -->
+      <a href="module2.html" class="module-card" data-status="progress">
+        <div class="card-top-bar bar-progress"></div>
+        <div class="hazard-badge">2</div>
+        <div class="card-body">
+          <div class="card-head">
+            <div class="card-icon icon-bg-2">🌬️</div>
+            <span class="status-badge badge-progress">In Progress</span>
+          </div>
+          <div class="card-title">Ventilation System</div>
+          <div class="card-desc">Learn how ventilation systems protect against hydrogen accumulation and what to do when they fail.</div>
+          <div class="card-progress-bar"><div class="card-progress-fill fill-progress" style="width:50%;"></div></div>
+          <div class="card-meta"><span>5 sections</span><span>50%</span></div>
+        </div>
+        <div class="card-link">Continue →</div>
+      </a>
+
+      <!-- Module 3 -->
+      <a href="module3.html" class="module-card" data-status="todo">
+        <div class="card-top-bar bar-todo"></div>
+        <div class="hazard-badge">3</div>
+        <div class="card-body">
+          <div class="card-head">
+            <div class="card-icon icon-bg-3">🔧</div>
+            <span class="status-badge badge-todo">Not Started</span>
+          </div>
+          <div class="card-title">Equipment &amp; Leak Points</div>
+          <div class="card-desc">Identify common leak points in hydrogen equipment — valves, regulators, tubing and connectors — and how to inspect them.</div>
+          <div class="card-progress-bar"><div class="card-progress-fill fill-todo"></div></div>
+          <div class="card-meta"><span>5 sections</span><span>0%</span></div>
+        </div>
+        <div class="card-link">Start Module →</div>
+      </a>
+
+      <!-- Module 4 -->
+      <a href="module4.html" class="module-card" data-status="todo">
+        <div class="card-top-bar bar-todo"></div>
+        <div class="hazard-badge">4</div>
+        <div class="card-body">
+          <div class="card-head">
+            <div class="card-icon icon-bg-4">🧪</div>
+            <span class="status-badge badge-todo">Not Started</span>
+          </div>
+          <div class="card-title">Chemical Storage</div>
+          <div class="card-desc">Explore safe chemical storage practices in hydrogen labs, including labelling, separation of incompatibles, and ventilation.</div>
+          <div class="card-progress-bar"><div class="card-progress-fill fill-todo"></div></div>
+          <div class="card-meta"><span>5 sections</span><span>0%</span></div>
+        </div>
+        <div class="card-link">Start Module →</div>
+      </a>
+
+      <!-- Module 5 -->
+      <a href="module5.html" class="module-card" data-status="todo">
+        <div class="card-top-bar bar-todo"></div>
+        <div class="hazard-badge">5</div>
+        <div class="card-body">
+          <div class="card-head">
+            <div class="card-icon icon-bg-5">🔴</div>
+            <span class="status-badge badge-todo">Not Started</span>
+          </div>
+          <div class="card-title">Gas Cylinder Storage</div>
+          <div class="card-desc">Understand how to safely store and handle high-pressure hydrogen gas cylinders, including securing, capping, and inspection.</div>
+          <div class="card-progress-bar"><div class="card-progress-fill fill-todo"></div></div>
+          <div class="card-meta"><span>5 sections</span><span>0%</span></div>
+        </div>
+        <div class="card-link">Start Module →</div>
+      </a>
+
+    </div>
+  </main>
+</div>
+
+<script src="script.js"></script>
+<script>
+  function filterModules(status, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.module-card').forEach(card => {
+      card.style.display = (status === 'all' || card.dataset.status === status) ? 'flex' : 'none';
+    });
+  }
+</script>
+</body>
+</html>

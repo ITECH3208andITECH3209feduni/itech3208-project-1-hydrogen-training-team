@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hydrogen Lab Safety – Hydrogen Training Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-icon" style="font-size:0.7rem;">HLS</div>
+      <span>Hydrogen <span>Lab Safety</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="active">Home</a>
+      <a href="modules.html">Modules</a>
+      <a href="scenarios.html">Scenarios</a>
+      <a href="quizzes.html">Quizzes</a>
+    </div>
+    <div class="nav-right">
+      <div class="notif-bell" id="notifBell" title="Notifications">
+        🔔
+        <span class="notif-badge" id="notifBadge">3</span>
+      </div>
+      <div class="avatar" id="avatarBtn" title="My Account">JD</div>
+      <div class="avatar-dropdown" id="avatarDropdown">
+        <a href="#">👤 My Profile</a>
+        <a href="#">⚙️ Settings</a>
+        <a href="#">📜 My Certificates</a>
+        <hr/>
+        <a href="#" class="logout">🚪 Log Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- Greeting -->
+    <div class="greeting">
+      <h1>Welcome back, <span>Jane</span> 👋</h1>
+      <p>Continue your hydrogen technology training journey</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+
+      <a href="modules.html" class="stat-card">
+        <div class="stat-icon modules">📚</div>
+        <div class="stat-info">
+          <div class="label">Modules</div>
+          <div class="count" data-target="12">0</div>
+          <div class="sub">4 completed · 3 in progress</div>
+        </div>
+        <div class="stat-arrow">→</div>
+      </a>
+
+      <a href="scenarios.html" class="stat-card">
+        <div class="stat-icon scenarios">🔬</div>
+        <div class="stat-info">
+          <div class="label">Scenarios / Simulation</div>
+          <div class="count" data-target="8">0</div>
+          <div class="sub">2 completed · 1 in progress</div>
+        </div>
+        <div class="stat-arrow">→</div>
+      </a>
+
+      <a href="quizzes.html" class="stat-card">
+        <div class="stat-icon quizzes">📝</div>
+        <div class="stat-info">
+          <div class="label">Quizzes</div>
+          <div class="count" data-target="16">0</div>
+          <div class="sub">6 completed · avg score 84%</div>
+        </div>
+        <div class="stat-arrow">→</div>
+      </a>
+
+    </div>
+
+    <!-- Bottom Grid -->
+    <div class="bottom-grid">
+
+      <!-- Training Progress -->
+      <div class="panel">
+        <div class="panel-header">📊 Training Progress</div>
+        <div class="panel-body">
+          <div class="progress-row">
+            <div class="progress-track">
+              <div class="progress-fill" id="progressBar" data-width="65"></div>
+            </div>
+            <div class="progress-pct" id="progressPct">0%</div>
+          </div>
+          <div class="module-list">
+            <div class="module-item">
+              <div class="module-dot dot-done"></div>
+              <div class="module-name">H₂ Fundamentals &amp; Properties</div>
+              <div class="module-status status-done">Done</div>
+            </div>
+            <div class="module-item">
+              <div class="module-dot dot-done"></div>
+              <div class="module-name">Safety Protocols &amp; Handling</div>
+              <div class="module-status status-done">Done</div>
+            </div>
+            <div class="module-item">
+              <div class="module-dot dot-prog"></div>
+              <div class="module-name">Electrolysis &amp; Production</div>
+              <div class="module-status status-prog">In Progress</div>
+            </div>
+            <div class="module-item">
+              <div class="module-dot dot-todo"></div>
+              <div class="module-name">Fuel Cell Technology</div>
+              <div class="module-status status-todo">Not Started</div>
+            </div>
+            <div class="module-item">
+              <div class="module-dot dot-todo"></div>
+              <div class="module-name">Storage &amp; Transportation</div>
+              <div class="module-status status-todo">Not Started</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Certificate -->
+      <div class="panel">
+        <div class="panel-header">🏆 Completed Modules</div>
+        <div class="cert-body">
+          <div class="cert-icon">🎓</div>
+          <div class="cert-text">
+            <h3>Hydrogen Safety Certification</h3>
+            <p>You've completed the Safety Protocols &amp; Handling module.<br/>
+               Download your certificate of completion.</p>
+          </div>
+          <a href="#" class="btn-cert" id="certBtn">Download Certificate →</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

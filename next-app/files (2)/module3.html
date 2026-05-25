@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hydrogen Lab Safety – Module 3: Equipment & Leak Points</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    .module-hero {
+      display: flex; align-items: center; gap: 20px;
+      padding: 36px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .module-icon-big {
+      width: 64px; height: 64px; border-radius: 16px;
+      background: rgba(255,190,80,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .module-hero-text h1 {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 1.8rem; font-weight: 700;
+      color: var(--white); margin-bottom: 4px;
+    }
+    .module-hero-text p { font-size: 0.88rem; color: var(--muted); }
+    .hazard-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(220,50,50,0.15);
+      border: 1px solid rgba(220,50,50,0.3);
+      color: #ff8080;
+      font-size: 0.78rem; font-weight: 600;
+      padding: 4px 12px; border-radius: 99px;
+      margin-bottom: 8px;
+    }
+
+    .section-block {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 30px;
+      margin-bottom: 18px;
+      animation: fadeUp 0.5s ease both;
+      position: relative;
+    }
+    .section-num {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 0.72rem; font-weight: 700;
+      color: var(--teal); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .section-block h2 {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--white); margin-bottom: 12px;
+    }
+    .section-block p {
+      font-size: 0.88rem; color: var(--text);
+      line-height: 1.75; margin-bottom: 12px;
+    }
+    .info-list, .step-list {
+      margin: 10px 0 12px 18px;
+      font-size: 0.87rem; color: var(--text);
+      line-height: 1.8;
+    }
+    .info-list li { list-style: disc; }
+    .step-list li { list-style: decimal; margin-bottom: 4px; }
+    .callout {
+      background: rgba(0,180,216,0.08);
+      border-left: 3px solid var(--teal);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 0.84rem;
+      color: var(--text);
+      margin-top: 12px;
+    }
+
+    .takeaway-box {
+      background: linear-gradient(135deg, rgba(0,119,168,0.2), rgba(0,180,216,0.08));
+      border: 1px solid var(--teal);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin: 24px 0 32px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .takeaway-box h3 {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 1rem; font-weight: 700;
+      color: var(--teal); margin-bottom: 8px;
+    }
+    .takeaway-box p {
+      font-size: 0.88rem; color: var(--text); line-height: 1.7;
+    }
+
+    .module-nav {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 40px;
+    }
+    .nav-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: 8px;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 0.88rem; font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--white); }
+    .nav-btn.teal {
+      background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+      color: white; border-color: var(--teal);
+    }
+    .nav-btn.teal:hover { opacity: 0.85; }
+
+    .back-crumb {
+      font-size: 0.82rem; color: var(--muted);
+      margin-bottom: 20px; display: flex; align-items: center; gap: 6px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .back-crumb a { color: var(--teal); text-decoration: none; }
+    .back-crumb a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <nav>
+    <div class="logo">
+      <div class="logo-icon" style="font-size:0.7rem;">HLS</div>
+      <span>Hydrogen <span>Lab Safety</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="modules.html" class="active">Modules</a>
+      <a href="scenarios.html">Scenarios</a>
+      <a href="quizzes.html">Quizzes</a>
+    </div>
+    <div class="nav-right">
+      <div class="notif-bell" id="notifBell">🔔<span class="notif-badge" id="notifBadge">3</span></div>
+      <div class="avatar" id="avatarBtn">JD</div>
+      <div class="avatar-dropdown" id="avatarDropdown">
+        <a href="#">👤 My Profile</a>
+        <a href="#">⚙️ Settings</a>
+        <a href="#">📜 My Certificates</a>
+        <hr/>
+        <a href="#" class="logout">🚪 Log Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width:820px;">
+
+    <div class="back-crumb">
+      <a href="modules.html">← Modules</a> / Hazard 3 – Equipment & Leak Points
+    </div>
+
+    <div class="module-hero">
+      <div class="module-icon-big">🔧</div>
+      <div class="module-hero-text">
+        <div class="hazard-label">⚠ Hazard 3</div>
+        <h1>Equipment & Leak Points</h1>
+        <p>Read through all sections to complete this module. Then test your knowledge in the Quizzes.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+  <div class="section-num">01</div>
+  <h2>Understanding Equipment Risks</h2>
+  <p>Hydrogen systems rely on equipment such as cylinders, valves, regulators, pipes, tubing, and connectors to safely store and transport gas. If any of these components become damaged, worn out, or incorrectly installed, hydrogen can escape and create a serious safety hazard.<br><br>Because hydrogen is stored under pressure and is highly flammable, even small equipment failures can lead to gas leaks, fire, or explosion.</p>
+</div>
+
+<div class="section-block">
+  <div class="section-num">02</div>
+  <h2>Common Leak Points</h2>
+  <p>Hydrogen leaks most commonly occur at connection points or areas exposed to wear and pressure. Common leak points include:</p>
+  <ul class="info-list">
+    <li>Cylinder valve connections</li>
+    <li>Pressure regulators</li>
+    <li>Pipe and tubing joints</li>
+    <li>Flexible hoses</li>
+    <li>O-rings and seals</li>
+    <li>Threaded fittings and connectors</li>
+  </ul>
+  <div class="callout">💡 These areas should always be checked carefully during inspections.</div>
+</div>
+
+<div class="section-block">
+  <div class="section-num">03</div>
+  <h2>Causes of Equipment Failure</h2>
+  <p>Equipment can fail for several reasons, including:</p>
+  <ul class="info-list">
+    <li>Loose or poorly tightened fittings</li>
+    <li>Damaged tubing or hoses</li>
+    <li>Aging components</li>
+    <li>Poor maintenance</li>
+    <li>Corrosion or material degradation</li>
+    <li>Repeated pressure stress on equipment</li>
+  </ul>
+  <div class="callout">💡 In hydrogen systems, some metals can also weaken over time due to hydrogen embrittlement, which may lead to cracks or sudden failure.</div>
+</div>
+
+<div class="section-block">
+  <div class="section-num">04</div>
+  <h2>Warning Signs of Equipment Problems</h2>
+  <p>Signs of faulty equipment or leaks may include:</p>
+  <ul class="info-list">
+    <li>Hissing sounds</li>
+    <li>Pressure drops on gauges</li>
+    <li>Damaged or cracked tubing</li>
+    <li>Loose fittings</li>
+    <li>Detector alarms activating</li>
+    <li>Visible wear or corrosion on components</li>
+  </ul>
+  <div class="callout">💡 Any damaged equipment should be reported immediately and not used until inspected.</div>
+</div>
+
+<div class="section-block">
+  <div class="section-num">05</div>
+  <h2>Safe Practices</h2>
+  <p>To reduce equipment-related risks:</p>
+  <ul class="info-list">
+    <li>Inspect equipment regularly</li>
+    <li>Tighten fittings properly</li>
+    <li>Replace damaged or aging components</li>
+    <li>Use materials suitable for hydrogen systems</li>
+    <li>Ensure regulators and valves are installed correctly</li>
+    <li>Perform routine leak checks</li>
+  </ul>
+  <div class="callout">💡 Proper maintenance is one of the most important parts of hydrogen safety.</div>
+</div>
+
+
+    <div class="takeaway-box">
+      <h3>🔑 Key Takeaway</h3>
+      <p>Equipment failures and leaks often begin at small connection points such as valves, fittings, or tubing. Regular inspection, proper maintenance, and early detection are essential to prevent hydrogen leaks and maintain a safe laboratory environment.</p>
+    </div>
+
+    <div class="module-nav">
+      <a href="module2.html" class="nav-btn">← Previous</a>
+      <a href="module4.html" class="nav-btn teal">Next Module →</a>
+    </div>
+
+  </main>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
