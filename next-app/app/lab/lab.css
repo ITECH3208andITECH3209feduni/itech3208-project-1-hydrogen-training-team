@@ -1,5 +1,8 @@
+/* lab.css — styles for app/lab/page.tsx and its components only */
+
 /* ─── Header ────────────────────────────────────────────────────── */
 .lab-title {
+	font-family: 'Exo 2', sans-serif;
 	font-size: 28px;
 	text-align: center;
 	color: var(--white);
@@ -275,10 +278,7 @@
 	line-height: 1;
 	transition: all 0.15s;
 }
-
-.hotspot-delete-btn:hover {
-	background: rgba(239,68,68,0.25);
-}
+.hotspot-delete-btn:hover { background: rgba(239,68,68,0.25); }
 
 /* ─── Hotspot editor panel ──────────────────────────────────────── */
 .hotspot-editor {
@@ -297,4 +297,13 @@
 	justify-content: center;
 	gap: 12px;
 	margin-bottom: 40px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+	.hotspot            { width: 28px; height: 28px; }
+	.lab-image-container { width: 95%; }
+	.hotspot-editor     { width: 95%; grid-template-columns: 1fr; }
+	.editor-wrap        { width: 95%; }
+	.image-upload-panel { flex-direction: column; align-items: flex-start; }
 }

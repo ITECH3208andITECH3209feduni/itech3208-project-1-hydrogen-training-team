@@ -1,57 +1,42 @@
+// app/lab/page.tsx  –  Interactive Hydrogen Lab
+// Secret key sequence to enter edit mode: H → Z → E → D → I → T
+// (type each character in the sequence, in order, within 2 seconds of each other)
+
 'use client';
 
-
-
+import './lab.css';		// css specific to this page
 import { useRef, useState, useEffect } from 'react';
-
 import Image from 'next/image';
-
 import { useRouter } from "next/navigation";
-
 import { useAuth } from "@/context/AuthContext";
-
 import HazardPopup from './components/HazardPopup';
-
 import EditBanner from './components/EditBanner';
-
 import HotspotEditor from './components/HotspotEditor';
-
 import SaveBar from './components/SaveBar';
-
 import { useHazards } from '@/hooks/useHazards';
 
 export default function LabPage() {
-
+	// Authentication
 	const { user, loading } = useAuth();
-
 	const router = useRouter();
 
 	useEffect(() => {
-
 		if (!loading && !user) {
-
 			router.replace("/login");
-
 		}
-
 	}, [user, loading, router]);
 
 	if (loading) {
-
 		return <div>Loading...</div>;
-
 	}
 
 	if (!user) {
-
 		return null;
-
 	}
 
-	const containerRef = useRef<HTMLDivElement>(null);
-
-	const [activeHazard, setActiveHazard] =
-		useState<string | null>(null);
+	// Page constants
+	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
+	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
 
 	const {
 		hotspots,
@@ -74,41 +59,26 @@ export default function LabPage() {
 	} = useHazards(containerRef);
 
 	return (
-
 		<main className="main">
 
 			{editMode && <EditBanner />}
-
-			<h1 className="lab-title">
-				Interactive Hydrogen Lab
-			</h1>
-
+			
+			{/* Header - Title and subtitle (latter changes based on loadStatus and editMode */}
+			<h1 className="lab-title">Interactive Hydrogen Lab</h1>
 			<p className="lab-subtitle">
-
-				{editMode
-					? 'Drag hotspots · select to edit · save when done'
-					: loadStatus === 'loading'
-					? 'Loading lab data…'
+				{editMode ? 'Drag hotspots · select to edit · save when done'
+					: loadStatus === 'loading' ? 'Loading lab data…'
 					: 'Click on highlighted areas to identify hazards.'
 				}
-
 			</p>
-
+			
+			{/* Lab image + hotspots */}
+			{/* Hotspots turn blue in edit mode, yellow if selected */}
 			<div
 				ref={containerRef}
-				className={`lab-image-container panel ${
-					editMode
-						? 'lab-image-container--edit'
-						: ''
-				}`}
-				style={{
-					opacity:
-						loadStatus === 'loading'
-							? 0.5
-							: 1
-				}}
+				className={`lab-image-container panel ${editMode ? 'lab-image-container--edit' : ''}`}
+				style={{ opacity: loadStatus === 'loading' ? 0.5 : 1 }}
 			>
-
 				<Image
 					src={imageUrl}
 					alt="Hydrogen Lab"
@@ -119,58 +89,29 @@ export default function LabPage() {
 					priority
 				/>
 
-				{loadStatus === 'ready' &&
-					hotspots.map((hs, index) => {
-
-						const isSelected =
-							selected === index;
-
-						return (
-
-							<button
-								key={hs.type}
-								className={`hotspot ${
-									editMode
-										? (
-											isSelected
-												? 'hotspot--selected'
-												: 'hotspot--edit'
-										)
-										: ''
-								}`}
-								style={{
-									top: hs.top,
-									left: hs.left
-								}}
-								aria-label={`Inspect ${hs.type} hazard`}
-								onMouseDown={
-									editMode
-										? handleDragStart(index)
-										: undefined
+				{loadStatus === 'ready' && hotspots.map((hs, index) => {
+					const isSelected = selected === index;
+					return (
+						<button
+							key={hs.type}
+							className={`hotspot ${editMode ? (isSelected ? 'hotspot--selected' : 'hotspot--edit') : ''}`}
+							style={{ top: hs.top, left: hs.left }}
+							aria-label={`Inspect ${hs.type} hazard`}
+							onMouseDown={editMode ? handleDragStart(index) : undefined}
+							onClick={() => {
+								if (editMode) {
+									setSelected(index);
+								} else {
+									setActiveHazard(hs.type);
 								}
-								onClick={() => {
-
-									if (editMode) {
-
-										setSelected(index);
-
-									} else {
-
-										setActiveHazard(hs.type);
-
-									}
-
-								}}
-							/>
-
-						);
-
-					})}
-
+							}}
+						/>
+					);
+				})}
 			</div>
-
+			
+			{/* Edit panel - Only visible in edit mode*/}
 			{editMode && (
-
 				<HotspotEditor
 					hotspots={hotspots}
 					selected={selected}
@@ -182,32 +123,27 @@ export default function LabPage() {
 					onDelete={deleteHotspot}
 					onUploadImage={uploadImage}
 				/>
-
 			)}
-
+			
+			{/* Save / reset bar - Only visible in edit mode */}
+			{/* Save button changes colour and label based on saveStatus */}
 			{editMode && (
-
 				<SaveBar
 					saveStatus={saveStatus}
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
 				/>
-
 			)}
-
+			
+			{/* Hazard popup - Only appears outside edit mode and if clicked on a hotspot */}
 			{!editMode && activeHazard && (
-
 				<HazardPopup
 					info={liveHazardData[activeHazard]}
 					onClose={() =>
 						setActiveHazard(null)
 					}
 				/>
-
 			)}
-
 		</main>
-
 	);
-
 }

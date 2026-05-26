@@ -1,45 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-
 import { useEffect } from "react";
-
 import { useRouter } from "next/navigation";
-
 import { useAuth } from "@/context/AuthContext";
 
 export default function TemplatePage() {
-
+	// Authentication
 	const { user, loading } = useAuth();
-
 	const router = useRouter();
 
 	useEffect(() => {
-
 		if (!loading && !user) {
-
 			router.replace("/login");
-
 		}
-
 	}, [user, loading, router]);
 
 	if (loading) {
-
 		return <div>Loading...</div>;
-
 	}
 
 	if (!user) {
-
 		return null;
-
 	}
 
 	return (
-
 		<main className="main">
-
 			<h1
 				style={{
 					marginTop: '20px',
@@ -48,11 +34,8 @@ export default function TemplatePage() {
 					color: 'var(--white)'
 				}}
 			>
-
 				Template Page
-
 			</h1>
-
 			<p
 				style={{
 					color: 'var(--muted)',
@@ -60,9 +43,7 @@ export default function TemplatePage() {
 					marginTop: '8px'
 				}}
 			>
-
 				Copy this folder to start developing a new page.
-
 			</p>
 
 			<div
@@ -73,13 +54,8 @@ export default function TemplatePage() {
 					margin: '30px auto'
 				}}
 			>
-
 				Put the content of the page here.
-
 			</div>
-
 		</main>
-
 	);
-
 }
