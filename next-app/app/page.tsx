@@ -1,14 +1,43 @@
-// app/page.tsx  –  Hydrogen Lab Safety Dashboard (primary page)
+// app/page.tsx  –  Hydrogen Lab Safety Dashboard
 
-'use client';   // Marks as Client Component, makes interactive
+'use client';	// Marks as Client Component, makes interactive
 
 import Link from 'next/link';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Dashboard() {
+	// Authentication
+	const { user, loading } = useAuth();
+	const router = useRouter();
+
+	useEffect(() => {
+		if (!loading && !user) {
+			router.replace("/login");
+		}
+	}, [user, loading, router]);
+
+	if (loading) {
+		return <div>Loading...</div>;
+	}
+
+	if (!user) {
+		return null;
+	}
+
 	return (
 		<main className="main">
+			{/* User Greeting */}
 			<div className="greeting">
-				<h1>Welcome back, <span className="greeting-accent">Jane</span> 👋</h1>
+				<h1>
+					Welcome back,
+					<span className="greeting-accent">
+						{" "}
+						{user.displayName || user.email}
+					</span>
+					👋
+				</h1>
 				<p>Continue your hydrogen technology training journey</p>
 			</div>
 			
@@ -23,7 +52,7 @@ export default function Dashboard() {
 					</div>
 					<div className="stat-arrow">→</div>
 				</Link>
-				
+
 				<Link href="/lab" className="stat-card">
 					<div className="stat-icon scenarios">🔬</div>
 					<div className="stat-info">
@@ -33,7 +62,7 @@ export default function Dashboard() {
 					</div>
 					<div className="stat-arrow">→</div>
 				</Link>
-				
+
 				<Link href="/quizzes" className="stat-card">
 					<div className="stat-icon quizzes">📝</div>
 					<div className="stat-info">
@@ -47,7 +76,7 @@ export default function Dashboard() {
 			
 			{/* Bottom Grid */}
 			<div className="bottom-grid">
-			
+				
 				{/* Training Progress */}
 				<div className="panel">
 					<div className="panel-header">📊 Training Progress</div>
