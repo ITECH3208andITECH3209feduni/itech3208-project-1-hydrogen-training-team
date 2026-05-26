@@ -1,28 +1,32 @@
 'use client';
 
+import '../modules.css';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { useRouter, notFound } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getModuleById } from '@/lib/modules';
 import SectionBlock from './components/SectionBlock';
 
-interface Props {
-	params: { id: string };
-}
-
-export default function ModulePage({ params }: Props) {
+export default function ModulePage() {
 	const { user, loading } = useAuth();
 	const router = useRouter();
-	const mod = getModuleById(params.id);
+	const params = useParams();
+	const id = Array.isArray(params.id) ? params.id[0] : params.id;
+	const mod = id ? getModuleById(id) : undefined;
 
 	useEffect(() => {
 		if (!loading && !user) router.replace('/login');
 	}, [user, loading, router]);
 
+	// Only redirect if id is known and still doesn't match any module
+	useEffect(() => {
+		if (!loading && user && id && !mod) router.replace('/modules');
+	}, [loading, user, id, mod, router]);
+
 	if (loading) return <div>Loading…</div>;
 	if (!user)   return null;
-	if (!mod)    return notFound();
+	if (!mod)    return null;
 
 	return (
 		<main className="main" style={{ maxWidth: '820px' }}>

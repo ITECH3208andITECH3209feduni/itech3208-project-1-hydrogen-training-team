@@ -143,6 +143,23 @@
 }
 .close-btn:hover { color: #ff3b30; }
 
+/* ─── Popup — module link button ─────────────────────────────────────────── */
+.popup-module-link {
+	display: block;
+	width: 100%;
+	margin-top: 16px;
+	padding: 9px 0;
+	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+	color: white;
+	border-radius: 8px;
+	font-size: 0.88rem;
+	font-weight: 600;
+	text-align: center;
+	text-decoration: none;
+	transition: opacity 0.2s;
+}
+.popup-module-link:hover { opacity: 0.85; }
+
 /* ─── Edit mode ─────────────────────────────────────────────────── */
 .edit-banner {
 	display: flex;

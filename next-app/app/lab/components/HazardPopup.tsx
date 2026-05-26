@@ -1,14 +1,16 @@
-// The textbox that appears upon clicking a hotspot
+// components/HazardPopup.tsx
+// Modal popup shown when a hotspot is clicked
 
 'use client';   // Marks as Client Component, makes interactive
 
-import { useEffect } from 'react';   // For keyboard listener
-import { HazardInfo } from '@/lib/hazards';   // Imports the hazard info from lib/hazards.ts
+import Link from 'next/link';				// For 'Learn More' links
+import { useEffect } from 'react';			// For keyboard listener
+import { HazardInfo } from '@/lib/hazards';	// Imports the hazard info from lib/hazards.ts
 
 // Defines props that this component accepts
 interface HazardPopupProps {
-	info: HazardInfo;   // Hazard data to display
-	onClose: () => void;   // Function to close popup
+	info: HazardInfo;		// Hazard data to display
+	onClose: () => void;	// Function to close popup
 }
 
 export default function HazardPopup({ info, onClose }: HazardPopupProps) {
@@ -18,15 +20,13 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 			if (e.key === 'Escape') onClose();
 		};
 		window.addEventListener('keydown', handleKey);
-		return () => window.removeEventListener('keydown', handleKey);   // Removes listener to prevent memory leak
+		return () => window.removeEventListener('keydown', handleKey);	// Removes listener to prevent memory leak
 	}, [onClose]);
 	
 	return (
 		<div
-			// Darken & blur background
 			className="popup-overlay"
 			onClick={(e) => {
-				// Popup only closes if click outside popup
 				if (e.target === e.currentTarget) onClose();
 			}}
 			role="dialog"
@@ -34,11 +34,23 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 			aria-labelledby="popup-title"
 		>
 			<div className="popup-content">
+				{/* Close button */}
 				<button className="close-btn" onClick={onClose} aria-label="Close">
 					×
 				</button>
+				{/* Title & Text */}
 				<h2 id="popup-title">{info.title}</h2>
 				<p id="popup-text">{info.text}</p>
+				{/* Learn More button */}
+				{info.moduleId && (
+					<Link
+						href={`/modules/${info.moduleId}`}
+						className="popup-module-link"
+						onClick={onClose}
+					>
+						Learn More →
+					</Link>
+				)}
 			</div>
 		</div>
 	);

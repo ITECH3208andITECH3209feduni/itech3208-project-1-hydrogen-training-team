@@ -351,7 +351,7 @@ export const modules: ModuleData[] = [
 		id: '5',
 		slug: 'gas-cylinder-storage',
 		hazardNum: 5,
-		icon: '🔴',
+		icon: '🧯',
 		iconBg: 'rgba(180,100,255,0.12)',
 		title: 'Gas Cylinder Storage',
 		description:

@@ -86,7 +86,12 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 						type: row.type as HazardType,
 						top:  row.top,
 						left: row.left,
-						info: { title: row.title, text: row.text },
+						// moduleId is static — not stored in Supabase — so fall back to hazards.ts
+						info: {
+							title:    row.title,
+							text:     row.text,
+							moduleId: defaultHazardData[row.type as HazardType]?.moduleId ?? '',
+						},
 					})
 				);
 				
@@ -216,6 +221,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				info: {
 					title: '⚠️ New Hazard',
 					text:  'Describe this hazard here.',
+					moduleId: '',
 				},
 			};
 			const next = [...prev, newHotspot];
