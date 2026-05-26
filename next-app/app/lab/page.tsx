@@ -58,6 +58,28 @@ export default function LabPage() {
 		liveHazardData,
 	} = useHazards(containerRef);
 
+	useEffect(() => {
+
+		if (!loading && !user) {
+
+			router.replace("/login");
+
+		}
+
+	}, [user, loading, router]);
+
+	if (loading) {
+
+		return <div>Loading...</div>;
+
+	}
+
+	if (!user) {
+
+		return null;
+
+	}
+
 	return (
 		<main className="main">
 
