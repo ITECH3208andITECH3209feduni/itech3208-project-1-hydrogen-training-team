@@ -12,7 +12,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut
+  signOut,
+  updateProfile
 } from "firebase/auth";
 
 import { auth } from "../lib/firebase";
@@ -86,17 +87,30 @@ export function AuthProvider({
   }
 
   async function register(
-    email: string,
-    password: string
-  ) {
+  email: string,
+  password: string,
+  name?: string
+) {
 
+  const userCredential =
     await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
 
+  if (name) {
+
+    await updateProfile(
+      userCredential.user,
+      {
+        displayName: name
+      }
+    );
+
   }
+
+}
 
   async function logout() {
 

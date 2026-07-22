@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-
 import Link from "next/link";
-
-import { useRouter } from "next/navigation";
-
-import { useAuth } from "@/context/AuthContext";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const styles = {
   page: {
@@ -60,6 +57,13 @@ const styles = {
     margin: "0 0 20px"
   },
 
+  description: {
+    fontSize: "14px",
+    color: "#666",
+    marginBottom: "20px",
+    lineHeight: 1.5
+  },
+
   group: {
     marginBottom: "14px"
   },
@@ -97,6 +101,16 @@ const styles = {
     marginTop: "6px"
   },
 
+  success: {
+    background: "#E8F8ED",
+    border: "1px solid #A8D5B5",
+    borderRadius: "8px",
+    padding: "10px 12px",
+    fontSize: "13px",
+    color: "#256029",
+    marginTop: "14px"
+  },
+
   error: {
     background: "#FCEBEB",
     border: "1px solid #F7C1C1",
@@ -104,7 +118,7 @@ const styles = {
     padding: "10px 12px",
     fontSize: "13px",
     color: "#791F1F",
-    marginBottom: "14px"
+    marginTop: "14px"
   },
 
   switch: {
@@ -121,18 +135,11 @@ const styles = {
   }
 };
 
-export default function LoginPage() {
-
-  const { login } = useAuth();
-
-  const router = useRouter();
+export default function ForgotPasswordPage() {
 
   const [email, setEmail] = useState("");
-
-  const [password, setPassword] = useState("");
-
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(
@@ -141,28 +148,31 @@ export default function LoginPage() {
 
     e.preventDefault();
 
+    setMessage("");
     setError("");
-
     setLoading(true);
 
     try {
 
-      await login(email, password);
+      await sendPasswordResetEmail(auth, email);
 
-      router.push("/");
+      setMessage(
+        "If an account exists for this email address, a password reset link has been sent."
+      );
 
     } catch (err: any) {
 
-      setError(
+      if (err.code === "auth/invalid-email") {
 
-        err.code ===
-        "auth/invalid-credential"
+        setError("Please enter a valid email address.");
 
-          ? "Incorrect email or password. Please try again."
+      } else {
 
-          : "Something went wrong. Please try again."
+        setError(
+          "Unable to send password reset email. Please try again."
+        );
 
-      );
+      }
 
     }
 
@@ -193,8 +203,54 @@ export default function LoginPage() {
         </div>
 
         <h2 style={styles.heading}>
-          Sign in
+          Forgot Password
         </h2>
+
+        <p style={styles.description}>
+          Enter your email address and we'll send you a password reset link.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+
+          <div style={styles.group}>
+
+            <label style={styles.label}>
+              Email Address
+            </label>
+
+            <input
+              style={styles.input}
+              type="email"
+              value={email}
+              required
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+            />
+
+          </div>
+
+          <button
+            type="submit"
+            style={styles.btn}
+            disabled={loading}
+          >
+
+            {loading
+              ? "Sending..."
+              : "Send Reset Link"}
+
+          </button>
+
+        </form>
+
+        {message && (
+
+          <div style={styles.success}>
+            {message}
+          </div>
+
+        )}
 
         {error && (
 
@@ -204,79 +260,13 @@ export default function LoginPage() {
 
         )}
 
-        <form onSubmit={handleSubmit}>
-
-          <div style={styles.group}>
-
-            <label style={styles.label}>
-              Email address
-            </label>
-
-            <input
-              style={styles.input}
-              type="email"
-              required
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
-            />
-
-          </div>
-<div style={styles.group}>
-
-  <label style={styles.label}>
-    Password
-  </label>
-
-  <input
-    style={styles.input}
-    type="password"
-    required
-    value={password}
-    onChange={(e) =>
-      setPassword(e.target.value)
-    }
-  />
-
-  <div
-    style={{
-      textAlign: "right",
-      marginTop: "8px"
-    }}
-  >
-    <Link
-      href="/forgot-password"
-      style={styles.link}
-    >
-      Forgot Password?
-    </Link>
-  </div>
-
-</div>
-
-          <button
-            style={styles.btn}
-            disabled={loading}
-          >
-
-            {loading
-              ? "Signing in…"
-              : "Sign in"}
-
-          </button>
-
-        </form>
-
         <div style={styles.switch}>
 
-          No account?{" "}
-
           <Link
-            href="/register"
+            href="/login"
             style={styles.link}
           >
-            Create one
+            ← Back to Login
           </Link>
 
         </div>

@@ -1,11 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-
 import { usePathname } from 'next/navigation';
-
 import { useRouter } from "next/navigation";
-
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
@@ -15,6 +12,15 @@ export default function Navbar() {
 	const router = useRouter();
 
 	const { user, logout } = useAuth();
+
+	// Hide navbar on authentication pages
+	if (
+		pathname === "/login" ||
+		pathname === "/register" ||
+		pathname === "/forgot-password"
+	) {
+		return null;
+	}
 
 	async function handleLogout() {
 
