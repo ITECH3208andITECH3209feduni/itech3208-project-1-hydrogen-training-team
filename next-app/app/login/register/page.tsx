@@ -1,5 +1,6 @@
 "use client";
 
+// @ts-ignore: CSS import may not have type declarations in this setup
 import '../auth.css';
 import { useState } from "react";
 import Link from "next/link";
