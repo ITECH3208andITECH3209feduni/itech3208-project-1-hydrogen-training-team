@@ -1,94 +1,67 @@
 'use client';
 
 import Link from 'next/link';
-
 import { usePathname } from 'next/navigation';
-
 import { useRouter } from "next/navigation";
-
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
-
 	const pathname = usePathname();
-
 	const router = useRouter();
-
 	const { user, logout } = useAuth();
 
 	async function handleLogout() {
-
 		try {
-
 			await logout();
-
 			router.replace("/login");
-
 		} catch (error) {
-
 			console.error("Logout failed", error);
-
 		}
-
 	}
 
 	return (
-
 		<nav className="nav">
-
 			<div className="logo">
-
 				<span>
 					Hydrogen Lab Safety
 				</span>
-
 			</div>
 
 			<div className="nav-links">
-
 				<Link
 					href="/"
 					className={`nav-link ${pathname === '/' ? 'active' : ''}`}
 				>
 					Home
 				</Link>
-
 				<Link
 					href="/modules"
 					className={`nav-link ${pathname === '/modules' ? 'active' : ''}`}
 				>
 					Modules
 				</Link>
-
 				<Link
 					href="/lab"
 					className={`nav-link ${pathname === '/lab' ? 'active' : ''}`}
 				>
 					Scenarios
 				</Link>
-
 				<Link
 					href="/quizzes"
 					className={`nav-link ${pathname === '/quizzes' ? 'active' : ''}`}
 				>
 					Quizzes
 				</Link>
-
 			</div>
 
 			<div className="nav-right">
-
 				{user && (
-
 					<>
-
 						<div
 							className="avatar"
 							title={user.email || "My Account"}
 						>
-
 							{user.email?.charAt(0).toUpperCase()}
-
 						</div>
 
 						<button
@@ -102,19 +75,11 @@ export default function Navbar() {
 								fontWeight: "600"
 							}}
 						>
-
 							Logout
-
 						</button>
-
 					</>
-
 				)}
-
 			</div>
-
 		</nav>
-
 	);
-
 }
