@@ -19,7 +19,6 @@ import {
 import { auth } from "../lib/firebase";
 
 type AuthContextType = {
-
   user: User | null;
 
   loading: boolean;
@@ -36,7 +35,6 @@ type AuthContextType = {
   ) => Promise<void>;
 
   logout: () => Promise<void>;
-
 };
 
 const AuthContext = createContext<
@@ -87,30 +85,57 @@ export function AuthProvider({
   }
 
   async function register(
-  email: string,
-  password: string,
-  name?: string
-) {
+    email: string,
+    password: string,
+    name?: string
+  ) {
 
-  const userCredential =
-    await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    // Create Firebase account
+    const userCredential =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-  if (name) {
+    // Update display name (optional)
+    if (name) {
 
-    await updateProfile(
-      userCredential.user,
+      await updateProfile(
+        userCredential.user,
+        {
+          displayName: name
+        }
+      );
+
+    }
+
+    // Create profile in Supabase
+    const response = await fetch(
+      "/api/profile/create",
       {
-        displayName: name
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+        }),
       }
     );
 
-  }
+    const result = await response.json();
 
-}
+    if (!result.ok) {
+
+      throw new Error(
+        result.error || "Failed to create user profile."
+      );
+
+    }
+
+  }
 
   async function logout() {
 
