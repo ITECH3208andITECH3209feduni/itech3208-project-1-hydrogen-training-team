@@ -28,6 +28,8 @@ A **Next.js 16 App Router** application with TypeScript for hydrogen technology 
 
 ## Project Structure
 
+> **Note:** this `next-app/` folder is a subfolder of the overall Git repository, not the repo root. The GitHub Actions Continuous Integration workflow (`.github/workflows/test.yml`) lives one level up, at the true repo root, alongside `next-app/` — not inside it — since GitHub only looks for workflow files at the repository root.
+
 ```
 hydrogen-lab/
 ├── app/
@@ -79,9 +81,6 @@ hydrogen-lab/
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
-├── .github/
-│   └── workflows/
-│       └── test.yml					# GitHub Actions — runs the test suite on every push/PR
 ├── lib/
 │   ├── hazards.ts						# Default hazard data + hotspot positions + moduleId map (fallback)
 │   ├── modules.ts						# Static content for all 5 modules (bundled at build time)
@@ -285,12 +284,12 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 ### Running tests
 
 ```bash
-npm test			# runs all tests once and exits — used by CI
+npm test			# runs all tests once and exits — used by Continuous Integration (CI)
 npm run test:watch	# reruns automatically as files change — used during local dev
 ```
 
 ### What's covered
-
+rk
 - **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots` in `hooks/useHazards.ts`)
 - **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`)
 
@@ -305,9 +304,9 @@ When adding a new API route:
 1. Add its happy-path response to `mocks/handlers.ts`
 2. Add at least one test exercising the happy path, and one covering its failure/edge case, using `server.use(...)` to override.
 
-### Continuous Integration
+### Continuous Integration (CI)
 
-`.github/workflows/test.yml` runs the full test suite automatically on every push and pull request via GitHub Actions. Pull requests targeting `main` should show a passing check before merging.
+A GitHub Actions workflow (`.github/workflows/test.yml`, at the repo root — not inside `next-app/`) runs the full test suite automatically on every push and pull request. Since `package.json` lives inside `next-app/`, the workflow sets `working-directory: next-app` so `npm install`/`npm test` run from the correct folder. Pull requests targeting `main` should show a passing check before merging.
 
 ---
 
