@@ -1,5 +1,5 @@
 // mocks/handlers.ts
-// Deliver mock results for API calls, to use in testing
+// Deliver mock responses for API calls, to use in testing
 import { http, HttpResponse } from 'msw';
 
 // Put a successful response in each route (for fail cases, override in test file)
