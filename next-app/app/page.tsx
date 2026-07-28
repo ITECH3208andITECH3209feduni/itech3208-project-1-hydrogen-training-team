@@ -43,7 +43,7 @@ export default function Dashboard() {
 			
 			{/* Stat Cards */}
 			<div className="stat-cards">
-				<Link href="/modules" className="stat-card">
+				<Link href="/modules/hazard-modules" className="stat-card">
 					<div className="stat-icon modules">📚</div>
 					<div className="stat-info">
 						<div className="label">Modules</div>
