@@ -451,3 +451,220 @@ body::after {
 	.stat-cards  { grid-template-columns: 1fr; }
 	.bottom-grid { grid-template-columns: 1fr; }
 }
+/* ════════════════════════════════════════════════════════════════
+   ACCESS MANAGEMENT
+   ════════════════════════════════════════════════════════════════ */
+
+.admin-panel{
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    overflow:hidden;
+    margin-top:30px;
+}
+
+.admin-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.admin-table thead{
+    background:rgba(0,180,216,.08);
+}
+
+.admin-table th{
+    padding:16px 20px;
+    text-align:left;
+    color:var(--teal);
+    font-family:"Exo 2",sans-serif;
+    font-size:.9rem;
+    border-bottom:var(--border-rule);
+}
+
+.admin-table td{
+    padding:16px 20px;
+    color:var(--text);
+    border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.admin-table tbody tr{
+    transition:.2s;
+}
+
+.admin-table tbody tr:hover{
+    background:rgba(255,255,255,.04);
+}
+
+.role-badge{
+    display:inline-block;
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:.75rem;
+    font-weight:700;
+    text-transform:uppercase;
+}
+
+.role-admin{
+    background:rgba(255,80,80,.18);
+    color:#ff7070;
+}
+
+.role-staff{
+    background:rgba(255,190,0,.18);
+    color:#ffd84d;
+}
+
+.role-user{
+    background:rgba(0,180,216,.18);
+    color:var(--teal);
+}
+
+.edit-btn{
+    border:none;
+    background:linear-gradient(
+        135deg,
+        var(--teal-dark),
+        var(--teal)
+    );
+    color:white;
+    padding:8px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.2s;
+}
+
+.edit-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 4px 16px rgba(0,180,216,.35);
+}
+/* ===============================
+   EDIT USER MODAL
+================================ */
+
+.modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    backdrop-filter:blur(4px);
+}
+
+.modal-card{
+
+    width:520px;
+    max-width:95%;
+
+    background:#071842;
+
+    border:var(--border-rule);
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    animation:fadeUp .25s ease;
+}
+
+.modal-header{
+
+    padding:22px;
+
+    border-bottom:var(--border-rule);
+}
+
+.modal-header h2{
+
+    color:var(--white);
+
+    font-family:"Exo 2",sans-serif;
+}
+
+.modal-body{
+
+    padding:22px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+}
+
+.form-group{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+}
+
+.form-group label{
+
+    color:var(--teal);
+
+    font-weight:600;
+}
+
+.form-group input,
+.form-group select{
+
+    padding:12px;
+
+    background:#102656;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    color:white;
+
+    border-radius:8px;
+
+    outline:none;
+}
+
+.modal-footer{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:14px;
+
+    padding:22px;
+
+    border-top:var(--border-rule);
+}
+
+.cancel-btn{
+
+    padding:10px 20px;
+
+    border:none;
+
+    background:#444;
+
+    color:white;
+
+    border-radius:8px;
+
+    cursor:pointer;
+}
+
+.save-btn{
+
+    padding:10px 20px;
+
+    border:none;
+
+    background:var(--teal);
+
+    color:white;
+
+    border-radius:8px;
+
+    cursor:pointer;
+}

@@ -1,25 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabase';
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
     try {
-        const { uid, email } = await req.json();
+        const {
+            uid,
+            email,
+            display_name,
+            organisation,
+        } = await req.json();
 
         if (!uid || !email) {
             return NextResponse.json(
-                { ok: false, error: 'Missing uid or email.' },
+                { ok: false, error: "Missing uid or email." },
                 { status: 400 }
             );
         }
 
         // Check if profile already exists
         const { data: existingProfile, error: fetchError } = await supabaseServer
-            .from('profiles')
-            .select('*')
-            .eq('uid', uid)
+            .from("profiles")
+            .select("*")
+            .eq("uid", uid)
             .single();
 
-        // If we found an existing profile, return it
+        // Profile already exists
         if (existingProfile) {
             return NextResponse.json({
                 ok: true,
@@ -27,8 +32,8 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // Ignore "no rows" error, but stop on anything else
-        if (fetchError && fetchError.code !== 'PGRST116') {
+        // Ignore "no rows" error
+        if (fetchError && fetchError.code !== "PGRST116") {
             console.error(fetchError);
 
             return NextResponse.json(
@@ -37,14 +42,16 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Create a new profile
+        // Create new profile
         const { data: profile, error: insertError } = await supabaseServer
-            .from('profiles')
+            .from("profiles")
             .insert({
                 uid,
                 email,
-                role: 'user',
-                user_type: 'public',
+                display_name,
+                organisation: organisation || null,
+                role: "user",
+                user_type: "public",
             })
             .select()
             .single();
@@ -67,7 +74,7 @@ export async function POST(req: NextRequest) {
         console.error(error);
 
         return NextResponse.json(
-            { ok: false, error: 'Internal server error.' },
+            { ok: false, error: "Internal server error." },
             { status: 500 }
         );
     }

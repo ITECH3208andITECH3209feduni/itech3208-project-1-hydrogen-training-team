@@ -1,7 +1,7 @@
 "use client";
 
 // @ts-ignore: CSS import may not have type declarations in this setup
-import '../auth.css';
+import "../auth.css";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,37 +12,51 @@ export default function RegisterPage() {
 	const router = useRouter();
 
 	const [form, setForm] = useState({
-		name:     "",
-		email:    "",
+		name: "",
+		email: "",
 		password: "",
-		confirm:  "",
+		confirm: "",
+		userType: "public",
+		organisation: "",
 	});
-	const [error, setError]     = useState("");
+
+	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
 	function update(field: string) {
 		return (e: React.ChangeEvent<HTMLInputElement>) =>
 			setForm((f) => ({ ...f, [field]: e.target.value }));
 	}
-	
-	// Send login details to Firebase
+
+	// Send registration details to Firebase
 	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setError("");
-		
-		if (form.password !== form.confirm) {	// Check that repetition of password is identical
+
+		// Check passwords match
+		if (form.password !== form.confirm) {
 			return setError("Passwords do not match.");
 		}
-		if (form.password.length < 6) {			// Check that password is long enough
+
+		// Check password length
+		if (form.password.length < 6) {
 			return setError("Password must be at least 6 characters.");
 		}
 
 		setLoading(true);
 
-		try {					// If new login acceptable, open dashboard page
-			await register(form.email, form.password, form.name);
+		try {
+			await register({
+				email: form.email,
+				password: form.password,
+				name: form.name,                 // Saved as Firebase displayName
+				organisation: form.organisation,
+				role: "user",
+				user_type: "public",
+			});
+
 			router.push("/");
-		} catch (err: any) {	// If email address is already in use, send error message
+		} catch (err: any) {
 			setError(
 				err.code === "auth/email-already-in-use"
 					? "An account with this email address already exists."
@@ -56,7 +70,6 @@ export default function RegisterPage() {
 	return (
 		<div className="auth-page">
 			<div className="auth-card">
-
 				<div className="auth-logo">
 					<span className="auth-logo-icon">⚗️</span>
 					<h1 className="auth-logo-title">Hydrogen Lab</h1>
@@ -64,24 +77,39 @@ export default function RegisterPage() {
 				</div>
 
 				<h2 className="auth-heading">Register</h2>
-				
+
 				{/* Error Message */}
 				{error && <div className="auth-error">{error}</div>}
 
 				<form onSubmit={handleSubmit}>
-					{/* Name Input */}
+					{/* Full Name */}
 					<div className="auth-group">
-						<label className="auth-label">Full name</label>
+						<label className="auth-label">Full Name</label>
 						<input
 							className="auth-input"
 							type="text"
 							required
 							value={form.name}
 							onChange={update("name")}
+							placeholder="Enter your full name"
 						/>
 					</div>
-					
-					{/* Email Address Input */}
+
+					{/* Organisation (Optional) */}
+					<div className="auth-group">
+						<label className="auth-label">
+							Organisation <span style={{ fontWeight: "normal" }}>(optional)</span>
+						</label>
+						<input
+							className="auth-input"
+							type="text"
+							value={form.organisation}
+							onChange={update("organisation")}
+							placeholder="University, school or company"
+						/>
+					</div>
+
+					{/* Email */}
 					<div className="auth-group">
 						<label className="auth-label">Email address</label>
 						<input
@@ -90,10 +118,11 @@ export default function RegisterPage() {
 							required
 							value={form.email}
 							onChange={update("email")}
+							placeholder="Enter your email"
 						/>
 					</div>
-					
-					{/* Password Input */}
+
+					{/* Password */}
 					<div className="auth-group">
 						<label className="auth-label">Password</label>
 						<input
@@ -102,10 +131,11 @@ export default function RegisterPage() {
 							required
 							value={form.password}
 							onChange={update("password")}
+							placeholder="Enter your password"
 						/>
 					</div>
-					
-					{/* Confirm Password Input */}
+
+					{/* Confirm Password */}
 					<div className="auth-group">
 						<label className="auth-label">Confirm password</label>
 						<input
@@ -114,21 +144,20 @@ export default function RegisterPage() {
 							required
 							value={form.confirm}
 							onChange={update("confirm")}
+							placeholder="Confirm your password"
 						/>
 					</div>
-					
+
 					{/* Register Button */}
 					<button className="auth-btn" disabled={loading}>
 						{loading ? "Creating account…" : "Create account"}
 					</button>
 				</form>
-				
-				{/* Link to Login Page */}
-				<div className="auth-switch">
-					Already registered?{" "}
-					<Link href="/login">Sign in</Link>
-				</div>
 
+				{/* Login Link */}
+				<div className="auth-switch">
+					Already registered? <Link href="/login">Sign in</Link>
+				</div>
 			</div>
 		</div>
 	);

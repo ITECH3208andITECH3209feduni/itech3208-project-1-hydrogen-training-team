@@ -11,7 +11,11 @@ export default function Navbar() {
 
 	const router = useRouter();
 
-	const { user, logout } = useAuth();
+	const {
+		user,
+		logout,
+		permissions,
+	} = useAuth();
 
 	// Hide navbar on authentication pages
 	if (
@@ -54,31 +58,45 @@ export default function Navbar() {
 
 				<Link
 					href="/"
-					className={`nav-link ${pathname === '/' ? 'active' : ''}`}
+					className={`nav-link ${pathname === "/" ? "active" : ""}`}
 				>
 					Home
 				</Link>
 
 				<Link
 					href="/modules"
-					className={`nav-link ${pathname === '/modules' ? 'active' : ''}`}
+					className={`nav-link ${pathname === "/modules" ? "active" : ""}`}
 				>
 					Modules
 				</Link>
 
 				<Link
 					href="/lab"
-					className={`nav-link ${pathname === '/lab' ? 'active' : ''}`}
+					className={`nav-link ${pathname === "/lab" ? "active" : ""}`}
 				>
 					Scenarios
 				</Link>
 
 				<Link
 					href="/quizzes"
-					className={`nav-link ${pathname === '/quizzes' ? 'active' : ''}`}
+					className={`nav-link ${pathname === "/quizzes" ? "active" : ""}`}
 				>
 					Quizzes
 				</Link>
+
+				{/* Admin Only */}
+				{permissions.canManageUsers && (
+					<Link
+						href="/admin/users"
+						className={`nav-link ${
+							pathname.startsWith("/admin")
+								? "active"
+								: ""
+						}`}
+					>
+						Administration
+					</Link>
+				)}
 
 			</div>
 
@@ -90,7 +108,11 @@ export default function Navbar() {
 
 						<div
 							className="avatar"
-							title={user.email || "My Account"}
+							title={
+								user.displayName ??
+								user.email ??
+								"My Account"
+							}
 						>
 
 							{user.email?.charAt(0).toUpperCase()}
