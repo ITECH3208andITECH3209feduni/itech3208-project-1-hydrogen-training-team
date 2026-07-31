@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/adminAuth";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify that the caller is an authenticated admin
+    // Verify the requester is an authenticated admin
     await requireAdmin(request);
 
     const { data, error } = await supabaseServer
@@ -15,6 +16,8 @@ export async function GET(request: NextRequest) {
       .order("email");
 
     if (error) {
+      console.error("SUPABASE ERROR:", error);
+
       return NextResponse.json(
         {
           ok: false,
@@ -28,16 +31,15 @@ export async function GET(request: NextRequest) {
       ok: true,
       users: data,
     });
-
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error("ADMIN USERS API FAILED:", err);
 
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Internal server error.",
+        error: err instanceof Error ? err.message : String(err),
       },
-      { status: 403 }
+      { status: 500 }
     );
   }
 }
