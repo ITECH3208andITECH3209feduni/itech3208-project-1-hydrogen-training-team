@@ -73,7 +73,7 @@ export default function RegisterPage() {
 				<div className="auth-logo">
 					<span className="auth-logo-icon">⚗️</span>
 					<h1 className="auth-logo-title">Hydrogen Lab</h1>
-					<p className="auth-logo-sub">Create your student account</p>
+					<p className="auth-logo-sub">Create your account</p>
 				</div>
 
 				<h2 className="auth-heading">Register</h2>

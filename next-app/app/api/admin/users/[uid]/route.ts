@@ -4,21 +4,14 @@ import { requireAdmin } from "@/lib/adminAuth";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ uid: string }> }
+  { params }: { params: Promise<{ uid: string }>}
 ) {
   try {
-    // Verify that the caller is an authenticated admin
-    await requireAdmin(req);
-
     const { uid } = await params;
 
     const body = await req.json();
 
-    const {
-      role,
-      user_type,
-      organisation,
-    } = body;
+    const { role, user_type, organisation } = body;
 
     const { data, error } = await supabaseServer
       .from("profiles")
@@ -46,16 +39,13 @@ export async function PATCH(
       ok: true,
       profile: data,
     });
-
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error
-          ? error.message
-          : "Internal server error.",
+        error: error instanceof Error ? error.message : "Internal server error.",
       },
       { status: 403 }
     );

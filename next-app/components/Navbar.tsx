@@ -18,13 +18,15 @@ export default function Navbar() {
 	} = useAuth();
 
 	// Hide navbar on authentication pages
-	if (
-		pathname === "/login" ||
-		pathname === "/register" ||
-		pathname === "/forgot-password"
-	) {
-		return null;
-	}
+	
+const hideNavbar =
+    pathname === "/login" ||
+    pathname.startsWith("/login/register") ||
+    pathname === "/forgot-password";
+
+if (hideNavbar) {
+    return null;
+}
 
 	async function handleLogout() {
 
@@ -60,7 +62,7 @@ export default function Navbar() {
 					href="/"
 					className={`nav-link ${pathname === "/" ? "active" : ""}`}
 				>
-					Home
+					Dashboard
 				</Link>
 
 				<Link
