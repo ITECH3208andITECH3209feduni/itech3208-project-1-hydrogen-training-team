@@ -152,26 +152,42 @@ const averageProgress = 0;
         >
           Refresh
         </button>
-
-      </div>
-            <div className="admin-stat-cards">
-
-        <div className="stat-card users-card">
-          <div className="stat-info">
-            <div className="label">Users</div>
-            <div className="count">{totalUsers}</div>
-            <div className="sub">Registered Accounts</div>
-          </div>
         </div>
 
+<div className="admin-stat-cards">
+
+     <div className="stat-card users-card">
+  <div className="stat-info">
+    <div className="label">
+      👥 Users
+    </div>
+
+    <div className="count">
+      {totalUsers}
+    </div>
+
+    <div className="sub">
+      Registered Accounts
+    </div>
+  </div>
+</div>
         <div className="stat-card admin-card">
-          <div className="stat-info">
-            <div className="label">Administrators</div>
-            <div className="count">{adminCount}</div>
-            <div className="sub">System Administrators</div>
-          </div>
-        </div>
+  <div className="stat-info">
 
+    <div className="label">
+      🛡 Administrators
+    </div>
+
+    <div className="count">
+      {adminCount}
+    </div>
+
+    <div className="sub">
+      System Administrators
+    </div>
+
+  </div>
+</div>
         <div className="stat-card completed-card">
   <div className="stat-info">
 

@@ -89,11 +89,11 @@ export default function ModuleCard({
 
     <p>
       <strong>Quiz Score:</strong>
-      <span>
-        {mod.status === "done"
-          ? `${adminData.quizScore}%`
-          : "-"}
-      </span>
+	  <span>
+      {mod.status === "done"
+        ? `${adminData.quizScore}%`
+        : "-"}
+	</span>
     </p>
 
     <p>
