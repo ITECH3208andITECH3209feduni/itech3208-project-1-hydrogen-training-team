@@ -1,0 +1,168 @@
+/* Module card */
+.module-card {
+	background: var(--card-bg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+	text-decoration: none;
+	color: inherit;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.25s;
+	animation: fadeUp 0.5s ease both;
+	position: relative;
+	cursor: pointer;
+}
+.module-card:hover {
+	transform: translateY(-4px);
+	border-color: var(--teal);
+	background: rgba(0,180,216,0.07);
+}
+
+/* Coloured top bar */
+.card-top-bar {
+	height: 5px;
+	width: 100%;
+	flex-shrink: 0;
+}
+.bar-done     { background: #00E5A0; }
+.bar-progress { background: var(--teal); }
+.bar-todo     { background: rgba(255,255,255,0.1); }
+
+.card-body {
+	padding: 20px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 12px;
+}
+
+.card-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.4rem;
+	flex-shrink: 0;
+}
+
+.status-badge {
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+}
+.badge-done     { background: rgba(0,229,160,0.15); color: #00E5A0; }
+.badge-progress { background: rgba(0,180,216,0.15); color: var(--teal); }
+.badge-todo     { background: rgba(255,255,255,0.07); color: var(--muted); }
+
+.card-title {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--white);
+	margin-bottom: 6px;
+}
+.card-desc {
+	font-size: 0.82rem;
+	color: var(--muted);
+	line-height: 1.5;
+	margin-bottom: 16px;
+	flex: 1;
+}
+
+.card-progress-bar {
+	height: 5px;
+	background: rgba(255,255,255,0.08);
+	border-radius: var(--radius-pill);
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+.card-progress-fill {
+	height: 100%;
+	border-radius: var(--radius-pill);
+	transition: width 0.6s ease;
+}
+
+.card-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+
+.card-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 10px;
+	border-top: 1px solid var(--border);
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--teal);
+	transition: background 0.2s;
+}
+.module-card:hover .card-link {
+	background: rgba(0,180,216,0.08);
+}
+
+/* Hazard number badge (top-left of card) */
+.hazard-badge {
+	position: absolute;
+	top: 14px;
+	left: 14px;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: rgba(220,50,50,0.9);
+	border: 2px solid white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: white;
+	font-family: 'Exo 2', sans-serif;
+}
+/* ===========================
+   Administrator View
+=========================== */
+
+.admin-module-info{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin:14px 0 18px;
+    padding:12px 14px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px;
+}
+
+.admin-module-info p{
+    margin:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:0.82rem;
+    color:var(--muted);
+}
+
+.admin-module-info strong{
+    color:var(--white);
+    font-weight:600;
+}
+
+.admin-module-info span{
+    color:var(--teal);
+    font-weight:600;
+}
