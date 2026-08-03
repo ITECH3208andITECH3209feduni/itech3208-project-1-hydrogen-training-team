@@ -28,7 +28,7 @@ export default function Navbar() {
 				<span>
 					Hydrogen Lab Safety
 				</span>
-			</Link>
+      </Link>
 
 			<div className="nav-links">
 				<Link
@@ -73,7 +73,6 @@ export default function Navbar() {
 						>
 							Logout
 						</button>
-
 					</>
 				)}
 			</div>

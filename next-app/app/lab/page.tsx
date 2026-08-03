@@ -20,20 +20,6 @@ export default function LabPage() {
 	const { user, loading } = useAuth();
 	const router = useRouter();
 
-	useEffect(() => {
-		if (!loading && !user) {
-			router.replace("/login");
-		}
-	}, [user, loading, router]);
-
-	if (loading) {
-		return <div>Loading...</div>;
-	}
-
-	if (!user) {
-		return null;
-	}
-
 	// Page constants
 	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
 	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
@@ -59,27 +45,19 @@ export default function LabPage() {
 	} = useHazards(containerRef);
 
 	useEffect(() => {
-
 		if (!loading && !user) {
-
 			router.replace("/login");
-
 		}
-
 	}, [user, loading, router]);
 
 	if (loading) {
-
 		return <div>Loading...</div>;
-
 	}
 
 	if (!user) {
-
 		return null;
-
 	}
-
+	
 	return (
 		<main className="main">
 
@@ -90,6 +68,7 @@ export default function LabPage() {
 			<p className="lab-subtitle">
 				{editMode ? 'Drag hotspots · select to edit · save when done'
 					: loadStatus === 'loading' ? 'Loading lab data…'
+					: loadStatus === 'error'   ? 'Could not load latest lab data — showing defaults.'
 					: 'Click on highlighted areas to identify hazards.'
 				}
 			</p>
@@ -111,7 +90,7 @@ export default function LabPage() {
 					priority
 				/>
 
-				{loadStatus === 'ready' && hotspots.map((hs, index) => {
+				{loadStatus !== 'loading' && hotspots.map((hs, index) => {
 					const isSelected = selected === index;
 					return (
 						<button

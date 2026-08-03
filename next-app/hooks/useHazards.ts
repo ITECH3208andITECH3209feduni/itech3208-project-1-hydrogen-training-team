@@ -36,12 +36,12 @@ export function buildDefaultHotspots(): EditableHotspot[] {
 }
 
 // Prevents dragging hotspots outside image boundaries
-function clamp(val: number, min: number, max: number) {
+export function clamp(val: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, val));
 }
 
 // Generate a unique type key that doesn't clash with existing hotspots
-function generateType(existing: EditableHotspot[]): string {
+export function generateType(existing: EditableHotspot[]): string {
 	const existingTypes = new Set(existing.map((hs) => hs.type));
 	let i = 1;
 	while (existingTypes.has(`hazard_${i}`)) i++;
@@ -74,10 +74,16 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				const res  = await fetch('/api/load-hazards', { cache: 'no-store' });
 				const json = await res.json();
 				
-				// If table empty or fetch fails, use hazards.ts instead
-				if (!json.ok || !json.data?.length) {
-					setLoadStatus('ready');
-					return;
+				// If fetch fails or table empty, use hazards.ts instead
+				if (!json.ok) {
+  					console.error('load-hazards API error:', json.error);
+  					setLoadStatus('error');
+  					return;
+				}
+				
+				if (!json.data?.length) {
+  					setLoadStatus('ready');
+  					return;
 				}
 				
 				// If rows returned from fetch, maps into hotspot objects
