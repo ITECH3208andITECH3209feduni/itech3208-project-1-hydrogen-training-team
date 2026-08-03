@@ -28,6 +28,8 @@ A **Next.js 16 App Router** application with TypeScript for hydrogen technology 
 
 ## Project Structure
 
+> **Note:** this `next-app/` folder is a subfolder of the overall Git repository, not the repo root. The GitHub Actions Continuous Integration workflow (`.github/workflows/test.yml`) lives one level up, at the true repo root, alongside `next-app/` — not inside it — since GitHub only looks for workflow files at the repository root.
+
 ```
 hydrogen-lab/
 ├── app/
@@ -49,7 +51,7 @@ hydrogen-lab/
 │   │       ├── EditBanner.tsx			# Yellow banner shown when edit mode is active
 │   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, and lab image
 │   │       ├── SaveBar.tsx				# Reset and save buttons for hotspots
-│           └── HazardPopup.tsx			# Modal popup for hazard info
+│   │       └── HazardPopup.tsx			# Modal popup for hazard info
 │   ├── modules/
 │   │   ├── page.tsx					# Module listing with filter bar (/modules)
 │   │   ├── modules.css					# Modules-specific styles
@@ -74,7 +76,11 @@ hydrogen-lab/
 ├── context/
 │   └── AuthContext.tsx					# Firebase auth state — wraps the app via layout.tsx
 ├── hooks/
-│   └── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, secret key, image upload
+│   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, secret key, image upload
+│   └── useHazards.test.ts				# Unit + integration tests for useHazards.ts
+├── mocks/
+│   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
+│   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
 ├── lib/
 │   ├── hazards.ts						# Default hazard data + hotspot positions + moduleId map (fallback)
 │   ├── modules.ts						# Static content for all 5 modules (bundled at build time)
@@ -85,6 +91,8 @@ hydrogen-lab/
 ├── .env.local							# Environment variables (not committed to Git)
 ├── next.config.js
 ├── tsconfig.json
+├── vitest.config.ts					# Vitest configuration (jsdom, plugins, setup file)
+├── vitest.setup.ts						# Global test setup — jest-dom matchers, MSW server lifecycle
 └── package.json
 ```
 
@@ -113,7 +121,7 @@ All pages except `/login` and `/login/register` redirect unauthenticated users t
 npm install
 ```
 
-Requires **Node.js 20.9 or higher** (Next.js 16 minimum).
+Requires **Node.js 20.9 or higher**. The project currently targets **Next.js 14**.
 
 ### 2. Set up Firebase
 
@@ -266,6 +274,39 @@ The default hotspot data will be written to Supabase and loaded on every subsequ
 npm run build
 npm start
 ```
+
+---
+
+## Testing
+
+The project uses **Vitest** for unit and integration tests, with **React Testing Library** for rendering hooks/components and **MSW (Mock Service Worker)** for mocking API routes — no real Supabase calls are made during tests.
+
+### Running tests
+
+```bash
+npm test			# runs all tests once and exits — used by Continuous Integration (CI)
+npm run test:watch	# reruns automatically as files change — used during local dev
+```
+
+### What's covered
+rk
+- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots` in `hooks/useHazards.ts`)
+- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`)
+
+Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/useHazards.ts` → `hooks/useHazards.test.ts`). Vitest picks these up automatically.
+
+### Mock API conventions
+
+`mocks/handlers.ts` defines the default MSW response for every `/api/*` route. **Defaults represent the happy path** — a successful response with realistic data, matching the actual shape returned by the corresponding file in `app/api/*/route.ts`.
+Any test covering a different scenario (empty data, a server-reported error, a network failure) overrides the relevant handler locally with `server.use(...)`, rather than changing the shared default.
+
+When adding a new API route:
+1. Add its happy-path response to `mocks/handlers.ts`
+2. Add at least one test exercising the happy path, and one covering its failure/edge case, using `server.use(...)` to override.
+
+### Continuous Integration (CI)
+
+A GitHub Actions workflow (`.github/workflows/test.yml`, at the repo root — not inside `next-app/`) runs the full test suite automatically on every push and pull request. Since `package.json` lives inside `next-app/`, the workflow sets `working-directory: next-app` so `npm install`/`npm test` run from the correct folder. Pull requests targeting `main` should show a passing check before merging.
 
 ---
 

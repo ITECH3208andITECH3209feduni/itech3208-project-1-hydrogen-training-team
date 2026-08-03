@@ -68,6 +68,7 @@ export default function LabPage() {
 			<p className="lab-subtitle">
 				{editMode ? 'Drag hotspots · select to edit · save when done'
 					: loadStatus === 'loading' ? 'Loading lab data…'
+					: loadStatus === 'error'   ? 'Could not load latest lab data — showing defaults.'
 					: 'Click on highlighted areas to identify hazards.'
 				}
 			</p>
@@ -89,7 +90,7 @@ export default function LabPage() {
 					priority
 				/>
 
-				{loadStatus === 'ready' && hotspots.map((hs, index) => {
+				{loadStatus !== 'loading' && hotspots.map((hs, index) => {
 					const isSelected = selected === index;
 					return (
 						<button
