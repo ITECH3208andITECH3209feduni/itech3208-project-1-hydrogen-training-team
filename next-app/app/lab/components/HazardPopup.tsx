@@ -44,7 +44,7 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 				{/* Learn More button */}
 				{info.moduleId && (
 					<Link
-						href={`/modules/${info.moduleId}`}
+						href={`/modules/hazard-modules/${info.moduleId}`}
 						className="popup-module-link"
 						onClick={onClose}
 					>

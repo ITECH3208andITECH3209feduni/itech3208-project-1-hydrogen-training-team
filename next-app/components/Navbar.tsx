@@ -1,3 +1,6 @@
+// /components/Navbar.tsx
+// Navigation bar for whole application, includes links to pages and logout button.
+
 'use client';
 
 import Link from 'next/link';
@@ -21,11 +24,11 @@ export default function Navbar() {
 
 	return (
 		<nav className="nav">
-			<div className="logo">
+			<Link href="/intro" className="logo">
 				<span>
 					Hydrogen Lab Safety
 				</span>
-			</div>
+      </Link>
 
 			<div className="nav-links">
 				<Link
@@ -35,8 +38,8 @@ export default function Navbar() {
 					Home
 				</Link>
 				<Link
-					href="/modules"
-					className={`nav-link ${pathname === '/modules' ? 'active' : ''}`}
+					href="/modules/hazard-modules"
+					className={`nav-link ${pathname.startsWith('/modules') ? 'active' : ''}`}
 				>
 					Modules
 				</Link>
@@ -66,14 +69,7 @@ export default function Navbar() {
 
 						<button
 							onClick={handleLogout}
-							style={{
-								marginLeft: "12px",
-								padding: "8px 14px",
-								borderRadius: "8px",
-								border: "none",
-								cursor: "pointer",
-								fontWeight: "600"
-							}}
+							className="btn-logout"
 						>
 							Logout
 						</button>

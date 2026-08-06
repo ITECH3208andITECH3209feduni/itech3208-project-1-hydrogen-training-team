@@ -1,38 +1,14 @@
-// lib/modules.ts
-// All module content data — used by the modules listing and individual module pages
+// lib/hazardModules.ts
+// Content for the "Hazard Modules" section (app/modules/hazard-modules/).
+// Types come from lib/moduleTypes.ts.
 
-export type ModuleStatus = 'done' | 'progress' | 'todo';
+import { ModuleData, getModuleById } from './moduleTypes';
 
-export interface ModuleSection {
-	num: string;
-	heading: string;
-	body: string;		// HTML string for paragraph/list content
-	callout?: string;
-	listType?: 'ul' | 'ol';
-	items?: string[];
-}
-
-export interface ModuleData {
-	id: string;				// e.g. "1"
-	slug: string;			// e.g. "gas-leak-detection"
-	hazardNum: number;
-	icon: string;
-	iconBg: string;			// Tailwind-style inline colour for the icon background
-	title: string;
-	description: string;	// Short card description
-	status: ModuleStatus;
-	progress: number;		// 0–100
-	sections: ModuleSection[];
-	keyTakeaway: string;
-	prevId: string | null;
-	nextId: string | null;
-}
-
-export const modules: ModuleData[] = [
+export const hazardModules: ModuleData[] = [
 	{
 		id: '1',
 		slug: 'gas-leak-detection',
-		hazardNum: 1,
+		badgeNum: 1,
 		icon: '💨',
 		iconBg: 'rgba(0,180,216,0.15)',
 		title: 'Gas Leak Detection',
@@ -100,13 +76,12 @@ export const modules: ModuleData[] = [
 		],
 		keyTakeaway:
 			'Hydrogen leaks are difficult to detect but can quickly become dangerous if ignored. Understanding the warning signs, using proper detection systems, and responding safely are essential for maintaining a safe hydrogen laboratory environment.',
-		prevId: null,
 		nextId: '2',
 	},
 	{
 		id: '2',
 		slug: 'ventilation-system',
-		hazardNum: 2,
+		badgeNum: 2,
 		icon: '🌬️',
 		iconBg: 'rgba(0,229,160,0.12)',
 		title: 'Ventilation System',
@@ -183,7 +158,7 @@ export const modules: ModuleData[] = [
 	{
 		id: '3',
 		slug: 'equipment-and-leak-points',
-		hazardNum: 3,
+		badgeNum: 3,
 		icon: '🔧',
 		iconBg: 'rgba(255,190,80,0.12)',
 		title: 'Equipment & Leak Points',
@@ -267,7 +242,7 @@ export const modules: ModuleData[] = [
 	{
 		id: '4',
 		slug: 'chemical-storage',
-		hazardNum: 4,
+		badgeNum: 4,
 		icon: '🧪',
 		iconBg: 'rgba(255,107,107,0.12)',
 		title: 'Chemical Storage',
@@ -350,7 +325,7 @@ export const modules: ModuleData[] = [
 	{
 		id: '5',
 		slug: 'gas-cylinder-storage',
-		hazardNum: 5,
+		badgeNum: 5,
 		icon: '🧯',
 		iconBg: 'rgba(180,100,255,0.12)',
 		title: 'Gas Cylinder Storage',
@@ -425,11 +400,10 @@ export const modules: ModuleData[] = [
 		keyTakeaway:
 			'Hydrogen gas cylinders contain large amounts of stored energy and must be handled and stored carefully. Proper securing, ventilation, regular inspection, and safe storage practices are essential to prevent leaks, fires, and serious accidents in laboratory environments.',
 		prevId: '4',
-		nextId: null,
 	},
 ];
 
-// Helper to look up a module by its numeric id string
-export function getModuleById(id: string): ModuleData | undefined {
-	return modules.find((m) => m.id === id);
+// Helper to look up a hazard module by its numeric id string
+export function getHazardModuleById(id: string): ModuleData | undefined {
+	return getModuleById(hazardModules, id);	// Calls the generic helper from lib/moduleTypes.ts
 }
