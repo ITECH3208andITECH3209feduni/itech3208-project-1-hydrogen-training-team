@@ -129,7 +129,7 @@ export default function Dashboard() {
 								<br />Download your certificate of completion.
 							</p>
 						</div>
-						<a href="#" className="btn-cert">Download Certificate →</a>
+						<Link href="/certificate" className="btn-cert">Download Certificate →</Link>
 					</div>
 				</div>
 			</div>
