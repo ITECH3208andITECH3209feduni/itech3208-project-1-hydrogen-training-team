@@ -158,7 +158,7 @@ const averageProgress = 0;
 
 <div className="admin-stat-cards">
 
-     <div className="stat-card users-card">
+  <div className="stat-card users-card">
   <div className="stat-info">
     <div className="label">
       👥 Users

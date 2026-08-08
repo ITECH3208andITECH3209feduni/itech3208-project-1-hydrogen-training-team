@@ -26,7 +26,8 @@
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "types": ["vitest/globals"]
   },
   "include": [
     "next-env.d.ts",
@@ -37,6 +38,9 @@
     ".next/global.d.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+	"**/*.test.ts",
+	"**/*.test.tsx",
+	"mocks/**/*"
   ]
 }
