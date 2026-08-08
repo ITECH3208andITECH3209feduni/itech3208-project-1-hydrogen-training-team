@@ -1,6 +1,8 @@
 "use client";
-
-import { useEffect, useMemo, useState } from "react";
+// TypeScript may not have declarations for importing plain CSS here. Suppress the error.
+// @ts-ignore: Implicit any for CSS import
+import "./admin.css";
+import React, { useEffect, useMemo, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -233,7 +235,7 @@ const averageProgress = 0;
           type="text"
           placeholder="Search by email, name, organisation, role..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
         />
 
         <div className="user-count">
@@ -345,5 +347,6 @@ const averageProgress = 0;
       />
 
     </main>
+    
   );
 }

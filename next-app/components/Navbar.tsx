@@ -28,17 +28,17 @@ if (hideNavbar) {
     return null;
 }
 
-	async function handleLogout() {
+async function handleLogout() {
 
-		try {
+	try {
 
-			await logout();
+		await logout();
 
-			router.replace("/login");
+		router.replace("/login");
 
 		} catch (error) {
 
-			console.error("Logout failed", error);
+		console.error("Logout failed", error);
 
 		}
 
@@ -62,7 +62,7 @@ if (hideNavbar) {
 					href="/"
 					className={`nav-link ${pathname === "/" ? "active" : ""}`}
 				>
-					Dashboard
+					Home
 				</Link>
 
 				<Link
@@ -85,6 +85,13 @@ if (hideNavbar) {
 				>
 					Quizzes
 				</Link>
+				{/* About page */}
+					<Link 
+						href="/about"
+						className={`nav-link ${pathname === "/about" ? "active" : ""}`}
+					>
+				    About
+					</Link>
 
 				{/* Admin Only */}
 				{permissions.canManageUsers && (

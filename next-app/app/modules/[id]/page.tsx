@@ -1,5 +1,6 @@
 'use client';
 
+// @ts-expect-error CSS imports are handled by Next.js
 import '../modules.css';
 import Link from 'next/link';
 import { useEffect } from 'react';

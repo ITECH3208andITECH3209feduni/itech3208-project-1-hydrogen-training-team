@@ -3,6 +3,7 @@
 
 'use client';
 
+// @ts-ignore - CSS imports are handled by Next.js
 import './modules.css';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';

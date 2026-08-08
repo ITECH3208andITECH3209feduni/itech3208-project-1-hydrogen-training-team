@@ -85,7 +85,7 @@ export default function LoginPage() {
 
 					{/* Forgot Password Link */}
 					<div className="auth-forgot">
-						<Link href="/forgot-password">
+						<Link href="/login/forgot-password">
 							Forgot Password?
 						</Link>
 					</div>
