@@ -1,167 +1,334 @@
 // app/modules/components/ModuleCard.tsx
-// Card displayed in the modules listing grid for each module
 
-import Link from 'next/link';
-import { ModuleData, ModuleStatus } from '@/lib/modules';
-// @ts-ignore: CSS import declaration missing
+import Link from "next/link";
+import { ModuleData, ModuleStatus } from "@/lib/modules";
 import "./ModuleCard.css";
 
-const statusMeta: Record<ModuleStatus, { label: string; barClass: string; badgeClass: string; linkText: string }> = {
-	done:     { label: '✓ Completed', barClass: 'bar-done',     badgeClass: 'badge-done',     linkText: 'View Module →'  },
-	progress: { label: 'In Progress', barClass: 'bar-progress', badgeClass: 'badge-progress', linkText: 'Continue →'     },
-	todo:     { label: 'Not Started', barClass: 'bar-todo',     badgeClass: 'badge-todo',     linkText: 'Start Module →' },
-};
+interface AdminProgress {
+    uid?: string;
+    module_id?: number | string;
+    status?: string | null;
+    progress?: number | null;
+    time_spent?: number | string | null;
+    started_at?: string | null;
+    last_accessed?: string | null;
+    completed_at?: string | null;
+}
 
 interface ModuleCardProps {
-	mod: ModuleData;
-	animationDelay?: number;
-	mode?: "student" | "admin";
+    mod: ModuleData;
+    animationDelay?: number;
+    mode?: "student" | "admin";
+    adminProgress?: AdminProgress;
+}
+
+const statusMeta: Record<
+    ModuleStatus,
+    {
+        label: string;
+        barClass: string;
+        badgeClass: string;
+        linkText: string;
+    }
+> = {
+    done: {
+        label: "✓ Completed",
+        barClass: "bar-done",
+        badgeClass: "badge-done",
+        linkText: "View Module →",
+    },
+
+    progress: {
+        label: "In Progress",
+        barClass: "bar-progress",
+        badgeClass: "badge-progress",
+        linkText: "Continue →",
+    },
+
+    todo: {
+        label: "Not Started",
+        barClass: "bar-todo",
+        badgeClass: "badge-todo",
+        linkText: "Start Module →",
+    },
+};
+
+function formatDate(
+    date: string | null | undefined
+): string {
+    if (!date) {
+        return "-";
+    }
+
+    const parsed = new Date(date);
+
+    if (Number.isNaN(parsed.getTime())) {
+        return "-";
+    }
+
+    return parsed.toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+}
+
+function formatTimeSpent(
+    value: number | string | null | undefined
+): string {
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return "-";
+    }
+
+    if (typeof value === "string") {
+        return value;
+    }
+
+    return `${value} mins`;
 }
 
 export default function ModuleCard({
-	mod,
-	animationDelay = 0,
-	mode = "student",
+    mod,
+    animationDelay = 0,
+    mode = "student",
+    adminProgress,
 }: ModuleCardProps) {
-	const meta = statusMeta[mod.status];
-	const adminData = {
-  completedDate: "12 Jul 2026",
-  quizScore: 88,
-  attempts: 1,
-  timeSpent: "42 mins",
-  lastAccessed: "Yesterday",
-};
+    /*
+     * ---------------------------------------------------------
+     * STUDENT VIEW
+     * ---------------------------------------------------------
+     */
 
-	const cardContent = (
-	<>
-		<div className={`card-top-bar ${meta.barClass}`} />
+    if (mode === "student") {
+        const meta = statusMeta[mod.status];
 
-		<div className="hazard-badge">
-			{mod.hazardNum}
-		</div>
+        return (
+            <Link
+                href={`/modules/${mod.id}`}
+                className="module-card"
+                style={{
+                    animationDelay: `${animationDelay}s`,
+                }}
+            >
+                <div
+                    className={`card-top-bar ${meta.barClass}`}
+                />
 
-		<div className="card-body">
+                <div className="hazard-badge">
+                    {mod.hazardNum}
+                </div>
 
-			<div className="card-head">
+                <div className="card-body">
 
-				<div
-					className="card-icon"
-					style={{ background: mod.iconBg }}
-				>
-					{mod.icon}
-				</div>
+                    <div className="card-head">
 
-				<span
-					className={`status-badge ${meta.badgeClass}`}
-				>
-					{meta.label}
-				</span>
+                        <div
+                            className="card-icon"
+                            style={{
+                                background: mod.iconBg,
+                            }}
+                        >
+                            {mod.icon}
+                        </div>
 
-			</div>
+                        <span
+                            className={`status-badge ${meta.badgeClass}`}
+                        >
+                            {meta.label}
+                        </span>
 
-			<div className="card-title">
-				{mod.title}
-			</div>
+                    </div>
 
-			{mode === "student" ? (
+                    <div className="card-title">
+                        {mod.title}
+                    </div>
 
-  <div className="card-desc">
-    {mod.description}
-  </div>
+                    <div className="card-description">
+                        {mod.description}
+                    </div>
 
-) : (
+                    <div className="card-progress-bar">
 
-  <div className="admin-module-info">
+                        <div
+                            className="card-progress-fill"
+                            style={{
+                                width: `${mod.progress}%`,
+                                background:
+                                    mod.status === "done"
+                                        ? "#00E5A0"
+                                        : "var(--teal)",
+                            }}
+                        />
 
-    <p>
-      <strong>Status</strong>
-      <span>{meta.label.replace("✓ ", "")}</span>
-    </p>
+                    </div>
 
-    <p>
-      <strong>Completed</strong>
-      <span>
-        {mod.status === "done"
-          ? adminData.completedDate
-          : "-"}
-      </span>
-    </p>
+                    <div className="card-meta">
 
-    <p>
-      <strong>Quiz Score:</strong>
-	  <span>
-      {mod.status === "done"
-        ? `${adminData.quizScore}%`
-        : "-"}
-	</span>
-    </p>
+                        <span>
+                            {mod.sections.length} sections
+                        </span>
 
-    <p>
-      <strong>Attempts:</strong>{" "}
-      <span>
-        {mod.status !== "todo"
-          ? adminData.attempts
-          : "-"}
-      </span>
-    </p>
+                        <span>
+                            {mod.progress}%
+                        </span>
 
-    <p>
-      <strong>Time Spent:</strong>{" "}
-      <span>
-        {mod.status !== "todo"
-          ? adminData.timeSpent
-          : "-"}
-      </span>
-    </p>
+                    </div>
 
-  </div>
+                </div>
 
-)}
+                <div className="card-link">
+                    {meta.linkText}
+                </div>
+            </Link>
+        );
+    }
 
-			<div className="card-progress-bar">
+    /*
+     * ---------------------------------------------------------
+     * ADMIN VIEW
+     * ---------------------------------------------------------
+     */
 
-				<div
-					className="card-progress-fill"
-					style={{
-						width: `${mod.progress}%`,
-						background:
-							mod.status === "done"
-								? "#00E5A0"
-								: "var(--teal)",
-					}}
-				/>
+    const progressValue =
+        adminProgress?.progress !== null &&
+        adminProgress?.progress !== undefined
+            ? Math.max(
+                  0,
+                  Math.min(
+                      100,
+                      Number(adminProgress.progress)
+                  )
+              )
+            : 0;
 
-			</div>
+    let displayStatus: ModuleStatus = "todo";
 
-			<div className="card-meta">
-				<span>{mod.sections.length} sections</span>
-				<span>{mod.progress}%</span>
-			</div>
+    if (
+        adminProgress?.status === "done" ||
+        progressValue >= 100
+    ) {
+        displayStatus = "done";
+    } else if (
+        adminProgress?.status === "progress" ||
+        progressValue > 0
+    ) {
+        displayStatus = "progress";
+    }
 
-		</div>
+    const meta = statusMeta[displayStatus];
 
-		{mode === "student" && (
-			<div className="card-link">
-				{meta.linkText}
-			</div>
-		)}
-	</>
-);
+    const completedDate =
+        displayStatus === "done"
+            ? formatDate(adminProgress?.completed_at)
+            : "-";
 
-return mode === "admin" ? (
-	<div
-		className="module-card"
-		style={{ animationDelay: `${animationDelay}s` }}
-	>
-		{cardContent}
-	</div>
-) : (
-	<Link
-		href={`/modules/${mod.id}`}
-		className="module-card"
-		style={{ animationDelay: `${animationDelay}s` }}
-	>
-		{cardContent}
-	</Link>
-);
+    const timeSpent = formatTimeSpent(
+        adminProgress?.time_spent
+    );
+
+    return (
+        <div
+            className="module-card"
+            style={{
+                animationDelay: `${animationDelay}s`,
+            }}
+        >
+            <div
+                className={`card-top-bar ${meta.barClass}`}
+            />
+
+            <div className="hazard-badge">
+                {mod.hazardNum}
+            </div>
+
+            <div className="card-body">
+
+                <div className="card-head">
+
+                    <div
+                        className="card-icon"
+                        style={{
+                            background: mod.iconBg,
+                        }}
+                    >
+                        {mod.icon}
+                    </div>
+
+                    <span
+                        className={`status-badge ${meta.badgeClass}`}
+                    >
+                        {meta.label}
+                    </span>
+
+                </div>
+
+                <div className="card-title">
+                    {mod.title}
+                </div>
+
+                <div className="admin-module-info">
+
+                    <p>
+                        <strong>Status</strong>
+
+                        <span>
+                            {meta.label.replace(
+                                "✓ ",
+                                ""
+                            )}
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Completed</strong>
+
+                        <span>
+                            {completedDate}
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Time Spent</strong>
+
+                        <span>
+                            {timeSpent}
+                        </span>
+                    </p>
+
+                </div>
+
+                <div className="card-progress-bar">
+
+                    <div
+                        className="card-progress-fill"
+                        style={{
+                            width: `${progressValue}%`,
+                            background:
+                                displayStatus === "done"
+                                    ? "#00E5A0"
+                                    : "var(--teal)",
+                        }}
+                    />
+
+                </div>
+
+                <div className="card-meta">
+
+                    <span>
+                        {mod.sections.length} sections
+                    </span>
+
+                    <span>
+                        {progressValue}%
+                    </span>
+
+                </div>
+
+            </div>
+        </div>
+    );
 }
