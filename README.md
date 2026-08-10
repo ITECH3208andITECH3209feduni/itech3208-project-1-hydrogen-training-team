@@ -36,6 +36,9 @@ hydrogen-lab/
 │   ├── globals.css						# Shared styles — reset, tokens, nav, panel, dashboard
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
 │   ├── page.tsx						# Dashboard (home page)
+│   ├── intro/
+│   │   ├── page.tsx					# Public landing/intro page (/intro) — no login required
+│   │   └── intro.css					# Intro-specific styles
 │   ├── template/
 │   │   └── page.tsx					# Template for creating new pages (not in navigation)
 │   ├── login/
@@ -95,7 +98,8 @@ hydrogen-lab/
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
 │   └── firebase.ts						# Firebase app initialisation (auth + Firestore)
 ├── public/
-│   └── lab.jpg							# Default lab image (fallback)
+│   ├── lab.jpg							# Default lab image (fallback)
+│   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the intro page
 ├── .env.local							# Environment variables (not committed to Git)
 ├── next.config.js
 ├── tsconfig.json
@@ -113,6 +117,7 @@ Note: `app/modules/` has no `page.tsx` of its own — it's a code-organization d
 | Route                            | File                                       | Description                                                            |
 |----------------------------------|--------------------------------------------|------------------------------------------------------------------------|
 | `/`                              | `app/page.tsx`                             | Dashboard with modules, scenarios, quizzes, and training progress      |
+| `/intro`                         | `app/intro/page.tsx`                       | Public landing page introducing the platform — no login required       |
 | `/login`                         | `app/login/page.tsx`                       | Email and password login                                               |
 | `/login/register`                | `app/login/register/page.tsx`              | New account registration                                               |
 | `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                         |
@@ -121,9 +126,10 @@ Note: `app/modules/` has no `page.tsx` of its own — it's a code-organization d
 | `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav  |
 | `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                             |
 
+Note: the "Hydrogen Lab Safety" title in the Navbar links to `/intro`, following the common pattern of a site's logo linking back to a landing/home page.
 Note: there is no page at the bare `/modules` route. `app/modules/` is a code-organization directory holding every section built on the shared listing+reader template — not a page itself — so visiting `/modules` directly returns a 404. The Navbar and dashboard both link straight to `/modules/hazard-modules`.
 
-All pages except `/login` and `/login/register` redirect unauthenticated users to `/login`.
+All pages except `/login`, `/login/register` and `/intro` redirect unauthenticated users to `/login`. The `/intro` page calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 
 ---
 
@@ -420,6 +426,110 @@ Each lab hotspot popup includes a **Learn More** button that links to `/modules/
 
 ---
 
+## Modules Database Schema (Supabase — content migration in progress)
+
+The `modules` / `module_sections` tables described below exist in Supabase and are seeded with the full Hazard Modules content, but **pages do not fetch from them yet** — `app/modules/hazard-modules/page.tsx` and its `[id]/page.tsx` still import directly from `lib/hazardModules.ts`. This section documents the schema so the eventual fetch-based rewrite has a source of truth; it does not change how the app behaves today.
+
+### Why two tables instead of one JSON column
+
+`ModuleData` has one nested array (`sections`). Rather than storing that array as a single `jsonb` column, it's split into a `modules` table and a child `module_sections` table — matching the plain-columns-plus-RLS style already used for `hazards`, and making individual sections editable/queryable later (e.g. for a hypothetical module edit mode, similar to `/lab`'s hotspot editor) without rewriting a whole JSON array.
+
+The one exception is `ModuleSection.items` (a flat `string[]` of bullet points) — that stays as a single `jsonb` column rather than its own child table, since bullet points have no fields or identity of their own beyond "one entry in this list."
+
+Both tables are keyed by `(section, id)` rather than `id` alone, because module ids aren't unique across sections — `hazard-modules` and `guides` both use ids `'1'`–`'5'`. `section` is the folder name under `app/modules/` (e.g. `'hazard-modules'`, `'guides'`), so the same two tables can serve every current and future section without new tables per section.
+
+### Create the tables
+
+```sql
+create table modules (
+	section       text not null,                 -- e.g. 'hazard-modules', 'guides'
+	id            text not null,                  -- matches the URL segment, e.g. '1'
+	slug          text,                            -- optional, → ModuleData.slug
+	badge_num     int,                             -- optional, → ModuleData.badgeNum
+	icon          text not null,
+	icon_bg       text not null,                   -- → ModuleData.iconBg
+	title         text not null,
+	description   text not null,
+	key_takeaway  text not null,
+	prev_id       text,                            -- → ModuleData.prevId (null = omitted key in the TS type)
+	next_id       text,                            -- → ModuleData.nextId
+	sort_order    int  not null default 0,          -- listing-grid order — table rows have no inherent order
+	primary key (section, id)
+);
+
+create table module_sections (
+	section     text not null,
+	module_id   text not null,
+	num         text not null,                     -- '01', '02', ... → ModuleSection.num
+	heading     text not null,
+	body        text not null,                      -- keeps the '\n\n' paragraph breaks and inline <strong> tags as-is
+	list_type   text check (list_type in ('ul', 'ol')),
+	items       jsonb,                              -- string[] → ModuleSection.items
+	callout     text,
+	sort_order  int not null default 0,
+	primary key (section, module_id, num),
+	foreign key (section, module_id) references modules (section, id) on delete cascade
+);
+```
+
+Note: `modules.status` and `modules.progress` are intentionally **not** columns on this table — see "Status/progress ownership" below.
+
+### Set permissions
+
+Same public-read / service-role-write pattern as `hazards`:
+
+```sql
+alter table public.modules enable row level security;
+alter table public.module_sections enable row level security;
+
+create policy "Allow public read" on public.modules for select to anon using (true);
+create policy "Allow service role write" on public.modules for all to service_role using (true) with check (true);
+
+create policy "Allow public read" on public.module_sections for select to anon using (true);
+create policy "Allow service role write" on public.module_sections for all to service_role using (true) with check (true);
+```
+
+### Seed with the existing Hazard Modules content
+
+All 5 modules and 26 sections from `lib/hazardModules.ts` have been inserted as `section = 'hazard-modules'` rows, generated directly from that file to avoid transcription drift. The seed script is not currently checked into the repo — regenerate it from `lib/hazardModules.ts` if the tables ever need to be reseeded from scratch.
+
+### Status/progress ownership
+
+Per-module `status`/`progress` are tracked **per user**, not per module — they live on a separate `user_module_progress` table (owned by an in-progress branch, not part of this migration) rather than on `modules`. Because of this:
+
+- `modules` has no `status`/`progress` columns.
+- `lib/hazardModules.ts` should have every entry's `status`/`progress` flattened to `'todo'` / `0`, since the static file is no longer the source of truth for those fields and shouldn't imply otherwise.
+- Once pages fetch from Supabase, a module's displayed status/progress should come from joining `modules` against the current user's row in `user_module_progress` (falling back to `'todo'` / `0` if no row exists yet), not from `modules` itself.
+
+### `user_module_progress` — cross-referencing notes
+
+`user_module_progress` (created on a separate branch) originally keyed on `module_id` alone, which collides once more than one section has progress data (`hazard-modules` module `'1'` and a hypothetical `guides` module `'1'` would be indistinguishable). It has since been updated to reference `modules` properly:
+
+```sql
+alter table public.user_module_progress
+	add column section text not null default 'hazard-modules';
+
+alter table public.user_module_progress
+	drop constraint user_module_progress_uid_module_id_key,
+	add constraint user_module_progress_uid_section_module_id_key
+		unique (uid, section, module_id);
+
+alter table public.user_module_progress
+	add constraint fk_user_progress_module
+		foreign key (section, module_id) references public.modules (section, id)
+		on delete restrict
+		on update restrict;
+```
+
+`restrict` (rather than `cascade`) is deliberate: deleting or re-keying a `modules` row while `user_module_progress` rows still reference it fails loudly instead of silently deleting/orphaning user progress. This matters for a future module edit mode, which should only ever update content columns in place — never delete-and-reinsert `modules` rows.
+
+**Known follow-ups for whoever finishes wiring `user_module_progress` in:**
+- Any `upsert(...).onConflict('uid,module_id')` call needs updating to `onConflict: 'uid,section,module_id'` — the old constraint name no longer exists, so this fails immediately (schema-level check, not data-level).
+- Any read/update filtering on `(uid, module_id)` alone (without `.eq('section', ...)`) still returns the correct row today only because `hazard-modules` is the only section with real data — this will break once a second section (e.g. `guides`) has progress rows, so `section` should be added to these filters proactively.
+- RLS policies (public-read/service-role-write is *not* appropriate here, since this is per-user data) and equivalent policies on `profiles` are still outstanding, pending confirmation of how `uid` (a Firebase UID) is verified server-side.
+
+---
+
 ## Customising Default Hotspot Data
 
 The file `lib/hazards.ts` defines the default hotspot positions and text used as a fallback when Supabase is unavailable or the table is empty. Edit the `hotspots` array to change default positions, and the `hazardData` record to change default titles and descriptions.
@@ -462,6 +572,7 @@ Styles are split across three files to keep page-specific rules isolated:
 | `app/lab/lab.css` 		| Lab page only — hotspots, popup, edit mode, editor panels, save bar                         |
 | `app/modules/modules.css` | Shared by every page under `app/modules/` — cards, filter bar, section blocks, takeaway box |
 | `app/login/auth.css` 		| Login and register pages — card, form inputs, error box                                     |
+| `app/intro/intro.css` 	| Intro page only — hero, quick facts, content sections, CTA                                  |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The other three files are imported directly by the pages that need them.
 
