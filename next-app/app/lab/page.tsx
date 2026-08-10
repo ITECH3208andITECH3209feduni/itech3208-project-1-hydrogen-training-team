@@ -4,9 +4,11 @@
 
 'use client';
 
-import './lab.css';	// css specific to this page
-import { useRef, useState } from 'react';
+import './lab.css';		// css specific to this page
+import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import HazardPopup from './components/HazardPopup';
 import EditBanner from './components/EditBanner';
 import HotspotEditor from './components/HotspotEditor';
@@ -14,9 +16,14 @@ import SaveBar from './components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
 
 export default function LabPage() {
-	const containerRef = useRef<HTMLDivElement>(null);							// Attached to image container div, so drag logic knows its position & size
+	// Authentication
+	const { user, loading } = useAuth();
+	const router = useRouter();
+
+	// Page constants
+	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
 	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
-	
+
 	const {
 		hotspots,
 		loadStatus,
@@ -36,10 +43,24 @@ export default function LabPage() {
 		resetDefaults,
 		liveHazardData,
 	} = useHazards(containerRef);
+
+	useEffect(() => {
+		if (!loading && !user) {
+			router.replace("/login");
+		}
+	}, [user, loading, router]);
+
+	if (loading) {
+		return <div>Loading...</div>;
+	}
+
+	if (!user) {
+		return null;
+	}
 	
 	return (
 		<main className="main">
-			
+
 			{editMode && <EditBanner />}
 			
 			{/* Header - Title and subtitle (latter changes based on loadStatus and editMode */}
@@ -47,6 +68,7 @@ export default function LabPage() {
 			<p className="lab-subtitle">
 				{editMode ? 'Drag hotspots · select to edit · save when done'
 					: loadStatus === 'loading' ? 'Loading lab data…'
+					: loadStatus === 'error'   ? 'Could not load latest lab data — showing defaults.'
 					: 'Click on highlighted areas to identify hazards.'
 				}
 			</p>
@@ -67,8 +89,8 @@ export default function LabPage() {
 					unoptimized
 					priority
 				/>
-				
-				{loadStatus === 'ready' && hotspots.map((hs, index) => {
+
+				{loadStatus !== 'loading' && hotspots.map((hs, index) => {
 					const isSelected = selected === index;
 					return (
 						<button
@@ -77,7 +99,13 @@ export default function LabPage() {
 							style={{ top: hs.top, left: hs.left }}
 							aria-label={`Inspect ${hs.type} hazard`}
 							onMouseDown={editMode ? handleDragStart(index) : undefined}
-							onClick={() => { if (editMode) setSelected(index); else setActiveHazard(hs.type); }}
+							onClick={() => {
+								if (editMode) {
+									setSelected(index);
+								} else {
+									setActiveHazard(hs.type);
+								}
+							}}
 						/>
 					);
 				})}
@@ -112,7 +140,9 @@ export default function LabPage() {
 			{!editMode && activeHazard && (
 				<HazardPopup
 					info={liveHazardData[activeHazard]}
-					onClose={() => setActiveHazard(null)}
+					onClose={() =>
+						setActiveHazard(null)
+					}
 				/>
 			)}
 		</main>

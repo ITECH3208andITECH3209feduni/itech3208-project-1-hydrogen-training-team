@@ -1,12 +1,18 @@
-/* globals.css — shared styles for Hydrogen Lab Safety (dashboard + lab) */
+/* globals.css
+   Universal styles: reset, tokens, body, nav, .main, .panel, animations
+   Dashboard-specific: greeting, stat cards, bottom grid, progress, cert panel
+   Lab-specific styles  → lab.css
+   Modules-specific styles → modules.css
+*/
 
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
 * {
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
 }
 
-/* ─── Design tokens ────────────────────────────────────────────────────── */
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
 :root {
 	--teal:        #00B4D8;
 	--teal-dark:   #0077A8;
@@ -25,7 +31,7 @@
 	--radius-pill: 99px;
 }
 
-/* ─── Base ─────────────────────────────────────────────────────────────── */
+/* ─── Base ───────────────────────────────────────────────────────────────── */
 body {
 	font-family: 'Inter', sans-serif;
 	background: var(--navy);
@@ -55,29 +61,22 @@ body::after {
 	z-index: 0;
 	background-image:
 		radial-gradient(circle, rgba(0,180,216,0.12) 1px, transparent 1px),
-		radial-gradient(circle, rgba(0,212,255,0.07) 1px, transparent 1px);
+		radial-gradient(circle, rgba(0,212,255,0.07)  1px, transparent 1px);
 	background-size: 48px 48px, 120px 120px;
 	background-position: 0 0, 24px 24px;
 	pointer-events: none;
 }
 
-.page-wrap { position: relative; z-index: 1; min-height: 100vh; }
-
-/* ─── Shared: Exo 2 font ───────────────────────────────────────────────── */
-.logo, .greeting h1, .stat-info .count, .progress-pct,
-.panel-header, .cert-text h3, .btn-cert {
-	font-family: 'Exo 2', sans-serif;
+.page-wrap {
+	position: relative;
+	z-index: 1;
+	min-height: 100vh;
 }
 
-/* ─── Shared: flex row centered ────────────────────────────────────────── */
-.nav, .logo, .nav-right, .stat-card, .stat-icon,
-.progress-row, .module-item, .cert-icon, .btn-cert, .panel-header {
+/* ─── Nav ────────────────────────────────────────────────────────────────── */
+.nav {
 	display: flex;
 	align-items: center;
-}
-
-/* ─── Nav ──────────────────────────────────────────────────────────────── */
-.nav {
 	justify-content: space-between;
 	padding: 0 40px;
 	height: 68px;
@@ -90,7 +89,10 @@ body::after {
 }
 
 .logo {
+	display: flex;
+	align-items: center;
 	gap: 10px;
+	font-family: 'Exo 2', sans-serif;
 	font-weight: 800;
 	font-size: 1.35rem;
 	color: var(--white);
@@ -134,7 +136,11 @@ body::after {
 }
 .nav-link.active { color: var(--teal); }
 
-.nav-right { gap: 14px; }
+.nav-right {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
 
 .avatar {
 	width: 38px;
@@ -153,33 +159,74 @@ body::after {
 }
 .avatar:hover { box-shadow: 0 0 14px rgba(0,180,216,0.5); }
 
-/* ─── Main container ───────────────────────────────────────────────────── */
+.btn-logout {
+	margin-left: 12px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	border: none;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+/* ─── Main container ─────────────────────────────────────────────────────── */
 .main {
 	padding: 40px 40px 60px;
 	max-width: 1280px;
 	margin: 0 auto;
 }
 
-/* ─── Greeting ─────────────────────────────────────────────────────────── */
+/* ─── Panel — shared card container used on all pages ───────────────────── */
+.panel {
+	background: var(--card-bg);
+	border: var(--border-rule);
+	border-radius: var(--radius);
+	overflow: hidden;
+}
+
+.panel-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 16px 22px;
+	background: rgba(0,180,216,0.08);
+	border-bottom: var(--border-rule);
+	font-family: 'Exo 2', sans-serif;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--teal);
+}
+
+.panel-body { padding: 26px 22px; }
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+	from { opacity: 0; transform: translateY(18px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DASHBOARD — app/page.tsx
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Greeting ───────────────────────────────────────────────────────────── */
 .greeting {
 	margin-bottom: 36px;
 	animation: fadeUp 0.5s ease both;
 }
-
 .greeting h1 {
+	font-family: 'Exo 2', sans-serif;
 	font-size: 2rem;
 	font-weight: 700;
 	color: var(--white);
 	margin-bottom: 4px;
 }
 .greeting-accent { color: var(--teal); }
-
 .greeting p {
 	font-size: 0.9rem;
 	color: var(--muted);
 }
 
-/* ─── Stat cards ───────────────────────────────────────────────────────── */
+/* ─── Stat cards ─────────────────────────────────────────────────────────── */
 .stat-cards {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
@@ -188,6 +235,8 @@ body::after {
 }
 
 .stat-card {
+	display: flex;
+	align-items: center;
 	background: var(--card-bg);
 	border: var(--border-rule);
 	border-radius: var(--radius);
@@ -204,9 +253,7 @@ body::after {
 .stat-card::before {
 	content: '';
 	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
+	top: 0; left: 0; right: 0;
 	height: 2px;
 	background: linear-gradient(90deg, transparent, var(--teal), transparent);
 	opacity: 0;
@@ -222,11 +269,13 @@ body::after {
 .stat-card:nth-child(3) { animation-delay: 0.14s; }
 
 .stat-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 54px;
 	height: 54px;
 	border-radius: 13px;
 	flex-shrink: 0;
-	justify-content: center;
 	font-size: 1.6rem;
 }
 .stat-icon.modules   { background: rgba(0,180,216,0.15); }
@@ -241,14 +290,13 @@ body::after {
 	color: var(--muted);
 	margin-bottom: 6px;
 }
-
 .stat-info .count {
+	font-family: 'Exo 2', sans-serif;
 	font-size: 2rem;
 	font-weight: 700;
 	color: var(--white);
 	line-height: 1;
 }
-
 .stat-info .sub {
 	font-size: 0.8rem;
 	color: var(--muted);
@@ -261,46 +309,29 @@ body::after {
 	opacity: 0.6;
 	transition: opacity 0.2s, transform 0.2s;
 }
-
 .stat-card:hover .stat-arrow {
 	opacity: 1;
 	transform: translateX(4px);
 }
 
-/* ─── Bottom grid ──────────────────────────────────────────────────────── */
+/* ─── Bottom grid ────────────────────────────────────────────────────────── */
 .bottom-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 20px;
 }
 
-.panel {
-	background: var(--card-bg);
-	border: var(--border-rule);
-	border-radius: var(--radius);
-	overflow: hidden;
-	animation: fadeUp 0.5s ease both;
-}
-.panel:nth-child(2) { animation-delay: 0.1s; }
+/* Staggered panel animations on the dashboard only */
+.bottom-grid .panel { animation: fadeUp 0.5s ease both; }
+.bottom-grid .panel:nth-child(2) { animation-delay: 0.1s; }
 
-.panel-header {
-	padding: 16px 22px;
-	background: rgba(0,180,216,0.08);
-	border-bottom: var(--border-rule);
-	font-size: 0.95rem;
-	font-weight: 600;
-	color: var(--teal);
-	gap: 8px;
-}
-
-.panel-body { padding: 26px 22px; }
-
-/* ─── Progress ─────────────────────────────────────────────────────────── */
+/* ─── Training progress ──────────────────────────────────────────────────── */
 .progress-row {
+	display: flex;
+	align-items: center;
 	gap: 14px;
 	margin-bottom: 20px;
 }
-
 .progress-track {
 	flex: 1;
 	height: 10px;
@@ -308,7 +339,6 @@ body::after {
 	border-radius: var(--radius-pill);
 	overflow: hidden;
 }
-
 .progress-fill {
 	height: 100%;
 	border-radius: var(--radius-pill);
@@ -316,8 +346,8 @@ body::after {
 	background: linear-gradient(90deg, var(--teal-dark), var(--progress));
 	box-shadow: 0 0 10px rgba(0,212,255,0.4);
 }
-
 .progress-pct {
+	font-family: 'Exo 2', sans-serif;
 	font-weight: 700;
 	font-size: 1rem;
 	color: var(--teal);
@@ -325,13 +355,15 @@ body::after {
 	text-align: right;
 }
 
-/* ─── Module list ──────────────────────────────────────────────────────── */
+/* ─── Module progress list ───────────────────────────────────────────────── */
 .module-list {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 }
 .module-item {
+	display: flex;
+	align-items: center;
 	gap: 12px;
 	padding: 10px 14px;
 	background: rgba(255,255,255,0.03);
@@ -345,22 +377,11 @@ body::after {
 	border-radius: 50%;
 	flex-shrink: 0;
 }
-
-.dot-done {
-	background: var(--green);
-	box-shadow: 0 0 6px var(--green);
-}
-
-.dot-prog {
-	background: var(--teal);
-	box-shadow: 0 0 6px var(--teal);
-}
+.dot-done { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot-prog { background: var(--teal);  box-shadow: 0 0 6px var(--teal); }
 .dot-todo { background: rgba(255,255,255,0.2); }
 
-.module-name {
-	flex: 1;
-	color: var(--text);
-}
+.module-name { flex: 1; color: var(--text); }
 
 .module-status {
 	font-size: 0.75rem;
@@ -368,23 +389,11 @@ body::after {
 	padding: 2px 10px;
 	border-radius: var(--radius-pill);
 }
+.status-done { background: rgba(0,229,160,0.12); color: var(--green); }
+.status-prog { background: rgba(0,180,216,0.12); color: var(--teal); }
+.status-todo { background: rgba(255,255,255,0.06); color: var(--muted); }
 
-.status-done {
-	background: rgba(0,229,160,0.12);
-	color: var(--green);
-}
-
-.status-prog {
-	background: rgba(0,180,216,0.12);
-	color: var(--teal);
-}
-
-.status-todo {
-	background: rgba(255,255,255,0.06);
-	color: var(--muted);
-}
-
-/* ─── Certificate panel ────────────────────────────────────────────────── */
+/* ─── Certificate panel ──────────────────────────────────────────────────── */
 .cert-body {
 	display: flex;
 	flex-direction: column;
@@ -393,10 +402,12 @@ body::after {
 	padding: 32px 22px;
 }
 .cert-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 90px;
 	height: 90px;
 	border-radius: 50%;
-	justify-content: center;
 	background: radial-gradient(circle, rgba(0,180,216,0.15), rgba(0,119,168,0.08));
 	border: 2px solid var(--border);
 	font-size: 2.5rem;
@@ -407,14 +418,13 @@ body::after {
 	50%      { box-shadow: 0 0 0 14px rgba(0,180,216,0); }
 }
 .cert-text { text-align: center; }
-
 .cert-text h3 {
+	font-family: 'Exo 2', sans-serif;
 	font-size: 1.1rem;
 	font-weight: 700;
 	color: var(--white);
 	margin-bottom: 6px;
 }
-
 .cert-text p {
 	font-size: 0.82rem;
 	color: var(--muted);
@@ -422,12 +432,15 @@ body::after {
 }
 
 .btn-cert {
+	display: flex;
+	align-items: center;
 	gap: 8px;
 	padding: 11px 26px;
 	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
 	color: white;
 	border: none;
 	border-radius: 8px;
+	font-family: 'Exo 2', sans-serif;
 	font-size: 0.9rem;
 	font-weight: 600;
 	cursor: pointer;
@@ -440,30 +453,10 @@ body::after {
 	box-shadow: 0 6px 28px rgba(0,180,216,0.5);
 }
 
-/* ─── Animations ───────────────────────────────────────────────────────── */
-@keyframes fadeUp {
-	from { opacity: 0; transform: translateY(18px); }
-	to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ─── Responsive ───────────────────────────────────────────────────────── */
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-	.nav  { padding: 0 20px; }
-	.main { padding: 24px 20px 40px; }
+	.nav         { padding: 0 20px; }
+	.main        { padding: 24px 20px 40px; }
 	.stat-cards  { grid-template-columns: 1fr; }
 	.bottom-grid { grid-template-columns: 1fr; }
-	.hotspot {
-		width: 28px;
-		height: 28px;
-	}
-	.lab-image-container { width: 95%; }
-	.hotspot-editor {
-		width: 95%;
-		grid-template-columns: 1fr;
-	}
-	.editor-wrap { width: 95%; }
-	.image-upload-panel {
-		flex-direction: column;
-		align-items: flex-start;
-	}
 }

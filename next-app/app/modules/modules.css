@@ -1,0 +1,362 @@
+/* modules.css — shared styles for pages under app/modules/ and its components only */
+
+/* ─── Modules listing ──────────────────────────────────────────────────── */
+.page-header {
+	margin-bottom: 28px;
+	animation: fadeUp 0.5s ease both;
+}
+.page-header h1 {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 2rem;
+	font-weight: 700;
+	color: var(--white);
+	margin-bottom: 4px;
+}
+.page-header p {
+	font-size: 0.9rem;
+	color: var(--muted);
+}
+
+/* Filter bar */
+.filter-bar {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 24px;
+	flex-wrap: wrap;
+	animation: fadeUp 0.5s ease 0.05s both;
+}
+.filter-btn {
+	padding: 6px 16px;
+	border-radius: var(--radius-pill);
+	font-size: 0.82rem;
+	font-weight: 500;
+	cursor: pointer;
+	border: 1px solid var(--border);
+	background: transparent;
+	color: var(--muted);
+	transition: all 0.2s;
+}
+.filter-btn.active, .filter-btn:hover {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: white;
+}
+
+/* Modules grid */
+.modules-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+}
+
+/* Module card */
+.module-card {
+	background: var(--card-bg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+	text-decoration: none;
+	color: inherit;
+	display: flex;
+	flex-direction: column;
+	transition: all 0.25s;
+	animation: fadeUp 0.5s ease both;
+	position: relative;
+	cursor: pointer;
+}
+.module-card:hover {
+	transform: translateY(-4px);
+	border-color: var(--teal);
+	background: rgba(0,180,216,0.07);
+}
+
+/* Coloured top bar */
+.card-top-bar {
+	height: 5px;
+	width: 100%;
+	flex-shrink: 0;
+}
+.bar-done     { background: #00E5A0; }
+.bar-progress { background: var(--teal); }
+.bar-todo     { background: rgba(255,255,255,0.1); }
+
+.card-body {
+	padding: 20px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.card-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 12px;
+}
+
+.card-icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.4rem;
+	flex-shrink: 0;
+}
+
+.status-badge {
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: var(--radius-pill);
+}
+.badge-done     { background: rgba(0,229,160,0.15); color: #00E5A0; }
+.badge-progress { background: rgba(0,180,216,0.15); color: var(--teal); }
+.badge-todo     { background: rgba(255,255,255,0.07); color: var(--muted); }
+
+.card-title {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--white);
+	margin-bottom: 6px;
+}
+.card-desc {
+	font-size: 0.82rem;
+	color: var(--muted);
+	line-height: 1.5;
+	margin-bottom: 16px;
+	flex: 1;
+}
+
+.card-progress-bar {
+	height: 5px;
+	background: rgba(255,255,255,0.08);
+	border-radius: var(--radius-pill);
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+.card-progress-fill {
+	height: 100%;
+	border-radius: var(--radius-pill);
+	transition: width 0.6s ease;
+}
+
+.card-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: var(--muted);
+}
+
+.card-link {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 10px;
+	border-top: 1px solid var(--border);
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--teal);
+	transition: background 0.2s;
+}
+.module-card:hover .card-link {
+	background: rgba(0,180,216,0.08);
+}
+
+/* Hazard number badge (top-left of card) */
+.hazard-badge {
+	position: absolute;
+	top: 14px;
+	left: 14px;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: rgba(220,50,50,0.9);
+	border: 2px solid white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: white;
+	font-family: 'Exo 2', sans-serif;
+}
+
+/* ─── Module reader ─────────────────────────────────────────────────────── */
+.back-crumb {
+	font-size: 0.82rem;
+	color: var(--muted);
+	margin-bottom: 20px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	animation: fadeUp 0.4s ease both;
+}
+.back-crumb a {
+	color: var(--teal);
+	text-decoration: none;
+}
+.back-crumb a:hover { text-decoration: underline; }
+
+.module-hero {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	padding: 36px 0 32px;
+	border-bottom: var(--border-rule);
+	margin-bottom: 36px;
+	animation: fadeUp 0.5s ease both;
+}
+.module-icon-big {
+	width: 64px;
+	height: 64px;
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	flex-shrink: 0;
+}
+.module-hero-text h1 {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 1.8rem;
+	font-weight: 700;
+	color: var(--white);
+	margin-bottom: 4px;
+}
+.module-hero-text p {
+	font-size: 0.88rem;
+	color: var(--muted);
+}
+
+.hazard-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(220,50,50,0.15);
+	border: 1px solid rgba(220,50,50,0.3);
+	color: #ff8080;
+	font-size: 0.78rem;
+	font-weight: 600;
+	padding: 4px 12px;
+	border-radius: var(--radius-pill);
+	margin-bottom: 8px;
+}
+
+/* Section block */
+.section-block {
+	background: var(--card-bg);
+	border: var(--border-rule);
+	border-radius: var(--radius);
+	padding: 28px 30px;
+	margin-bottom: 18px;
+	animation: fadeUp 0.5s ease both;
+}
+.section-num {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: var(--teal);
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	margin-bottom: 8px;
+}
+.section-block h2 {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--white);
+	margin-bottom: 12px;
+}
+.section-block p {
+	font-size: 0.88rem;
+	color: var(--text);
+	line-height: 1.75;
+	margin-bottom: 12px;
+}
+.section-block p:last-child { margin-bottom: 0; }
+
+/* Lists inside section blocks */
+.info-list,
+.step-list {
+	margin: 10px 0 12px 18px;
+	font-size: 0.87rem;
+	color: var(--text);
+	line-height: 1.8;
+}
+.info-list li { list-style: disc; }
+.step-list li { list-style: decimal; margin-bottom: 4px; }
+
+/* Callout box */
+.callout {
+	background: rgba(0,180,216,0.08);
+	border-left: 3px solid var(--teal);
+	border-radius: 0 8px 8px 0;
+	padding: 10px 14px;
+	font-size: 0.84rem;
+	color: var(--text);
+	margin-top: 12px;
+}
+
+/* Key Takeaway */
+.takeaway-box {
+	background: linear-gradient(135deg, rgba(0,119,168,0.2), rgba(0,180,216,0.08));
+	border: 1px solid var(--teal);
+	border-radius: var(--radius);
+	padding: 24px 28px;
+	margin: 24px 0 32px;
+	animation: fadeUp 0.5s ease both;
+}
+.takeaway-box h3 {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--teal);
+	margin-bottom: 8px;
+}
+.takeaway-box p {
+	font-size: 0.88rem;
+	color: var(--text);
+	line-height: 1.7;
+}
+
+/* Prev / Next nav */
+.module-nav {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 40px;
+}
+.nav-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 22px;
+	border-radius: 8px;
+	font-family: 'Exo 2', sans-serif;
+	font-size: 0.88rem;
+	font-weight: 600;
+	text-decoration: none;
+	border: 1px solid var(--border);
+	color: var(--muted);
+	transition: all 0.2s;
+}
+.nav-btn:hover {
+	background: rgba(255,255,255,0.05);
+	color: var(--white);
+}
+.nav-btn.teal {
+	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+	color: white;
+	border-color: var(--teal);
+}
+.nav-btn.teal:hover { opacity: 0.85; }
+
+/* ─── Responsive additions ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+	.modules-grid { grid-template-columns: 1fr; }
+	.module-hero  { flex-direction: column; align-items: flex-start; }
+}

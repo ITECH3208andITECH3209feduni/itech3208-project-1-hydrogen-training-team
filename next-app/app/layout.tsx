@@ -1,22 +1,24 @@
 // Root layout that wraps all pages, setting the HTML metdata and importing the css
 
-import type { Metadata } from 'next';   // Used to type metadata object
-import './globals.css';   // Applies css file to all pages in app
-import Navbar from '@/components/Navbar';   // Applies navigation bar to all pages
+import type { Metadata } from "next";					// Used to type metadata object
+import "./globals.css";									// Applies css file to all pages in app
+import Navbar from "@/components/Navbar";				// Applies navigation bar to all pages
+import { AuthProvider } from "../context/AuthContext";
 
 // Defines metadata for page (Equivalent to <head> in html)
 export const metadata: Metadata = {
-	title: 'Hydrogen Lab Safety',
-	description: 'Hydrogen Training Platform',
+	title: "Hydrogen Lab Safety",
+	description: "Hydrogen Training Platform",
 };
 
 // Root layout component (wraps every page in app)
 export default function RootLayout({
-	children,   // Represents page currently being rendered
+	children,		// Represents page currently being rendered
 }: {
 	children: React.ReactNode;
 }) {
-	return (   // Renders html and injects current page's content
+	// Renders html and injects current page's content
+	return (
 		<html lang="en">
 			<head>
 				<link
@@ -25,10 +27,12 @@ export default function RootLayout({
 				/>
 			</head>
 			<body>
-				<div className="page-wrap">
-					<Navbar />
-					{children}
-				</div>
+				<AuthProvider>
+					<div className="page-wrap">
+						<Navbar />
+						{children}
+					</div>
+				</AuthProvider>
 			</body>
 		</html>
 	);

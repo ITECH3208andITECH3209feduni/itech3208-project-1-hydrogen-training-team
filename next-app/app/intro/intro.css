@@ -1,0 +1,299 @@
+/* app/intro/intro.css
+   Styles for the landing/introduction to hydrogen page (app/intro/page.tsx) only.
+   Not part of globals.css — imported directly by this page.
+*/
+
+.intro-page {
+	background: #03045E;
+	color: #C9E8F4;
+	font-family: 'Inter', sans-serif;
+	position: relative;
+	overflow: hidden;
+}
+
+.intro-lab-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 520px;
+	object-fit: cover;
+	z-index: 0;
+}
+
+.intro-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 520px;
+	background: linear-gradient(to bottom, rgba(3,4,94,0.7) 0%, rgba(3,4,94,0.85) 60%, #03045E 100%);
+	z-index: 1;
+}
+
+.intro-teal { color: #00B4D8; }
+
+/* ─── Hero ───────────────────────────────────────────────────────────────── */
+.intro-hero {
+	position: relative;
+	z-index: 2;
+	text-align: center;
+	padding: 60px 24px 50px;
+}
+
+.intro-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 99px;
+	background: rgba(0,180,216,0.15);
+	border: 1px solid rgba(0,180,216,0.35);
+	font-size: 0.72rem;
+	color: #00B4D8;
+	margin-bottom: 18px;
+}
+
+.intro-hero h1 {
+	font-size: 2.2rem;
+	font-weight: 800;
+	color: #F0F8FF;
+	line-height: 1.2;
+	margin: 0 0 14px;
+	text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+
+.intro-hero p {
+	font-size: 0.88rem;
+	color: #A8D4E8;
+	max-width: 500px;
+	margin: 0 auto 26px;
+	line-height: 1.8;
+}
+
+.intro-btns {
+	display: flex;
+	gap: 10px;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.intro-cta {
+	padding: 10px 24px;
+	border-radius: 8px;
+	background: #00B4D8;
+	color: white;
+	font-size: 0.88rem;
+	font-weight: 600;
+	border: none;
+	cursor: pointer;
+	text-decoration: none;
+	display: inline-block;
+}
+
+.intro-outline {
+	padding: 10px 24px;
+	border-radius: 8px;
+	border: 1px solid rgba(0,180,216,0.4);
+	color: #00B4D8;
+	font-size: 0.88rem;
+	background: transparent;
+	cursor: pointer;
+	text-decoration: none;
+	display: inline-block;
+}
+
+/* ─── Quick facts ────────────────────────────────────────────────────────── */
+.intro-facts {
+	position: relative;
+	z-index: 2;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	padding: 0 28px 40px;
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+.intro-fact {
+	background: rgba(0,180,216,0.08);
+	border: 1px solid rgba(0,180,216,0.2);
+	border-radius: 10px;
+	padding: 14px;
+	text-align: center;
+}
+
+.intro-fact-num {
+	font-size: 1.4rem;
+	font-weight: 800;
+	color: #00B4D8;
+}
+
+.intro-fact-label {
+	font-size: 0.72rem;
+	color: #7AAFCA;
+	margin-top: 4px;
+	line-height: 1.4;
+}
+
+/* ─── Content sections ───────────────────────────────────────────────────── */
+.intro-section {
+	padding: 44px 28px;
+	background: #020c2a;
+}
+
+.intro-section-alt {
+	padding: 44px 28px;
+	background: rgba(0,180,216,0.04);
+	border-top: 1px solid rgba(0,180,216,0.1);
+	border-bottom: 1px solid rgba(0,180,216,0.1);
+}
+
+.intro-section-title {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #F0F8FF;
+	text-align: center;
+	margin: 0 0 8px;
+}
+
+.intro-section-sub {
+	font-size: 0.82rem;
+	color: #7AAFCA;
+	text-align: center;
+	max-width: 500px;
+	margin: 0 auto 28px;
+	line-height: 1.7;
+}
+
+.intro-grid3 {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 14px;
+	max-width: 860px;
+	margin: 0 auto;
+}
+
+.intro-grid4 {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+	max-width: 860px;
+	margin: 0 auto;
+}
+
+.intro-card {
+	background: rgba(255,255,255,0.04);
+	border: 1px solid rgba(0,180,216,0.18);
+	border-radius: 11px;
+	padding: 18px 16px;
+}
+
+.intro-card-icon {
+	font-size: 1.5rem;
+	margin-bottom: 8px;
+}
+
+.intro-card-title {
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: #F0F8FF;
+	margin: 0 0 6px;
+}
+
+.intro-card-text {
+	font-size: 0.75rem;
+	color: #7AAFCA;
+	line-height: 1.6;
+	margin: 0;
+}
+
+.intro-aud-card {
+	background: rgba(255,255,255,0.03);
+	border: 1px solid rgba(0,180,216,0.14);
+	border-radius: 10px;
+	padding: 16px;
+	text-align: center;
+}
+
+.intro-aud-icon {
+	font-size: 1.6rem;
+	display: block;
+	margin-bottom: 6px;
+}
+
+.intro-aud-title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #F0F8FF;
+	margin: 0 0 5px;
+}
+
+.intro-aud-text {
+	font-size: 0.72rem;
+	color: #7AAFCA;
+	line-height: 1.5;
+	margin: 0;
+}
+
+.intro-fund-card {
+	background: rgba(255,255,255,0.04);
+	border: 1px solid rgba(0,180,216,0.18);
+	border-radius: 11px;
+	padding: 16px;
+}
+
+.intro-fund-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.intro-fund-icon { font-size: 1.2rem; }
+
+.intro-fund-title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #F0F8FF;
+	margin: 0;
+}
+
+.intro-fund-text {
+	font-size: 0.73rem;
+	color: #7AAFCA;
+	line-height: 1.6;
+	margin: 0;
+}
+
+/* ─── Bottom CTA + footer ────────────────────────────────────────────────── */
+.intro-cta-section {
+	padding: 44px 24px;
+	text-align: center;
+	background: #03045E;
+	border-top: 1px solid rgba(0,180,216,0.15);
+}
+
+.intro-cta-title {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #F0F8FF;
+	margin: 0 0 8px;
+}
+
+.intro-cta-sub {
+	font-size: 0.82rem;
+	color: #7AAFCA;
+	margin: 0 0 22px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+	.intro-grid4 { grid-template-columns: repeat(2, 1fr); }
+	.intro-grid3 { grid-template-columns: 1fr; }
+	.intro-facts { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+	.intro-grid4 { grid-template-columns: 1fr; }
+	.intro-facts { grid-template-columns: 1fr; }
+	.intro-hero h1 { font-size: 1.7rem; }
+}
