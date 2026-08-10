@@ -36,6 +36,9 @@ hydrogen-lab/
 │   ├── globals.css						# Shared styles — reset, tokens, nav, panel, dashboard
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
 │   ├── page.tsx						# Dashboard (home page)
+│   ├── intro/
+│   │   ├── page.tsx					# Public landing/intro page (/intro) — no login required
+│   │   └── intro.css					# Intro-specific styles
 │   ├── template/
 │   │   └── page.tsx					# Template for creating new pages (not in navigation)
 │   ├── login/
@@ -95,7 +98,8 @@ hydrogen-lab/
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
 │   └── firebase.ts						# Firebase app initialisation (auth + Firestore)
 ├── public/
-│   └── lab.jpg							# Default lab image (fallback)
+│   ├── lab.jpg							# Default lab image (fallback)
+│   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the intro page
 ├── .env.local							# Environment variables (not committed to Git)
 ├── next.config.js
 ├── tsconfig.json
@@ -113,6 +117,7 @@ Note: `app/modules/` has no `page.tsx` of its own — it's a code-organization d
 | Route                            | File                                       | Description                                                            |
 |----------------------------------|--------------------------------------------|------------------------------------------------------------------------|
 | `/`                              | `app/page.tsx`                             | Dashboard with modules, scenarios, quizzes, and training progress      |
+| `/intro`                         | `app/intro/page.tsx`                       | Public landing page introducing the platform — no login required       |
 | `/login`                         | `app/login/page.tsx`                       | Email and password login                                               |
 | `/login/register`                | `app/login/register/page.tsx`              | New account registration                                               |
 | `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                         |
@@ -121,9 +126,10 @@ Note: `app/modules/` has no `page.tsx` of its own — it's a code-organization d
 | `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav  |
 | `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                             |
 
+Note: the "Hydrogen Lab Safety" title in the Navbar links to `/intro`, following the common pattern of a site's logo linking back to a landing/home page.
 Note: there is no page at the bare `/modules` route. `app/modules/` is a code-organization directory holding every section built on the shared listing+reader template — not a page itself — so visiting `/modules` directly returns a 404. The Navbar and dashboard both link straight to `/modules/hazard-modules`.
 
-All pages except `/login` and `/login/register` redirect unauthenticated users to `/login`.
+All pages except `/login`, `/login/register` and `/intro` redirect unauthenticated users to `/login`. The `/intro` page calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 
 ---
 
@@ -462,6 +468,7 @@ Styles are split across three files to keep page-specific rules isolated:
 | `app/lab/lab.css` 		| Lab page only — hotspots, popup, edit mode, editor panels, save bar                         |
 | `app/modules/modules.css` | Shared by every page under `app/modules/` — cards, filter bar, section blocks, takeaway box |
 | `app/login/auth.css` 		| Login and register pages — card, form inputs, error box                                     |
+| `app/intro/intro.css` 	| Intro page only — hero, quick facts, content sections, CTA                                  |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The other three files are imported directly by the pages that need them.
 
