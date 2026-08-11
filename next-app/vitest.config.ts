@@ -5,7 +5,10 @@ import react from '@vitejs/plugin-react';           // Lets Vitest process .tsx 
 import tsconfigPaths from 'vite-tsconfig-paths';    // Lets Vitest understand import aliases
 
 export default defineConfig({
-    plugins: [react(), tsconfigPaths()],
+    plugins: [
+        react(),
+        tsconfigPaths({ projects: ['./tsconfig.vitest.json'] }),
+    ],
     test: {
         environment: 'jsdom',               // Simulate a browser environment (window, document, etc.)
         globals: true,                      // Lets Vitest use global test functions (describe, it, expect, etc.) without importing them

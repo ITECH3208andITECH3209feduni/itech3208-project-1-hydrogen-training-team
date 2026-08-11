@@ -403,7 +403,7 @@ export const hazardModules: ModuleData[] = [
 	},
 ];
 
-// Helper to look up a hazard module by its numeric id string
+// Helper to look up a hazard module by its numeric id string (currently unused, considered for deletion)
 export function getHazardModuleById(id: string): ModuleData | undefined {
 	return getModuleById(hazardModules, id);	// Calls the generic helper from lib/moduleTypes.ts
 }

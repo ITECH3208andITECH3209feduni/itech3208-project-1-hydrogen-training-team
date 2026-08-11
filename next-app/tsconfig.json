@@ -36,11 +36,11 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".next/global.d.ts"
-,  ],
+  ],
   "exclude": [
     "node_modules",
-	"**/*.test.ts",
-	"**/*.test.tsx",
-	"mocks/**/*"
+	  "**/*.test.ts",
+	  "**/*.test.tsx",
+	  "mocks/**/*"
   ]
 }

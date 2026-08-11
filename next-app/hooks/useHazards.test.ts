@@ -1,6 +1,6 @@
 // hooks/useHazards.test.ts
-// Unit tests for functions in useHazards.ts
-import { describe, it, expect } from 'vitest';
+// Unit & Integration tests for functions in useHazards.ts & related API calls
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { buildDefaultHotspots, clamp, generateType, useHazards } from './useHazards';
