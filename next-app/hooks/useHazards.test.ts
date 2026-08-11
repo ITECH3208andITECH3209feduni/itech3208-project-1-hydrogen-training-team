@@ -65,12 +65,32 @@ describe('3. generateType', () => {
   });
 });
 
+// 4. Test addHotspot
+// Note: does call on APIs during testing, but not to test them, so this is still a unit test.
+describe('4. addHotspot', () => {
+  // Test if a new hotspot is added with the default info
+  it('4.1 seeds a new hotspot with default info', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    const countBefore = result.current.hotspots.length;
+    act(() => { result.current.addHotspot(); });
+
+    expect(result.current.hotspots.length).toBe(countBefore + 1);
+
+    const newHotspot = result.current.hotspots[result.current.hotspots.length - 1];
+    expect(newHotspot.info.title).toBe('⚠️ New Hazard');
+    expect(newHotspot.info.moduleId).toBeNull();
+    expect(newHotspot.info.moduleSection).toBeNull();
+  });
+});
+
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 4. Test load-hazards API call
-describe('4. load-hazards', () => {
+// 5. Test load-hazards API call
+describe('5. load-hazards', () => {
   // Test if loads successfully
-  it('4.1 maps response into hotspots, including moduleId from defaults', async () => {
+  it('5.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -93,7 +113,7 @@ describe('4. load-hazards', () => {
   });
   
   // Test if uses default info when API returns empty
-  it('4.2 falls back to defaults when API returns empty', async () => {
+  it('5.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
@@ -109,7 +129,7 @@ describe('4. load-hazards', () => {
   });
   
   // Test if uses default info when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('4.3 falls back to defaults when API responds with an error', async () => {
+  it('5.3 falls back to defaults when API responds with an error', async () => {
     // Replace console error with a fake (avoids clutter)
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -129,7 +149,7 @@ describe('4. load-hazards', () => {
   });
 
   // Test if uses default info when API call fails (internet failure, server crash, etc.)
-  it('4.4 falls back to defaults on a network failure', async () => {
+  it('5.4 falls back to defaults on a network failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
@@ -146,7 +166,7 @@ describe('4. load-hazards', () => {
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
-  it('4.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+  it('5.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({
         ok: true,
@@ -175,10 +195,10 @@ describe('4. load-hazards', () => {
   });
 });
 
-// 5. Test load-image API call
-describe('5. load-image', () => {
+// 6. Test load-image API call
+describe('6. load-image', () => {
   // Test if loads successfully and sets imageUrl state
-  it('5.1 sets imageUrl from API when available', async () => {
+  it('6.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
     
@@ -186,7 +206,7 @@ describe('5. load-image', () => {
   });
 
   // Test if uses default when API returns empty
-  it('5.2 keeps the default image when no image exists in the API', async () => {
+  it('6.2 keeps the default image when no image exists in the API', async () => {
     server.use(http.get('/api/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
@@ -198,7 +218,7 @@ describe('5. load-image', () => {
   });
 
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('5.3 keeps the default image when API responds with an error', async () => {
+  it('6.3 keeps the default image when API responds with an error', async () => {
     server.use(
       http.get('/api/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
@@ -211,10 +231,10 @@ describe('5. load-image', () => {
   });
 });
 
-// 6. Test save-hazards API call
-describe('6. save-hazards', () => {
+// 7. Test save-hazards API call
+describe('7. save-hazards', () => {
   // Test a successful save
-  it('6.1 sets saveStatus to saved on a successful save', async () => {
+  it('7.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -225,7 +245,7 @@ describe('6. save-hazards', () => {
   });
 
   // Test a failed save
-  it('6.2 sets saveStatus to error if the save request fails', async () => {
+  it('7.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
       http.post('/api/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
@@ -239,7 +259,7 @@ describe('6. save-hazards', () => {
   });
 
   // Test if all fields are sent to the API (hotspots + hazardData)
-  it('6.3 sends the full hotspots + hazardData payload', async () => {
+  it('7.3 sends the full hotspots + hazardData payload', async () => {
     let capturedBody: any = null;
     server.use(
       http.post('/api/save-hazards', async ({ request }) => {
@@ -271,10 +291,10 @@ describe('6. save-hazards', () => {
   });
 });
 
-// 7. Test upload-image API call
-describe('7. upload-image', () => {
+// 8. Test upload-image API call
+describe('8. upload-image', () => {
   // Test a successful upload
-  it('7.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
+  it('8.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -290,7 +310,7 @@ describe('7. upload-image', () => {
   });
 
   // Test a failed upload
-  it('7.2 sets uploadStatus to error if the upload fails', async () => {
+  it('8.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
       http.post('/api/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
@@ -302,26 +322,5 @@ describe('7. upload-image', () => {
 
     await act(async () => { await result.current.uploadImage(fakeFile); });
     expect(result.current.uploadStatus).toBe('error');
-  });
-});
-
-// 8. Test addHotspot
-describe('8. addHotspot', () => {
-  // Test if a new hotspot is added with the default info
-  it('8.1 seeds a new hotspot with default info', async () => {
-    const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
-
-    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
-
-    const countBefore = result.current.hotspots.length;
-    act(() => { result.current.addHotspot(); });
-
-    await waitFor(() => expect(result.current.hotspots.length).toBe(countBefore + 1));
-
-    const newHotspot = result.current.hotspots[result.current.hotspots.length - 1];
-    expect(newHotspot.info.title).toBe('⚠️ New Hazard');
-    expect(newHotspot.info.moduleId).toBeNull();
-    expect(newHotspot.info.moduleSection).toBeNull();
   });
 });
