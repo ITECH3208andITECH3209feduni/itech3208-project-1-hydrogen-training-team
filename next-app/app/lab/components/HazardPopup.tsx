@@ -41,10 +41,10 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 				{/* Title & Text */}
 				<h2 id="popup-title">{info.title}</h2>
 				<p id="popup-text">{info.text}</p>
-				{/* Learn More button */}
-				{info.moduleId && (
+				{/* Learn More button (only renders if connected to a module) */}
+				{info.moduleSection && info.moduleId && (
 					<Link
-						href={`/modules/hazard-modules/${info.moduleId}`}
+						href={`/modules/${info.moduleSection}/${info.moduleId}`}
 						className="popup-module-link"
 						onClick={onClose}
 					>

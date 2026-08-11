@@ -14,6 +14,8 @@ export const handlers = [
                     left: '30.0%',
                     title: 'Loaded Title',
                     text: 'Loaded description text.',
+                    module_section: 'hazard-modules',
+                    module_id: '1',
                 },
             ],
         });

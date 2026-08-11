@@ -22,12 +22,14 @@ export async function POST(req: NextRequest) {
 		if ((hotspots as []).length > 0) {
 			const rows = (hotspots as { type: string; top: string; left: string }[]).map(
 				(hs, index) => ({
-					type:       hs.type,
-					top:        hs.top,
-					left:       hs.left,
-					title:      (hazardData as Record<string, { title: string; text: string }>)[hs.type].title,
-					text:       (hazardData as Record<string, { title: string; text: string }>)[hs.type].text,
-					sort_order: index,
+					type:           hs.type,
+					top:            hs.top,
+					left:           hs.left,
+					title:          (hazardData as Record<string, { title: string; text: string; moduleId: string | null; moduleSection: string | null }>)[hs.type].title,
+					text:           (hazardData as Record<string, { title: string; text: string; moduleId: string | null; moduleSection: string | null }>)[hs.type].text,
+					module_section: (hazardData as Record<string, { title: string; text: string; moduleId: string | null; moduleSection: string | null }>)[hs.type].moduleSection,
+					module_id:      (hazardData as Record<string, { title: string; text: string; moduleId: string | null; moduleSection: string | null }>)[hs.type].moduleId,
+					sort_order:     index,
 				})
 			);
 			

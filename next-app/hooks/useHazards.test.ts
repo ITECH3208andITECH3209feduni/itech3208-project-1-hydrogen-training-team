@@ -88,8 +88,8 @@ describe('4. load-hazards', () => {
     expect(loadedHotspot.left).toBe('30.0%');
     expect(loadedHotspot.info.title).toBe('Loaded Title');
     expect(loadedHotspot.info.text).toBe('Loaded description text.');
-    // moduleId isn't stored in Supabase — it should come from hazards.ts, not be empty
-    expect(loadedHotspot.info.moduleId).not.toBe('');
+    expect(loadedHotspot.info.moduleId).toBe('1');
+    expect(loadedHotspot.info.moduleSection).toBe('hazard-modules');
   });
   
   // Test if uses default info when API returns empty
@@ -143,6 +143,35 @@ describe('4. load-hazards', () => {
     expect(result.current.hotspots.length).toBeGreaterThan(0);
     expect(consoleSpy).toHaveBeenCalledWith('Failed to load hazards from Supabase — using defaults');
     consoleSpy.mockRestore();
+  });
+
+  // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
+  it('4.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+    server.use(
+      http.get('/api/load-hazards', () => HttpResponse.json({
+        ok: true,
+        data: [
+          {
+            type: 'ventilation',
+            top: '25.0%',
+            left: '35.0%',
+            title: 'Unlinked Hazard',
+            text: 'No module linked to this one.',
+            module_section: null,
+            module_id: null,
+          },
+        ],
+      }))
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+
+    const loadedHotspot = result.current.hotspots[0];
+    expect(loadedHotspot.info.moduleId).toBeNull();
+    expect(loadedHotspot.info.moduleSection).toBeNull();
   });
 });
 
@@ -208,6 +237,38 @@ describe('6. save-hazards', () => {
     await act(async () => { await result.current.saveToSupabase(); });
     expect(result.current.saveStatus).toBe('error');
   });
+
+  // Test if all fields are sent to the API (hotspots + hazardData)
+  it('6.3 sends the full hotspots + hazardData payload', async () => {
+    let capturedBody: any = null;
+    server.use(
+      http.post('/api/save-hazards', async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json({ ok: true });
+      })
+    );
+ 
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+ 
+    // Wait for the load to complete so hotspots carry the mock's info
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    await act(async () => { await result.current.saveToSupabase(); });
+    expect(result.current.saveStatus).toBe('saved');
+ 
+    // hotspots: only position/type fields — no leaked `info`
+    expect(capturedBody.hotspots).toEqual([
+      { type: 'gas', top: '20.0%', left: '30.0%' },
+    ]);
+ 
+    // hazardData: the HazardInfo for the loaded hotspot
+    expect(capturedBody.hazardData.gas).toEqual({
+      title: 'Loaded Title',
+      text: 'Loaded description text.',
+      moduleId: '1',
+      moduleSection: 'hazard-modules',
+    });
+  });
 });
 
 // 7. Test upload-image API call
@@ -241,5 +302,26 @@ describe('7. upload-image', () => {
 
     await act(async () => { await result.current.uploadImage(fakeFile); });
     expect(result.current.uploadStatus).toBe('error');
+  });
+});
+
+// 8. Test addHotspot
+describe('8. addHotspot', () => {
+  // Test if a new hotspot is added with the default info
+  it('8.1 seeds a new hotspot with default info', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+
+    const countBefore = result.current.hotspots.length;
+    act(() => { result.current.addHotspot(); });
+
+    await waitFor(() => expect(result.current.hotspots.length).toBe(countBefore + 1));
+
+    const newHotspot = result.current.hotspots[result.current.hotspots.length - 1];
+    expect(newHotspot.info.title).toBe('⚠️ New Hazard');
+    expect(newHotspot.info.moduleId).toBeNull();
+    expect(newHotspot.info.moduleSection).toBeNull();
   });
 });
