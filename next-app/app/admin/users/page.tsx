@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
 // @ts-ignore: Implicit any for CSS import
 import "./admin.css";
@@ -23,6 +23,12 @@ export default function AdminUsersPage() {
 
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+
+const [completedTraining, setCompletedTraining] =
+  useState(0);
+
+const [averageProgress, setAverageProgress] =
+  useState(0);
 
   const [selectedUser, setSelectedUser] =
     useState<UserProfile | null>(null);
@@ -65,7 +71,82 @@ export default function AdminUsersPage() {
       const data = await res.json();
 
       if (data.ok) {
-        setUsers(data.users);
+        const loadedUsers: UserProfile[] = data.users;
+
+    setUsers(loadedUsers);
+
+    const learners = loadedUsers.filter(
+      (user) =>
+        user.role !== "admin" &&
+        user.user_type === "public"
+    );
+
+    const progressResults = await Promise.all(
+      learners.map(async (learner) => {
+        try {
+          const progressResponse = await fetch(
+            `/api/admin/users/${learner.uid}/progress`,
+            {
+              method: "GET",
+              cache: "no-store",
+              headers: {
+                Authorization: `Bearer ${idToken}`,
+              },
+            }
+          );
+
+          if (!progressResponse.ok) {
+            return null;
+          }
+
+          const progressData =
+            await progressResponse.json();
+
+          if (
+            !progressData.ok ||
+            !progressData.summary
+          ) {
+            return null;
+          }
+
+          return progressData.summary;
+        } catch (error) {
+          console.error(
+            `Failed to load progress for ${learner.uid}:`,
+            error
+          );
+
+          return null;
+        }
+      })
+    );
+
+    const validProgressResults =
+      progressResults.filter(
+        (result) => result !== null
+      );
+
+    const completedCount =
+      validProgressResults.filter(
+        (result) =>
+          result.completedModules >= 5
+      ).length;
+
+    const average =
+      validProgressResults.length > 0
+        ? Math.round(
+            validProgressResults.reduce(
+              (total, result) =>
+                total +
+                Number(result.overallProgress),
+              0
+            ) /
+              validProgressResults.length
+          )
+        : 0;
+
+    setCompletedTraining(completedCount);
+    setAverageProgress(average);
       } else {
         alert(data.error);
       }
@@ -119,9 +200,7 @@ const adminCount = users.filter(
 ).length;
 
 // Temporary values until module progress is implemented
-const completedTraining = 0;
 
-const averageProgress = 0;
 
   if (loading) return <p>Loading...</p>;
 
@@ -161,7 +240,7 @@ const averageProgress = 0;
   <div className="stat-card users-card">
   <div className="stat-info">
     <div className="label">
-      👥 Users
+      <span className="label-icon">Users</span>
     </div>
 
     <div className="count">
@@ -177,7 +256,7 @@ const averageProgress = 0;
   <div className="stat-info">
 
     <div className="label">
-      🛡 Administrators
+      <span className="label-icon">Administrators</span>
     </div>
 
     <div className="count">
@@ -194,7 +273,7 @@ const averageProgress = 0;
   <div className="stat-info">
 
     <div className="label">
-      🎓 Training Completed
+      <span className="label-icon">Training Completed</span>
     </div>
 
     <div className="count">
@@ -212,7 +291,7 @@ const averageProgress = 0;
           <div className="stat-info">
 
             <div className="label">
-              📊 Average Progress
+              <span className="label-icon">Average Progress</span>
             </div>
 
             <div className="count">
@@ -350,3 +429,4 @@ const averageProgress = 0;
     
   );
 }
+

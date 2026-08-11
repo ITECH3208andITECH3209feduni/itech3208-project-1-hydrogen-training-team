@@ -83,11 +83,7 @@ export default function HazardsQuizPage() {
             setSaving(true);
             setError('');
 
-            console.log('QUIZ SUBMIT: handleSubmit fired');
-
             const token = await user.getIdToken();
-
-            console.log('QUIZ SUBMIT: Firebase token obtained');
 
             const response = await fetch(
                 '/api/quizzes/progress',
@@ -104,11 +100,6 @@ export default function HazardsQuizPage() {
                 }
             );
 
-            console.log(
-                'QUIZ SUBMIT: API response status',
-                response.status
-            );
-
             const result = await response.json();
 
             if (!response.ok || !result.ok) {
@@ -117,11 +108,6 @@ export default function HazardsQuizPage() {
                         'Failed to save quiz result.'
                 );
             }
-
-            console.log(
-                'QUIZ SUBMIT: Quiz progress saved',
-                result.progress
-            );
 
             setSubmitted(true);
 
@@ -386,3 +372,4 @@ export default function HazardsQuizPage() {
         </main>
     );
 }
+

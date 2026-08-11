@@ -1,7 +1,6 @@
 "use client";
 
 // Import page stylesheet
-// @ts-expect-error CSS import handled by Next.js
 import "./about.css";
 
 // About page component

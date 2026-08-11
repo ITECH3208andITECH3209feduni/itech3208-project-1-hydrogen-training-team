@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireUser } from "@/lib/authUser";
 
@@ -101,7 +101,8 @@ export async function POST(request: NextRequest) {
 			.from("user_module_progress")
 			.insert({
 				uid,
-				module_id,
+				section: "hazard-modules",
+                            module_id,
 				status: "progress",
 				progress: 0,
 				attempts: 0,
@@ -325,3 +326,4 @@ export async function PATCH(request: NextRequest) {
 		);
 	}
 }
+
