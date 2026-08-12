@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
                             module_id,
 				status: "progress",
 				progress: 0,
-				attempts: 0,
+				attempts: 1,
 				started_at: now,
 				last_accessed: now,
 			});
@@ -157,6 +157,7 @@ export async function PATCH(request: NextRequest) {
 			quiz_score,
 			attempts,
 			time_spent,
+                    action,
 		} = body;
 
 		if (!module_id) {
@@ -169,7 +170,109 @@ export async function PATCH(request: NextRequest) {
 			);
 		}
 
-		// Build only the fields that were supplied
+		            // -------------------------------------------------
+            // Explicit module restart
+            // -------------------------------------------------
+
+            if (action === "restart") {
+                    const {
+                            data: existing,
+                            error: existingError,
+                    } = await supabaseServer
+                            .from("user_module_progress")
+                            .select(
+                                    "id, attempts, progress, status"
+                            )
+                            .eq("uid", uid)
+                            .eq("module_id", module_id)
+                            .maybeSingle();
+
+                    if (existingError) {
+                            console.error(
+                                    "Restart lookup error:",
+                                    existingError
+                            );
+
+                            return NextResponse.json(
+                                    {
+                                            ok: false,
+                                            error:
+                                                    existingError.message,
+                                    },
+                                    { status: 500 }
+                            );
+                    }
+
+                    if (!existing) {
+                            return NextResponse.json(
+                                    {
+                                            ok: false,
+                                            error:
+                                                    "Module progress record does not exist.",
+                                    },
+                                    { status: 404 }
+                            );
+                    }
+
+                    const currentAttempts =
+                            Number(existing.attempts ?? 0);
+
+                    const nextAttempts =
+                            Number.isFinite(
+                                    currentAttempts
+                            )
+                                    ? Math.max(
+                                              1,
+                                              currentAttempts + 1
+                                      )
+                                    : 1;
+
+                    const now =
+                            new Date().toISOString();
+
+                    const {
+                            data,
+                            error,
+                    } = await supabaseServer
+                            .from("user_module_progress")
+                            .update({
+                                    progress: 0,
+                                    status: "progress",
+                                    attempts:
+                                            nextAttempts,
+                                    completed_at: null,
+                                    time_spent: 0,
+                                    started_at: now,
+                                    last_accessed: now,
+                            })
+                            .eq("uid", uid)
+                            .eq("module_id", module_id)
+                            .select()
+                            .single();
+
+                    if (error) {
+                            console.error(
+                                    "Restart module error:",
+                                    error
+                            );
+
+                            return NextResponse.json(
+                                    {
+                                            ok: false,
+                                            error: error.message,
+                                    },
+                                    { status: 500 }
+                            );
+                    }
+
+                    return NextResponse.json({
+                            ok: true,
+                            message:
+                                    "Module restarted successfully",
+                            progress: data,
+                    });
+            }
+// Build only the fields that were supplied
 		const updateData: Record<string, unknown> = {
 			last_accessed: new Date().toISOString(),
 		};
@@ -326,4 +429,5 @@ export async function PATCH(request: NextRequest) {
 		);
 	}
 }
+
 
