@@ -19,10 +19,10 @@ export const questionhazards: QuizQuestion[] = [
 		question:
 			'What makes hydrogen leaks especially difficult to detect using human senses alone?',
 		options: [
-			'It has a strong, sulphur-like odour',
+			'It has a very faint, pleasant scent',
 			'It is colourless, odourless, and tasteless',
-			'It turns the surrounding air pale blue',
-			'It causes a loud hissing at any leak point',
+			'It is often visually mistaken for a heat shimmer',
+			'It makes no sound when leaking',
 		],
 		correctIndex: 1,
 		explanation:
@@ -52,7 +52,7 @@ export const questionhazards: QuizQuestion[] = [
 	{
 		id: 4,
 		question:
-			'Because hydrogen rises rapidly, where is the greatest accumulation risk in an indoor workspace?',
+			'Where is the greatest accumulation risk in an indoor workspace?',
 		options: [
 			'In floor drains and pits',
 			'At ceilings and in enclosed or confined spaces',
@@ -83,7 +83,7 @@ export const questionhazards: QuizQuestion[] = [
 			'Compressed gas at up to 700 bar',
 			'Dissolved in water at room temperature',
 			'As a fine powder suspended in air',
-			'Stored only in open atmospheric tanks',
+			'Stored in open atmospheric tanks',
 		],
 		correctIndex: 0,
 		explanation:
@@ -99,7 +99,7 @@ export const questionhazards: QuizQuestion[] = [
 	},
 	{
 		id: 8,
-		question: 'What is the only by-product when hydrogen is used in a fuel cell?',
+		question: 'What by-product is produced when hydrogen is used in a fuel cell?',
 		options: ['Carbon dioxide', 'Water', 'Nitrogen oxides', 'Methane'],
 		correctIndex: 1,
 		explanation:

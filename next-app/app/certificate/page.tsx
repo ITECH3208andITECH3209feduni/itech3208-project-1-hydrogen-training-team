@@ -17,7 +17,7 @@ interface QuizRecord {
 }
 
 function storageKey(uid: string) {
-	return `h2academy_quiz_hazards_${uid}`;
+	return `hydrogenlabsafety_quiz_hazards_${uid}`;
 }
 
 export default function CertificatePage() {
@@ -62,7 +62,7 @@ export default function CertificatePage() {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 		const link = document.createElement('a');
-		link.download = `H2-Academy-Certificate-${displayName.replace(/\s+/g, '-')}.png`;
+		link.download = `Hydrogen-Lab-Safety-Certificate-${displayName.replace(/\s+/g, '-')}.png`;
 		link.href = canvas.toDataURL('image/png');
 		link.click();
 	}
@@ -146,7 +146,7 @@ function drawCertificate(
 
 	ctx.fillStyle = '#00B4D8';
 	ctx.font = '700 28px Inter, sans-serif';
-	ctx.fillText('H2 ACADEMY', width / 2, 130);
+	ctx.fillText('Hydrogen Lab Safety', width / 2, 130);
 
 	ctx.fillStyle = '#F0F8FF';
 	ctx.font = '800 56px Georgia, serif';

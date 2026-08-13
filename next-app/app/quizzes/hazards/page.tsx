@@ -10,15 +10,59 @@ import {
     questionhazards,
     QUIZ_TITLE,
     PASS_THRESHOLD,
+    QuizQuestion,
 } from '@/lib/questionhazards';
 
 function storageKey(uid: string) {
-    return `h2academy_quiz_hazards_${uid}`;
+    return `hydrogenlabsafety_quiz_hazards_${uid}`;
+}
+
+// Array Shuffler (Fisher-Yates method)
+function shuffleArray<T>(array: T[]): T[] {
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+}
+
+// Quiz Shuffler
+function shuffleQuiz(questions: QuizQuestion[]): QuizQuestion[] {
+    // Shuffle the questions
+    const shuffledQuestions = shuffleArray(questions);
+
+    return shuffledQuestions.map((q) => {
+        const indexedOptions = q.options.map((option, index) => ({
+            option,
+            originalIndex: index,
+        }));
+
+        // Shuffle the options for each question
+        const shuffledOptions = shuffleArray(indexedOptions);
+
+        const newCorrectIndex = shuffledOptions.findIndex(
+            (o) => o.originalIndex === q.correctIndex
+        );
+
+        return {
+            ...q,
+            options: shuffledOptions.map((o) => o.option),
+            correctIndex: newCorrectIndex,
+        };
+    });
 }
 
 export default function HazardsQuizPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
+
+    // Randomise questions and options on load
+    const [quiz, setQuiz] = useState<QuizQuestion[]>(() =>
+        shuffleQuiz(questionhazards)
+    );
 
     const [answers, setAnswers] = useState<(number | null)[]>(
         Array(questionhazards.length).fill(null)
@@ -29,18 +73,11 @@ export default function HazardsQuizPage() {
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
 
-    const correctCount = useMemo(
-        () =>
-            answers.filter(
-                (answer, index) =>
-                    answer === questionhazards[index].correctIndex
-            ).length,
-        [answers]
-    );
+    const correctCount = answers.filter(
+        (answer, index) => answer === quiz[index].correctIndex
+    ).length;
 
-    const percentage = Math.round(
-        (correctCount / questionhazards.length) * 100
-    );
+    const percentage = Math.round((correctCount / quiz.length) * 100);
 
     const passed = percentage >= PASS_THRESHOLD;
 
@@ -132,6 +169,8 @@ export default function HazardsQuizPage() {
     }
 
     function handleRetry() {
+        setQuiz(shuffleQuiz(questionhazards));
+        
         setAnswers(
             Array(questionhazards.length).fill(null)
         );
@@ -174,7 +213,7 @@ export default function HazardsQuizPage() {
 
                     <p>
                         Answer all{' '}
-                        {questionhazards.length} questions,
+                        {quiz.length} questions,
                         then submit to see your results.
                         You need {PASS_THRESHOLD}% or
                         higher to pass.
@@ -214,7 +253,7 @@ export default function HazardsQuizPage() {
 
                             <p className="quiz-result-text">
                                 You got {correctCount} out
-                                of {questionhazards.length}{' '}
+                                of {quiz.length}{' '}
                                 correct.
 
                                 {!passed &&
@@ -243,7 +282,7 @@ export default function HazardsQuizPage() {
                 )}
 
                 <div className="quiz-question-list">
-                    {questionhazards.map((q, qIndex) => {
+                    {quiz.map((q, qIndex) => {
                         const userAnswer = answers[qIndex];
 
                         const isCorrect =
