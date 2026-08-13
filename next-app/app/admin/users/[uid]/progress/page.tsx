@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { modules } from "@/lib/modules";
+import { hazardModules } from "@/lib/hazardModules";
 import ModuleCard from "@/app/modules/components/ModuleCard";
 import { useAuth } from "@/context/AuthContext";
 
@@ -223,7 +223,7 @@ export default function UserProgressPage() {
 
     const summary =
         data.summary ?? {
-            totalModules: modules.length,
+            totalModules: hazardModules.length,
             completedModules: 0,
             overallProgress: 0,
             quizAverage: null,
@@ -236,7 +236,7 @@ export default function UserProgressPage() {
      */
 
     const modulesWithProgress =
-        modules.map((module) => {
+        hazardModules.map((module) => {
             const savedProgress =
                 moduleProgress.find(
                     (item) =>

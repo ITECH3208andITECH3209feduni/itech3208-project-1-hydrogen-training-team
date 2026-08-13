@@ -1,4 +1,4 @@
-/* modules.css — styles for app/modules/page.tsx and its sub-pages and components only */
+/* modules.css — shared styles for pages under app/modules/ and its components only */
 
 /* ─── Modules listing ──────────────────────────────────────────────────── */
 .page-header {
@@ -36,8 +36,7 @@
 	color: var(--muted);
 	transition: all 0.2s;
 }
-.filter-btn.active,
-.filter-btn:hover {
+.filter-btn.active, .filter-btn:hover {
 	background: var(--teal);
 	border-color: var(--teal);
 	color: white;

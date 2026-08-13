@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/adminAuth";
-import { modules } from "@/lib/modules";
+import { hazardModules } from "@/lib/hazardModules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         user.user_type === "public"
     );
 
-    const totalModules = modules.length;
+    const totalModules = hazardModules.length;
 
     // ---------------------------------------------------------
     // Calculate progress for each learner
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
           );
 
         const modulePercentages =
-          modules.map((module) => {
+          hazardModules.map((module) => {
             const record =
               learnerRecords.find(
                 (item) =>

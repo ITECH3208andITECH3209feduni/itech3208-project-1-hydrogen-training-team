@@ -1,7 +1,7 @@
 // app/modules/components/ModuleCard.tsx
 
 import Link from "next/link";
-import { ModuleData, ModuleStatus } from "@/lib/modules";
+import { ModuleData, ModuleStatus } from "@/lib/moduleTypes";
 import "./ModuleCard.css";
 
 interface AdminProgress {
@@ -119,7 +119,7 @@ export default function ModuleCard({
                 />
 
                 <div className="hazard-badge">
-                    {mod.hazardNum}
+                    {mod.badgeNum}
                 </div>
 
                 <div className="card-body">
@@ -242,7 +242,7 @@ export default function ModuleCard({
             />
 
             <div className="hazard-badge">
-                {mod.hazardNum}
+                {mod.badgeNum}
             </div>
 
             <div className="card-body">

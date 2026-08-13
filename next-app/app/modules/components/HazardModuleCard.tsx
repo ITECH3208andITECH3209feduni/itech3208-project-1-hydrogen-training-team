@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
+import './ModuleCard.css';
 
 const statusMeta: Record<
     ModuleStatus,
@@ -13,7 +14,7 @@ const statusMeta: Record<
     }
 > = {
     done: {
-        label: '✓ Completed',
+        label: 'âœ“ Completed',
         barClass: 'bar-done',
         badgeClass: 'badge-done',
         linkText: 'View →',
@@ -120,3 +121,4 @@ export default function HazardModuleCard({
         </Link>
     );
 }
+

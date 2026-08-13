@@ -36,6 +36,9 @@ hydrogen-lab/
 │   ├── globals.css						# Shared styles — reset, tokens, nav, panel, dashboard
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
 │   ├── page.tsx						# Dashboard (home page)
+│   ├── intro/
+│   │   ├── page.tsx					# Public landing/intro page (/intro) — no login required
+│   │   └── intro.css					# Intro-specific styles
 │   ├── template/
 │   │   └── page.tsx					# Template for creating new pages (not in navigation)
 │   ├── login/
@@ -53,14 +56,20 @@ hydrogen-lab/
 │   │       ├── SaveBar.tsx				# Reset and save buttons for hotspots
 │   │       └── HazardPopup.tsx			# Modal popup for hazard info
 │   ├── modules/
-│   │   ├── page.tsx					# Module listing with filter bar (/modules)
-│   │   ├── modules.css					# Modules-specific styles
+│   │   ├── modules.css					# Shared styles for every section under app/modules/
 │   │   ├── components/
-│   │   │   └── ModuleCard.tsx			# Card component for each module in the listing
-│   │   └── [id]/
-│   │       ├── page.tsx				# Module reader — dynamic route (/modules/1 … /modules/5)
-│   │       └── components/
-│   │           └── SectionBlock.tsx	# Renders a single numbered section in a module
+│   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
+│   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page
+│   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page
+│   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page
+│   │   ├── hazard-modules/
+│   │   │   ├── page.tsx				# Hazard module listing (/modules/hazard-modules)
+│   │   │   └── [id]/
+│   │   │       └── page.tsx			# Hazard module reader (/modules/hazard-modules/1 … 5)
+│   │   └── guides/
+│   │       ├── page.tsx				# Example second section (/modules/guides) — not linked in nav
+│   │       └── [id]/
+│   │           └── page.tsx			# Example reader page
 │   ├── api/
 │   │   ├── load-hazards/
 │   │   │   └── route.ts				# GET route — loads hazard data from Supabase
@@ -83,11 +92,14 @@ hydrogen-lab/
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
 ├── lib/
 │   ├── hazards.ts						# Default hazard data + hotspot positions + moduleId map (fallback)
-│   ├── modules.ts						# Static content for all 5 modules (bundled at build time)
+│   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
+│   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
+│   ├── guides.ts						# Example second section's data — not linked in nav
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
 │   └── firebase.ts						# Firebase app initialisation (auth + Firestore)
 ├── public/
-│   └── lab.jpg							# Default lab image (fallback)
+│   ├── lab.jpg							# Default lab image (fallback)
+│   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the intro page
 ├── .env.local							# Environment variables (not committed to Git)
 ├── next.config.js
 ├── tsconfig.json
@@ -96,20 +108,28 @@ hydrogen-lab/
 └── package.json
 ```
 
+Note: `app/modules/` has no `page.tsx` of its own — it's a code-organization directory holding every section built on the shared template (`hazard-modules`, `guides`), not a route itself.
+
 ---
 
 ## Pages
 
-| Route               | File                          | Description                                                        |
-|---------------------|-------------------------------|--------------------------------------------------------------------|
-| `/`                 | `app/page.tsx`                | Dashboard with modules, scenarios, quizzes, and training progress  |
-| `/login`            | `app/login/page.tsx`          | Email and password login                                           |
-| `/login/register`   | `app/login/register/page.tsx` | New account registration                                           |
-| `/lab`              | `app/lab/page.tsx`            | Interactive lab with clickable hazard hotspots                     |
-| `/modules`          | `app/modules/page.tsx`        | Module listing grid with status filter bar                         |
-| `/modules/[id]`     | `app/modules/[id]/page.tsx`   | Module reader — sections, callouts, key takeaway, prev/next nav    |
+| Route                            | File                                       | Description                                                            |
+|----------------------------------|--------------------------------------------|------------------------------------------------------------------------|
+| `/`                              | `app/page.tsx`                             | Dashboard with modules, scenarios, quizzes, and training progress      |
+| `/intro`                         | `app/intro/page.tsx`                       | Public landing page introducing the platform — no login required       |
+| `/login`                         | `app/login/page.tsx`                       | Email and password login                                               |
+| `/login/register`                | `app/login/register/page.tsx`              | New account registration                                               |
+| `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                         |
+| `/modules/hazard-modules`        | `app/modules/hazard-modules/page.tsx`      | Hazard module listing grid with status filter bar                      |
+| `/modules/hazard-modules/[id]`   | `app/modules/hazard-modules/[id]/page.tsx` | Hazard module reader — sections, callouts, key takeaway, prev/next nav |
+| `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav  |
+| `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                             |
 
-All pages except `/login` and `/login/register` redirect unauthenticated users to `/login`.
+Note: the "Hydrogen Lab Safety" title in the Navbar links to `/intro`, following the common pattern of a site's logo linking back to a landing/home page.
+Note: there is no page at the bare `/modules` route. `app/modules/` is a code-organization directory holding every section built on the shared listing+reader template — not a page itself — so visiting `/modules` directly returns a 404. The Navbar and dashboard both link straight to `/modules/hazard-modules`.
+
+All pages except `/login`, `/login/register` and `/intro` redirect unauthenticated users to `/login`. The `/intro` page calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 
 ---
 
@@ -317,6 +337,48 @@ A GitHub Actions workflow (`.github/workflows/test.yml`, at the repo root — no
 3. Update the `active` class on the correct nav link in `Navbar.tsx`
 4. Replace the placeholder content with your page content
 
+This is for a standalone page unrelated to the modules template below. If your new page is a listing+reader pair of the same shape as Hazard Modules, use the process in the next section instead.
+
+---
+
+## Adding a New Section to `app/modules/`
+
+`app/modules/` holds every section built on the shared listing+reader template (currently Hazard Modules and the Guides example). To add another one:
+
+1. Create a data file in `lib/` — e.g. `lib/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/moduleTypes.ts`), plus a lookup function that wraps the generic helper:
+   ```ts
+   import { ModuleData, getModuleById } from './moduleTypes';
+
+   export const scenarios: ModuleData[] = [ /* ... */ ];
+
+   export function getScenarioById(id: string) {
+   	return getModuleById(scenarios, id);
+   }
+   ```
+2. Create `app/modules/scenarios/page.tsx`, a thin wrapper around `ModuleListingPage`:
+   ```tsx
+   import '../modules.css';
+   import ModuleListingPage from '../components/ModuleListingPage';
+   import { scenarios } from '@/lib/scenarios';
+
+   export default function ScenariosPage() {
+   	return (
+   		<ModuleListingPage
+   			items={scenarios}
+   			basePath="/modules/scenarios"
+   			heading="Scenarios"
+   			subheading="Your subheading here"
+   		/>
+   	);
+   }
+   ```
+3. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, following the same pattern as `app/modules/guides/[id]/page.tsx`.
+4. If the section should appear in navigation, add a link in `Navbar.tsx`.
+
+The `guides` section (`lib/guides.ts`, `app/modules/guides/`) is a working, unlinked example of this exact pattern — copy it directly as a starting point rather than the snippets above if you'd rather start from a complete file.
+
+`badgeNum` (small numbered badge on the card/hero) and `slug` (stable id exposed as a `data-slug` attribute) are both optional on `ModuleData` — omit either if a section doesn't need it, as `guides` does for both.
+
 ---
 
 ## Edit Mode
@@ -345,11 +407,22 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 ## Modules
 
-Module content is defined in `lib/modules.ts` as a static TypeScript array bundled at build time — no database calls are made when loading module pages. Each module contains sections, optional lists and callouts, a key takeaway, and links to the previous and next module.
+`app/modules/` is a directory holding every section built on a shared listing+reader template — it isn't a page itself (there's no `page.tsx` directly under `app/modules/`). Currently there are two sections:
 
-The module reader at `/modules/[id]` uses `useParams()` to read the route segment and look up the module from the static array. Invalid IDs redirect to `/modules`.
+- **Hazard Modules** (`/modules/hazard-modules`) — the hydrogen hazards content, defined in `lib/hazardModules.ts`. Linked from the Navbar and the dashboard's Modules stat card.
+- **Guides** (`/modules/guides`) — an example second section demonstrating the pattern, defined in `lib/guides.ts`. Not currently linked from navigation.
 
-Each lab hotspot popup includes a **Read Module** button that links directly to the corresponding module page. The mapping between hazard types and module IDs is defined in `lib/hazards.ts` via the `moduleId` field on each `HazardInfo` entry, and is re-attached to Supabase-loaded hotspots at runtime in `useHazards.ts`.
+The shared template lives in `app/modules/components/`:
+- `ModuleListingPage.tsx` — filter bar, grid, auth redirect
+- `ModuleReaderPage.tsx` — breadcrumb, hero, sections, key takeaway, prev/next nav
+- `ModuleCard.tsx` — card shown in the listing page
+- `SectionBlock.tsx` — renders a single numbered section
+
+Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/moduleTypes.ts`. Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages.
+
+Module content is bundled at build time as static TypeScript arrays — no database calls are made when loading module pages.
+
+Each lab hotspot popup includes a **Learn More** button that links to `/modules/hazard-modules/{moduleId}`. The mapping between hazard types and module IDs is defined in `lib/hazards.ts` via the `moduleId` field on each `HazardInfo` entry, and is re-attached to Supabase-loaded hotspots at runtime in `useHazards.ts`.
 
 ---
 
@@ -363,15 +436,19 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 
 ## Customising Module Content
 
-All module content lives in `lib/modules.ts`. Each entry in the `modules` array contains:
+Hazard module content lives in `lib/hazardModules.ts`. Each entry in the `hazardModules` array is shaped as `ModuleData` (defined in `lib/moduleTypes.ts`, shared by every section under `app/modules/`) and contains:
 
 - `id` — numeric string matching the URL segment (e.g. `'1'`)
+- `slug` — optional stable identifier (e.g. `'gas-leak-detection'`); not used for routing, exposed as a `data-slug` attribute on the card and reader for things like analytics or test selectors
+- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`
 - `title`, `icon`, `iconBg`, `description`, `status`, `progress` — used by the listing card
 - `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects
 - `keyTakeaway` — displayed at the bottom of the reader
-- `prevId` / `nextId` — controls the previous/next navigation buttons
+- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely for the first module's `prevId` and the last module's `nextId`, rather than setting it to `null`
 
 Changes to this file require a redeployment to take effect.
+
+To add a whole new section rather than another hazard module, see "Adding a New Section to `app/modules/`" above.
 
 ---
 
@@ -385,12 +462,13 @@ Training progress, module statuses, stat card counts, and certificate details ar
 
 Styles are split across three files to keep page-specific rules isolated:
 
-| File						| Scope																			|
-|---------------------------|-------------------------------------------------------------------------------|
-| `app/globals.css` 		| Reset, design tokens, nav, `.panel`, animations, and dashboard styles 		|
-| `app/lab/lab.css` 		| Lab page only — hotspots, popup, edit mode, editor panels, save bar 			|
-| `app/modules/modules.css` | Modules listing and reader — cards, filter bar, section blocks, takeaway box 	|
-| `app/login/auth.css` 		| Login and register pages — card, form inputs, error box 						|
+| File						| Scope																						  |
+|---------------------------|---------------------------------------------------------------------------------------------|
+| `app/globals.css` 		| Reset, design tokens, nav, `.panel`, animations, and dashboard styles                       |
+| `app/lab/lab.css` 		| Lab page only — hotspots, popup, edit mode, editor panels, save bar                         |
+| `app/modules/modules.css` | Shared by every page under `app/modules/` — cards, filter bar, section blocks, takeaway box |
+| `app/login/auth.css` 		| Login and register pages — card, form inputs, error box                                     |
+| `app/intro/intro.css` 	| Intro page only — hero, quick facts, content sections, CTA                                  |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The other three files are imported directly by the pages that need them.
 

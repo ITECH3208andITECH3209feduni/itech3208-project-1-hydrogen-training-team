@@ -159,6 +159,15 @@ body::after {
 }
 .avatar:hover { box-shadow: 0 0 14px rgba(0,180,216,0.5); }
 
+.btn-logout {
+	margin-left: 12px;
+	padding: 8px 14px;
+	border-radius: 8px;
+	border: none;
+	cursor: pointer;
+	font-weight: 600;
+}
+
 /* ─── Main container ─────────────────────────────────────────────────────── */
 .main {
 	padding: 40px 40px 60px;
