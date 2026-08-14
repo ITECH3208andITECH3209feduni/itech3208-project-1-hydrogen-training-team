@@ -77,8 +77,10 @@ hydrogen-lab/
 │   │   │   └── route.ts				# POST route — saves hazard data to Supabase
 │   │   ├── load-image/
 │   │   │   └── route.ts				# GET route — returns lab image URL from Supabase Storage
-│   │   └── upload-image/
-│   │       └── route.ts				# POST route — uploads lab image to Supabase Storage
+│   │   ├── upload-image/
+│   │   │   └── route.ts				# POST route — uploads lab image to Supabase Storage
+│   │   └── load-modules/
+│   │       └── route.ts				# GET route — loads module content + sections from Supabase for a given section
 │   └── quizzes/
 ├── components/
 │   └── Navbar.tsx						# Reusable navigation bar
@@ -86,12 +88,14 @@ hydrogen-lab/
 │   └── AuthContext.tsx					# Firebase auth state — wraps the app via layout.tsx
 ├── hooks/
 │   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, secret key, image upload
-│   └── useHazards.test.ts				# Unit + integration tests for useHazards.ts
+│   ├── useHazards.test.ts				# Unit + integration tests for useHazards.ts
+│   ├── useModules.ts					# Generic hook — loads+merges Supabase module content for any app/modules/ section
+│   └── useModules.test.ts				# Unit + integration tests for useModules.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
 ├── lib/
-│   ├── hazards.ts						# Default hazard data + hotspot positions + moduleId map (fallback)
+│   ├── hazards.ts						# Default hazard data + hotspot positions + module link (fallback)
 │   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
 │   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
 │   ├── guides.ts						# Example second section's data — not linked in nav
@@ -103,6 +107,7 @@ hydrogen-lab/
 ├── .env.local							# Environment variables (not committed to Git)
 ├── next.config.js
 ├── tsconfig.json
+├── tsconfig.vitest.json				# Widened tsconfig (no test-file excludes) so vite-tsconfig-paths can resolve "@/" imports inside test files
 ├── vitest.config.ts					# Vitest configuration (jsdom, plugins, setup file)
 ├── vitest.setup.ts						# Global test setup — jest-dom matchers, MSW server lifecycle
 └── package.json
@@ -163,16 +168,19 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 
 ```sql
 create table hazards (
-	type        text primary key,
-	title       text not null,
-	text        text not null,
-	top         text not null,
-	"left"      text not null,
-	sort_order  int  not null default 0
+	type            text primary key,
+	title           text not null,
+	text            text not null,
+	top             text not null,
+	"left"          text not null,
+	module_section  text null,
+	module_id       text null,
+	sort_order      int  not null default 0
 );
 ```
 
 Note: `"left"` must be quoted as it is a reserved word in SQL.
+Note: `module_section`/`module_id` link a hotspot to a module (see "Linking Hotspots to Modules" below) — they're left nullable here and the foreign key constraint is added in step (d), after the `modules` table exists to reference.
 
 **c) Set permissions** — run the following in the SQL Editor:
 
@@ -191,9 +199,103 @@ for all
 to service_role
 using (true)
 with check (true);
+
+grant select on public.hazards to anon;
 ```
 
-**d) Create the image storage bucket** — run the following in the SQL Editor:
+> **Note:** the `grant select` line above is required in addition to the RLS policy. `enable row level security` + a `for select to anon` policy only controls which *rows* `anon` can see once it already has the base table-level privilege — it does not grant that privilege itself.
+	Tables created via the SQL Editor (rather than the dashboard's table UI) don't get this automatically, so without an explicit `grant select`, every query fails with `permission denied for table ...` (Postgres error `42501`) even though the policy above looks correct.
+	This applies per table, so each table below has its own `grant select` line — don't skip it for tables created after this section (e.g. when adding a new `app/modules/` section per "Adding a New Section" below).
+
+**d) Create the modules tables** — module content (title, sections, key takeaway, etc.) is also stored in Supabase, across two tables shared by every section under `app/modules/` (distinguished by a `section` column, e.g. `'hazard-modules'`):
+
+```sql
+create table public.modules (
+  section       text not null,
+  id            text not null,
+  slug          text null,
+  badge_num     integer null,
+  icon          text not null,
+  icon_bg       text not null,
+  title         text not null,
+  description   text not null,
+  key_takeaway  text not null,
+  prev_id       text null,
+  next_id       text null,
+  sort_order    integer not null default 0,
+  constraint modules_pkey primary key (section, id)
+);
+
+create table public.module_sections (
+  section     text not null,
+  module_id   text not null,
+  num         text not null,
+  heading     text not null,
+  body        text not null,
+  list_type   text null,
+  items       jsonb null,
+  callout     text null,
+  sort_order  integer not null default 0,
+  constraint module_sections_pkey primary key (section, module_id, num),
+  constraint module_sections_section_module_id_fkey foreign key (section, module_id) references modules (section, id) on delete cascade,
+  constraint module_sections_list_type_check check ((list_type = any (array['ul'::text, 'ol'::text])))
+);
+```
+
+Note: `status` and `progress` (used by the listing card) are deliberately **not** columns on `modules` — they're intended to come from a separate per-user progress-tracking table, not yet built. Until then, every module's status/progress is always drawn from its entry in `lib/hazardModules.ts`, never from Supabase — see `hooks/useModules.ts`.
+
+Now that `modules` exists, add the foreign key constraint deferred from the `hazards` table above:
+
+```sql
+alter table public.hazards
+  add constraint hazards_module_fk
+  foreign key (module_section, module_id)
+  references public.modules (section, id)
+  match full
+  on delete set null;
+```
+
+`match full` means a hazard row must have `module_section`/`module_id` either both `null` or both set to a valid, existing `(section, id)` pair on `modules` — never just one of the two. `on delete set null` means deleting a module doesn't delete the hazard that links to it; the hotspot's "Learn More" button just stops appearing (see "Linking Hotspots to Modules" below).
+
+Set permissions the same way as the `hazards` table:
+
+```sql
+alter table public.modules enable row level security;
+alter table public.module_sections enable row level security;
+
+create policy "Allow public read"
+on public.modules
+for select
+to anon
+using (true);
+
+create policy "Allow service role write"
+on public.modules
+for all
+to service_role
+using (true)
+with check (true);
+
+create policy "Allow public read"
+on public.module_sections
+for select
+to anon
+using (true);
+
+create policy "Allow service role write"
+on public.module_sections
+for all
+to service_role
+using (true)
+with check (true);
+
+grant select on public.modules to anon;
+grant select on public.module_sections to anon;
+```
+
+(See the note under step (c) — the `grant select` lines are required alongside these policies, not optional extras.)
+
+**e) Create the image storage bucket** — run the following in the SQL Editor:
 
 ```sql
 insert into storage.buckets (id, name, public)
@@ -218,7 +320,7 @@ to service_role
 using (bucket_id = 'lab-images');
 ```
 
-**e) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
+**f) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
 
 - **Project URL** — in the format `https://abcdefghijkl.supabase.co`
 - **`sb_publishable` key** — safe to expose in the browser
@@ -309,11 +411,17 @@ npm run test:watch	# reruns automatically as files change — used during local 
 ```
 
 ### What's covered
-rk
-- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots` in `hooks/useHazards.ts`)
-- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`)
+
+- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/useHazards.ts`; `mapSection`, `mergeRow` in `hooks/useModules.ts`)
+- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`; `useModules`/`useModuleById` loading via mocked `/api/load-modules`)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/useHazards.ts` → `hooks/useHazards.test.ts`). Vitest picks these up automatically.
+
+### Path aliases in test files
+
+`tsconfig.json` excludes `**/*.test.ts` / `**/*.test.tsx` / `mocks/**/*` so Next's typecheck stays scoped to app code. `vite-tsconfig-paths` (used by `vitest.config.ts` to resolve `@/*` imports) respects that same exclude list — so without a workaround, `@/`-style imports inside test files fail to resolve even though the app itself builds fine.
+
+`tsconfig.vitest.json` exists to fix this: it extends `tsconfig.json` but drops the excludes, and `vitest.config.ts` points `vite-tsconfig-paths` at it via `projects: ['./tsconfig.vitest.json']`. `tsconfig.json` itself is untouched, so Next/Vercel's build scope is unaffected.
 
 ### Mock API conventions
 
@@ -343,28 +451,30 @@ This is for a standalone page unrelated to the modules template below. If your n
 
 ## Adding a New Section to `app/modules/`
 
-`app/modules/` holds every section built on the shared listing+reader template (currently Hazard Modules and the Guides example). To add another one:
+`app/modules/` holds every section built on the shared listing+reader template (currently Hazard Modules). To add another one:
 
-1. Create a data file in `lib/` — e.g. `lib/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/moduleTypes.ts`), plus a lookup function that wraps the generic helper:
+1. Create a data file in `lib/` — e.g. `lib/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/moduleTypes.ts`). This array is what's shown before Supabase loads and the fallback if it fails — see `useModules`/`useModuleById` in step 2 below:
    ```ts
-   import { ModuleData, getModuleById } from './moduleTypes';
+   import { ModuleData } from './moduleTypes';
 
    export const scenarios: ModuleData[] = [ /* ... */ ];
-
-   export function getScenarioById(id: string) {
-   	return getModuleById(scenarios, id);
-   }
    ```
-2. Create `app/modules/scenarios/page.tsx`, a thin wrapper around `ModuleListingPage`:
+2. Seed a matching set of rows in the `modules`/`module_sections` Supabase tables with `section = 'scenarios'` (see "Set up Supabase" above).
+3. Create `app/modules/scenarios/page.tsx`, a thin wrapper around `ModuleListingPage`, pulling live data via `useModules`:
    ```tsx
+   'use client';
+
    import '../modules.css';
    import ModuleListingPage from '../components/ModuleListingPage';
+   import { useModules } from '@/hooks/useModules';
    import { scenarios } from '@/lib/scenarios';
 
    export default function ScenariosPage() {
+   	const { modules } = useModules('scenarios', scenarios);
+
    	return (
    		<ModuleListingPage
-   			items={scenarios}
+   			items={modules}
    			basePath="/modules/scenarios"
    			heading="Scenarios"
    			subheading="Your subheading here"
@@ -372,10 +482,10 @@ This is for a standalone page unrelated to the modules template below. If your n
    	);
    }
    ```
-3. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, following the same pattern as `app/modules/guides/[id]/page.tsx`.
-4. If the section should appear in navigation, add a link in `Navbar.tsx`.
+4. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, using `useModuleById` in place of a static per-section lookup — see `app/modules/hazard-modules/[id]/page.tsx` for the current pattern.
+5. If the section should appear in navigation, add a link in `Navbar.tsx`.
 
-The `guides` section (`lib/guides.ts`, `app/modules/guides/`) is a working, unlinked example of this exact pattern — copy it directly as a starting point rather than the snippets above if you'd rather start from a complete file.
+The `guides` section (`lib/guides.ts`, `app/modules/guides/`) is a working, unlinked example of a section built on the shared template — but it hasn't been migrated to Supabase yet, so it's still on the older static-only pattern (no `useModules` call, data comes straight from `lib/guides.ts`). Treat it as a reference for the overall section shape (data file + listing/reader wrappers), not for the live-loading pattern — follow `hazard-modules` for that instead.
 
 `badgeNum` (small numbered badge on the card/hero) and `slug` (stable id exposed as a `data-slug` attribute) are both optional on `ModuleData` — omit either if a section doesn't need it, as `guides` does for both.
 
@@ -420,9 +530,18 @@ The shared template lives in `app/modules/components/`:
 
 Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/moduleTypes.ts`. Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages.
 
-Module content is bundled at build time as static TypeScript arrays — no database calls are made when loading module pages.
+Module content lives in Supabase (see "Set up Supabase" above), loaded per-section through `hooks/useModules.ts`:
 
-Each lab hotspot popup includes a **Learn More** button that links to `/modules/hazard-modules/{moduleId}`. The mapping between hazard types and module IDs is defined in `lib/hazards.ts` via the `moduleId` field on each `HazardInfo` entry, and is re-attached to Supabase-loaded hotspots at runtime in `useHazards.ts`.
+- **`useModules(section, defaults)`** — fetches `GET /api/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus }`. A successful, non-empty response is authoritative for whatever it contains — modules Supabase doesn't return for that section are **not** padded back in from `defaults`, so removing a module from Supabase actually removes it from the app rather than having it silently reappear from stale bundled content. `defaults` is only used wholesale as a fallback when the fetch fails entirely or the section hasn't been seeded yet (empty response).
+- **`useModuleById(section, defaults, id)`** — the same, narrowed to a single module by id; this is what reader pages use in place of a section's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
+- **`mergeRow`/`mapSection`** (also exported from `useModules.ts`) do the field-name translation between Supabase's snake_case row shape (`badge_num`, `icon_bg`, `key_takeaway`, `list_type`, …) and the app's camelCase `ModuleData`/`ModuleSection` shape that every component already expects.
+- `status`/`progress` always come from `defaults`, never from Supabase (see the note on the `modules` table above). `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link — `badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
+
+Each section's data file (e.g. `lib/hazardModules.ts`) still exports its static `ModuleData[]` array — now serving as the `defaults` passed into `useModules`/`useModuleById`, i.e. what's shown before the Supabase fetch resolves, and the fallback if it fails. Section-specific lookup wrappers like `getHazardModuleById` are no longer called by the reader pages (which now use `useModuleById` instead) — they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
+
+There's currently no in-app edit mode for module content (unlike the lab's hidden hotspot editor) — changing what's in Supabase means editing rows directly via the Supabase dashboard or SQL Editor. Changing `lib/hazardModules.ts` itself still requires a redeployment, same as before, but its role has narrowed to "starting/fallback content" rather than "the content."
+
+Each lab hotspot popup includes a **Learn More** button that links to `/modules/{moduleSection}/{moduleId}`. See "Linking Hotspots to Modules" below for how that mapping is stored and loaded.
 
 ---
 
@@ -434,19 +553,39 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 
 ---
 
+## Linking Hotspots to Modules
+
+Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed version in `hooks/useHazards.ts`) has two fields that together point at a module:
+
+- `moduleId: string | null`
+- `moduleSection: string | null`
+
+`HazardPopup.tsx` builds the **Learn More** link as `/modules/${moduleSection}/${moduleId}`, and only renders the button when both are non-null.
+
+**Where the values come from:** the `hazards` table's `module_section`/`module_id` columns are genuinely live from Supabase — treated the same as `title`/`text`. `useHazards.ts` only falls back to the full set of local defaults (including their module links) if the `/api/load-hazards` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleSection` even where they're `null`. `lib/hazards.ts` itself still hardcodes a `moduleId`/`moduleSection` per hazard type — this is the pre-Supabase fallback data, in the same role as the rest of that file's defaults.
+
+**Both-or-neither:** the two columns form a matched pair enforced at the database level — the `hazards_module_fk` foreign key uses `match full`, so a row can have both `null` or both set to a valid `(section, id)` on `modules`, never just one. `addHotspot()` in `useHazards.ts` seeds new hotspots with both `null` accordingly. Deleting the linked module (`on delete set null`) doesn't delete the hazard — it just resets both columns to `null`, so the "Learn More" button disappears rather than pointing at a dead link.
+
+**Setting a link:** there's currently no in-app UI for setting or changing a hotspot's linked module — `HotspotEditor.tsx` only edits title, description, and position. Linking a hotspot to a module means setting `module_section`/`module_id` directly via the Supabase dashboard or SQL Editor, the same way module content itself is currently edited (see "Customising Module Content" below).
+
+---
+
 ## Customising Module Content
 
-Hazard module content lives in `lib/hazardModules.ts`. Each entry in the `hazardModules` array is shaped as `ModuleData` (defined in `lib/moduleTypes.ts`, shared by every section under `app/modules/`) and contains:
+Live hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'` (see "Set up Supabase" above) — edit rows there directly via the Supabase dashboard or SQL Editor to change what's shown. `lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see "Modules" above for how `hooks/useModules.ts` merges the two).
 
-- `id` — numeric string matching the URL segment (e.g. `'1'`)
-- `slug` — optional stable identifier (e.g. `'gas-leak-detection'`); not used for routing, exposed as a `data-slug` attribute on the card and reader for things like analytics or test selectors
-- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`
-- `title`, `icon`, `iconBg`, `description`, `status`, `progress` — used by the listing card
-- `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects
+Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/moduleTypes.ts`):
+
+- `id` — numeric string matching the URL segment (e.g. `'1'`) — this is the stable, permanent key; routes are built from it, not `slug`
+- `slug` — optional stable identifier (e.g. `'gas-leak-detection'`); not currently used for routing, exposed as a `data-slug` attribute on the card and reader for things like analytics or test selectors. A `null` `slug` column in Supabase is **not** backfilled from `lib/hazardModules.ts` — it comes through as genuinely missing, since it's a candidate for future routing use where a stale stand-in slug would be a real (if quiet) bug rather than a cosmetic one
+- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`. Unlike `slug`, a `null` `badge_num` in Supabase **is** backfilled from the matching entry in `lib/hazardModules.ts`, since it's purely cosmetic/positional
+- `title`, `icon`, `iconBg`, `description` — used by the listing card
+- `status`, `progress` — used by the listing card, but **not** stored in Supabase at all; always drawn from `lib/hazardModules.ts`, pending a separate per-user progress-tracking table
+- `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects; in Supabase this is the `module_sections` table (one row per section, foreign-keyed to its parent `modules` row, deleted automatically via `on delete cascade` if the module is deleted)
 - `keyTakeaway` — displayed at the bottom of the reader
-- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely for the first module's `prevId` and the last module's `nextId`, rather than setting it to `null`
+- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/hazardModules.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
 
-Changes to this file require a redeployment to take effect.
+Changes to `lib/hazardModules.ts` still require a redeployment to take effect, same as before — but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately, without a deploy.
 
 To add a whole new section rather than another hazard module, see "Adding a New Section to `app/modules/`" above.
 

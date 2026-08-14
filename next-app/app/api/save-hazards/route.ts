@@ -22,22 +22,16 @@ type Hotspot = {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
+        const hotspots = (body.hotspots ?? []) as Hotspot[];
 
-        const hotspots =
-            (body.hotspots ?? []) as Hotspot[];
-
-        const hazardData =
-            (body.hazardData ?? {}) as Record<
-                string,
-                HazardDataEntry
-            >;
+        const hazardData = (body.hazardData ?? {}) as Record<string, HazardDataEntry>;
 
         // Step 1 — delete existing rows
         const { error: deleteError } =
             await supabaseServer
                 .from("hazards")
                 .delete()
-                .neq("type", "");
+                .neq("type", "");   // .neq with an always-true condition deletes all rows
 
         if (deleteError) {
             throw deleteError;
