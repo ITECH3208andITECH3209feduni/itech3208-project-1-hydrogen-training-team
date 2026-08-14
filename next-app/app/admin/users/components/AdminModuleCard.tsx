@@ -1,8 +1,9 @@
-// app/modules/components/ModuleCard.tsx
+// app/admin/users/components/ModuleCard.tsx
+// Card for showing user's progress on a module.
 
-import Link from "next/link";
 import { ModuleData, ModuleStatus } from "@/lib/moduleTypes";
-import "./ModuleCard.css";
+import "@/app/modules/components/ModuleCard.css";
+import "../admin.css";
 
 interface AdminProgress {
     uid?: string;
@@ -15,8 +16,8 @@ interface AdminProgress {
     completed_at?: string | null;
 }
 
-interface ModuleCardProps {
-    mod: ModuleData;
+interface AdminModuleCardProps {
+    item: ModuleData;
     animationDelay?: number;
     mode?: "student" | "admin";
     adminProgress?: AdminProgress;
@@ -91,108 +92,11 @@ function formatTimeSpent(
     return `${value} mins`;
 }
 
-export default function ModuleCard({
-    mod,
+export default function AdminModuleCard({
+    item,
     animationDelay = 0,
-    mode = "student",
     adminProgress,
-}: ModuleCardProps) {
-    /*
-     * ---------------------------------------------------------
-     * STUDENT VIEW
-     * ---------------------------------------------------------
-     */
-
-    if (mode === "student") {
-        const meta = statusMeta[mod.status];
-
-        return (
-            <Link
-                href={`/modules/${mod.id}`}
-                className="module-card"
-                style={{
-                    animationDelay: `${animationDelay}s`,
-                }}
-            >
-                <div
-                    className={`card-top-bar ${meta.barClass}`}
-                />
-
-                <div className="hazard-badge">
-                    {mod.badgeNum}
-                </div>
-
-                <div className="card-body">
-
-                    <div className="card-head">
-
-                        <div
-                            className="card-icon"
-                            style={{
-                                background: mod.iconBg,
-                            }}
-                        >
-                            {mod.icon}
-                        </div>
-
-                        <span
-                            className={`status-badge ${meta.badgeClass}`}
-                        >
-                            {meta.label}
-                        </span>
-
-                    </div>
-
-                    <div className="card-title">
-                        {mod.title}
-                    </div>
-
-                    <div className="card-description">
-                        {mod.description}
-                    </div>
-
-                    <div className="card-progress-bar">
-
-                        <div
-                            className="card-progress-fill"
-                            style={{
-                                width: `${mod.progress}%`,
-                                background:
-                                    mod.status === "done"
-                                        ? "#00E5A0"
-                                        : "var(--teal)",
-                            }}
-                        />
-
-                    </div>
-
-                    <div className="card-meta">
-
-                        <span>
-                            {mod.sections.length} sections
-                        </span>
-
-                        <span>
-                            {mod.progress}%
-                        </span>
-
-                    </div>
-
-                </div>
-
-                <div className="card-link">
-                    {meta.linkText}
-                </div>
-            </Link>
-        );
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * ADMIN VIEW
-     * ---------------------------------------------------------
-     */
-
+}: AdminModuleCardProps) {
     const progressValue =
         adminProgress?.progress !== null &&
         adminProgress?.progress !== undefined
@@ -241,68 +145,51 @@ export default function ModuleCard({
                 className={`card-top-bar ${meta.barClass}`}
             />
 
-            <div className="hazard-badge">
-                {mod.badgeNum}
-            </div>
+            {item.badgeNum !== undefined && (
+                <div className="hazard-badge">
+                    {item.badgeNum}
+                </div>
+            )}
 
             <div className="card-body">
-
                 <div className="card-head">
-
                     <div
                         className="card-icon"
                         style={{
-                            background: mod.iconBg,
+                            background: item.iconBg,
                         }}
                     >
-                        {mod.icon}
+                        {item.icon}
                     </div>
-
                     <span
                         className={`status-badge ${meta.badgeClass}`}
                     >
                         {meta.label}
                     </span>
-
                 </div>
 
                 <div className="card-title">
-                    {mod.title}
+                    {item.title}
                 </div>
 
                 <div className="admin-module-info">
-
                     <p>
                         <strong>Status</strong>
-
                         <span>
-                            {meta.label.replace(
-                                "✓ ",
-                                ""
-                            )}
+                            {meta.label.replace("✓ ", "")}
                         </span>
                     </p>
-
                     <p>
                         <strong>Completed</strong>
-
-                        <span>
-                            {completedDate}
-                        </span>
+                        <span>{completedDate}</span>
                     </p>
-
                     <p>
                         <strong>Time Spent</strong>
-
-                        <span>
-                            {timeSpent}
-                        </span>
+                        <span>{timeSpent}</span>
                     </p>
-
                 </div>
 
                 <div className="card-progress-bar">
-
                     <div
                         className="card-progress-fill"
                         style={{
@@ -313,21 +200,14 @@ export default function ModuleCard({
                                     : "var(--teal)",
                         }}
                     />
-
                 </div>
 
                 <div className="card-meta">
-
                     <span>
-                        {mod.sections.length} sections
+                        {item.sections.length} sections
                     </span>
-
-                    <span>
-                        {progressValue}%
-                    </span>
-
+                    <span>{progressValue}%</span>
                 </div>
-
             </div>
         </div>
     );

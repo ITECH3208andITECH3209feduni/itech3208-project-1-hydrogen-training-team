@@ -101,118 +101,76 @@
 }
 
 .modal-card{
-
     width:520px;
     max-width:95%;
-
     background:#071842;
-
     border:var(--border-rule);
-
     border-radius:16px;
-
     overflow:hidden;
-
     animation:fadeUp .25s ease;
 }
 
 .modal-header{
-
     padding:22px;
-
     border-bottom:var(--border-rule);
 }
 
 .modal-header h2{
-
     color:var(--white);
-
     font-family:"Exo 2",sans-serif;
 }
 
 .modal-body{
-
     padding:22px;
-
     display:flex;
-
     flex-direction:column;
-
     gap:18px;
 }
 
 .form-group{
-
     display:flex;
-
     flex-direction:column;
-
     gap:8px;
 }
 
 .form-group label{
-
     color:var(--teal);
-
     font-weight:600;
 }
 
 .form-group input,
 .form-group select{
-
     padding:12px;
-
     background:#102656;
-
     border:1px solid rgba(255,255,255,.08);
-
     color:white;
-
     border-radius:8px;
-
     outline:none;
 }
 
 .modal-footer{
-
     display:flex;
-
     justify-content:flex-end;
-
     gap:14px;
-
     padding:22px;
-
     border-top:var(--border-rule);
 }
 
 .cancel-btn{
-
     padding:10px 20px;
-
     border:none;
-
     background:#444;
-
     color:white;
-
     border-radius:8px;
-
     cursor:pointer;
 }
 
 .save-btn{
-
     padding:10px 20px;
-
     border:none;
-
     background:var(--teal);
-
     color:white;
-
     border-radius:8px;
-
     cursor:pointer;
 }
 /* ========================================
@@ -328,4 +286,52 @@
 .progress-btn:hover{
     background:#1d4ed8;
     transform:translateY(-2px);
+}
+
+/* ========================================
+   ADMIN MODULES GRID
+======================================== */
+
+.admin-modules-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
+
+@media (max-width: 900px){
+    .admin-modules-grid{ grid-template-columns:1fr; }
+}
+
+/* ========================================
+   ADMIN MODULE CARD
+======================================== */
+
+.admin-module-info{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin:14px 0 18px;
+    padding:12px 14px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px;
+}
+
+.admin-module-info p{
+    margin:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:0.82rem;
+    color:var(--muted);
+}
+
+.admin-module-info strong{
+    color:var(--white);
+    font-weight:600;
+}
+
+.admin-module-info span{
+    color:var(--teal);
+    font-weight:600;
 }

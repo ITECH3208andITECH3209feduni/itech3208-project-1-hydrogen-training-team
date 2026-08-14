@@ -14,7 +14,7 @@ const statusMeta: Record<
     }
 > = {
     done: {
-        label: 'âœ“ Completed',
+        label: '✓ Completed',
         barClass: 'bar-done',
         badgeClass: 'badge-done',
         linkText: 'View →',
@@ -87,7 +87,7 @@ export default function HazardModuleCard({
                     {item.title}
                 </div>
 
-                <div className="card-description">
+                <div className="card-desc">
                     {item.description}
                 </div>
 

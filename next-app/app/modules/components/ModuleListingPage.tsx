@@ -41,7 +41,7 @@ export default function ModuleListingPage({
 		if (!loading && !user) router.replace('/login');
 	}, [user, loading, router]);
 
-	if (loading) return <div>LoadingGǪ</div>;
+	if (loading) return <div>Loading…</div>;
 	if (!user)   return null;
 
 	const visible = filter === 'all'

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import "../../admin.css";
 import { hazardModules } from "@/lib/hazardModules";
-import ModuleCard from "@/app/modules/components/ModuleCard";
+import ModuleCard from "@/app/admin/users/components/AdminModuleCard";
 import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
@@ -58,8 +58,7 @@ export default function UserProgressPage() {
 
     const { user, loading: authLoading } = useAuth();
 
-    const [data, setData] =
-        useState<ProgressResponse | null>(null);
+    const [data, setData] = useState<ProgressResponse | null>(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -86,28 +85,20 @@ export default function UserProgressPage() {
                   return;
                 }
 
-                const token =
-                 await user.getIdToken();
+                const token = await user.getIdToken();
 
-                const response = await fetch(
-                    `/api/admin/users/${uid}/progress`,
-                    {
+                const response = await fetch(`/api/admin/users/${uid}/progress`, {
                         method: "GET",
                         headers: {
-                            Authorization:
-                                `Bearer ${token}`,
+                            Authorization: `Bearer ${token}`,
                         },
                         cache: "no-store",
                     }
                 );
 
-                const result: ProgressResponse =
-                    await response.json();
+                const result: ProgressResponse = await response.json();
 
-                if (
-                    !response.ok ||
-                    !result.ok
-                ) {
+                if (!response.ok || !result.ok) {
                     throw new Error(
                         result.error ||
                             "Failed to load user progress."
@@ -116,16 +107,9 @@ export default function UserProgressPage() {
 
                 setData(result);
             } catch (err) {
-                console.error(
-                    "ADMIN PROGRESS LOAD ERROR:",
-                    err
-                );
+                console.error("ADMIN PROGRESS LOAD ERROR:", err);
 
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : "Failed to load user progress."
-                );
+                setError(err instanceof Error ? err.message : "Failed to load user progress.");
             } finally {
                 setLoading(false);
             }
@@ -263,15 +247,9 @@ export default function UserProgressPage() {
                     savedProgress.progress ?? 0
                 );
 
-            if (
-                savedProgress.status === "done" ||
-                savedPercentage >= 100
-            ) {
+            if (savedProgress.status === "done" || savedPercentage >= 100) {
                 status = "done";
-            } else if (
-                savedPercentage > 0 ||
-                savedProgress.status === "progress"
-            ) {
+            } else if (savedPercentage > 0 || savedProgress.status === "progress") {
                 status = "progress";
             } else {
                 status = "todo";
@@ -352,13 +330,10 @@ export default function UserProgressPage() {
         <main className="main">
 
             {/* Header */}
-
             <div className="page-header">
-
                 <h1>
                     Training Progress
                 </h1>
-
                 <p>
                     Viewing training record for user:
                     <strong>
@@ -366,68 +341,40 @@ export default function UserProgressPage() {
                         {uid}
                     </strong>
                 </p>
-
             </div>
 
             {/* User Information */}
-
             <div className="panel">
-
                 <div className="panel-header">
                     User Information
                 </div>
-
                 <div className="panel-body">
-
                     <p>
-                        <strong>
-                            Name:
-                        </strong>{" "}
-                        {displayName}
+                        <strong>Name:</strong>{" "}{displayName}
+                    </p>
+                    <p>
+                        <strong>Email:</strong>{" "}{profile.email || "Not provided"}
+                    </p>
+                    <p>
+                        <strong>Role:</strong>{" "}{role}
                     </p>
 
                     <p>
-                        <strong>
-                            Email:
-                        </strong>{" "}
-                        {profile.email ||
-                            "Not provided"}
+                        <strong>Organisation:</strong>{" "}{organisation}
                     </p>
-
-                    <p>
-                        <strong>
-                            Role:
-                        </strong>{" "}
-                        {role}
-                    </p>
-
-                    <p>
-                        <strong>
-                            Organisation:
-                        </strong>{" "}
-                        {organisation}
-                    </p>
-
                 </div>
-
             </div>
 
             <br />
 
             {/* Overall Progress */}
-
             <div className="panel">
-
                 <div className="panel-header">
                     Overall Progress
                 </div>
-
                 <div className="panel-body">
-
                     <div className="progress-row">
-
                         <div className="progress-track">
-
                             <div
                                 className="progress-fill"
                                 style={{
@@ -435,13 +382,11 @@ export default function UserProgressPage() {
                                         `${summary.overallProgress}%`,
                                 }}
                             />
-
                         </div>
 
                         <div className="progress-pct">
                             {summary.overallProgress}%
                         </div>
-
                     </div>
 
                     <br />
@@ -451,35 +396,28 @@ export default function UserProgressPage() {
                         {summary.totalModules} Modules
                         Completed
                     </strong>
-
                 </div>
-
             </div>
 
             <br />
 
             {/* Training Modules */}
-
             <div className="page-header">
-
                 <h2>
                     Hydrogen Safety Modules
                 </h2>
-
                 <p>
                     Administrator View
                     (Read Only)
                 </p>
-
             </div>
 
             <div className="modules-grid">
-
                 {modulesWithProgress.map(
                     (module, index) => (
                         <ModuleCard
                             key={module.id}
-                            mod={module}
+                            item={module}
                             animationDelay={
                                 index * 0.07
                             }
@@ -490,24 +428,18 @@ export default function UserProgressPage() {
                         />
                     )
                 )}
-
             </div>
 
             <br />
 
             {/* Final Assessment */}
-
             <div className="panel">
-
                 <div className="panel-header">
                     Final Assessment
                 </div>
-
                 <div className="panel-body">
-
                     {finalQuiz ? (
                         <>
-
                             <p>
                                 <strong>
                                     Quiz Score:
@@ -555,7 +487,6 @@ export default function UserProgressPage() {
                                       )
                                     : "-"}
                             </p>
-
                         </>
                     ) : (
                         <p>
@@ -565,45 +496,36 @@ export default function UserProgressPage() {
                             Not attempted
                         </p>
                     )}
-
                 </div>
-
             </div>
 
             <br />
 
             {/* Certificate */}
-
             <div className="panel">
-
                 <div className="panel-header">
                     Certificate
                 </div>
 
                 <div className="panel-body">
-
                     <p>
                         <strong>
                             Status:
                         </strong>{" "}
                         {certificateStatus}
                     </p>
-
                 </div>
-
             </div>
 
             <br />
 
             {/* Back */}
-
             <Link
                 href="/admin/users"
                 className="edit-btn"
             >
                 ← Back to Users
             </Link>
-
         </main>
     );
 }

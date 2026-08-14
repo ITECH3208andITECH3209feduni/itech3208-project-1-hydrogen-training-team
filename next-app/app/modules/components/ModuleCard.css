@@ -1,4 +1,5 @@
-/* Module card */
+/* Module card — shared base styles used by both HazardModuleCard (student)
+   and AdminModuleCard (admin). Admin-only styles live in admin.css. */
 .module-card {
 	background: var(--card-bg);
 	border: 1px solid var(--border);
@@ -132,37 +133,4 @@
 	font-weight: 700;
 	color: white;
 	font-family: 'Exo 2', sans-serif;
-}
-/* ===========================
-   Administrator View
-=========================== */
-
-.admin-module-info{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin:14px 0 18px;
-    padding:12px 14px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:10px;
-}
-
-.admin-module-info p{
-    margin:0;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:0.82rem;
-    color:var(--muted);
-}
-
-.admin-module-info strong{
-    color:var(--white);
-    font-weight:600;
-}
-
-.admin-module-info span{
-    color:var(--teal);
-    font-weight:600;
 }

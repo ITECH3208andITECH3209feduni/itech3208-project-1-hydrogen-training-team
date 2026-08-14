@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import EditUserModal from "@/components/admin/EditUserModal";
+import EditUserModal from "@/app/admin/users/components/EditUserModal";
 import Link from "next/link";
 type UserProfile = {
   uid: string;
