@@ -7,7 +7,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';    // Lets Vitest understand im
 export default defineConfig({
     plugins: [
         react(),
-        tsconfigPaths({ projects: ['./tsconfig.vitest.json'] }),
+        tsconfigPaths({ projects: ['./tsconfig.vitest.json'] })     // Points at a vitest-specific tsconfig file
     ],
     test: {
         environment: 'jsdom',               // Simulate a browser environment (window, document, etc.)

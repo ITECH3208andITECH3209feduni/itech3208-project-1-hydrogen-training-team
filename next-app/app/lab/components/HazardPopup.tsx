@@ -1,16 +1,15 @@
-// components/HazardPopup.tsx
-// Modal popup shown when a hotspot is clicked
+// app/lab/components/HazardPopup.tsx
+// Modal popup shown when a hotspot is clicked.
 
-'use client';   // Marks as Client Component, makes interactive
+"use client";
 
-import Link from 'next/link';				// For 'Learn More' links
-import { useEffect } from 'react';			// For keyboard listener
-import { HazardInfo } from '@/lib/hazards';	// Imports the hazard info from lib/hazards.ts
+import Link from "next/link";
+import { useEffect } from "react";
+import { HazardInfo } from "@/lib/hazards";
 
-// Defines props that this component accepts
 interface HazardPopupProps {
-	info: HazardInfo;		// Hazard data to display
-	onClose: () => void;	// Function to close popup
+    info: HazardInfo;
+    onClose: () => void;
 }
 
 export default function HazardPopup({ info, onClose }: HazardPopupProps) {
@@ -55,3 +54,4 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 		</div>
 	);
 }
+

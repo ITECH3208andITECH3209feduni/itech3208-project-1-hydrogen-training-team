@@ -1,9 +1,9 @@
 // app/api/load-hazards/route.ts
-// Returns all hotspot + hazard data from Supabase
-// Note: "left" is quoted in SQL because it is a reserved word
+// Returns all hotspot + hazard data from Supabase.
+// Note: "left" is quoted because it is a reserved word.
 
-import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
 	const { data, error } = await supabase

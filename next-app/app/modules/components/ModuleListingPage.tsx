@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
-import ModuleCard from './ModuleCard';
+import HazardModuleCard from './HazardModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;
 
@@ -71,7 +71,7 @@ export default function ModuleListingPage({
 			{/* Module grid */}
 			<div className="modules-grid">
 				{visible.map((item, i) => (
-					<ModuleCard
+					<HazardModuleCard
 						key={item.id}
 						item={item}
 						basePath={basePath}

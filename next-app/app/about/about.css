@@ -1,0 +1,321 @@
+/* About page header */
+.about-header{
+
+    margin-bottom:50px;
+
+    text-align:center;
+}
+
+/* Main page title */
+.about-header h1{
+
+    font-family:"Exo 2",sans-serif;
+
+    font-size:2.8rem;
+
+    color:white;
+
+    margin-bottom:12px;
+}
+
+/* Page introduction */
+.about-header p{
+
+    max-width:700px;
+
+    margin:auto;
+
+    color:var(--muted);
+
+    line-height:1.7;
+}
+
+/* Generic section spacing */
+.about-section{
+
+    margin-bottom:60px;
+}
+
+/* Section heading */
+.section-title{
+
+    margin-bottom:24px;
+}
+
+.section-title h2{
+
+    font-family:"Exo 2",sans-serif;
+
+    color:white;
+
+    font-size:1.8rem;
+}
+
+/* Standard information card */
+.about-card{
+
+    background:var(--card-bg);
+
+    border:var(--border-rule);
+
+    border-radius:var(--radius);
+
+    padding:30px;
+}
+
+/* Paragraph styling */
+.about-card p{
+
+    color:var(--muted);
+
+    line-height:1.9;
+
+    margin-bottom:18px;
+}
+
+.about-card p:last-child{
+
+    margin-bottom:0;
+}
+/* Section description */
+.section-subtitle{
+
+    color:var(--muted);
+
+    max-width:750px;
+
+    line-height:1.7;
+
+    margin-top:10px;
+}
+
+/* Information card grid */
+.info-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+
+    gap:24px;
+
+    margin-top:35px;
+}
+
+/* Individual information card */
+.info-card{
+
+    background:var(--card-bg);
+
+    border:var(--border-rule);
+
+    border-radius:var(--radius);
+
+    padding:28px;
+
+    transition:.25s;
+}
+
+/* Card hover animation */
+.info-card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:var(--teal);
+
+    box-shadow:0 12px 24px rgba(0,180,216,.12);
+}
+
+/* Icon at top of each card */
+.info-icon{
+
+    width:58px;
+
+    height:58px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:1.8rem;
+
+    background:rgba(0,180,216,.12);
+
+    margin-bottom:20px;
+}
+
+/* Card heading */
+.info-card h3{
+
+    color:white;
+
+    font-family:"Exo 2",sans-serif;
+
+    margin-bottom:14px;
+}
+
+/* Card text */
+.info-card p{
+
+    color:var(--muted);
+
+    line-height:1.7;
+}
+/* Platform feature grid */
+.feature-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+
+    gap:24px;
+
+    margin-top:35px;
+}
+
+/* Individual feature card */
+.feature-card{
+
+    background:var(--card-bg);
+
+    border:var(--border-rule);
+
+    border-radius:var(--radius);
+
+    padding:30px;
+
+    transition:.25s;
+}
+
+/* Card hover effect */
+.feature-card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:var(--teal);
+
+    box-shadow:0 12px 24px rgba(0,180,216,.15);
+}
+
+/* Feature icon */
+.feature-icon{
+
+    width:60px;
+
+    height:60px;
+
+    border-radius:14px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:1.8rem;
+
+    background:rgba(0,180,216,.12);
+
+    margin-bottom:18px;
+}
+
+/* Feature title */
+.feature-card h3{
+
+    font-family:"Exo 2",sans-serif;
+
+    color:white;
+
+    margin-bottom:12px;
+}
+
+/* Feature description */
+.feature-card p{
+
+    color:var(--muted);
+
+    line-height:1.7;
+}
+/* Technology grid */
+.tech-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+    gap:20px;
+
+    margin-top:35px;
+}
+
+/* Technology card */
+.tech-card{
+
+    background:var(--card-bg);
+
+    border:var(--border-rule);
+
+    border-radius:var(--radius);
+
+    padding:24px;
+
+    text-align:center;
+
+    transition:.25s;
+}
+
+/* Technology card hover effect */
+.tech-card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:var(--teal);
+}
+
+/* Technology icon */
+.tech-icon{
+
+    font-size:2.2rem;
+
+    margin-bottom:18px;
+}
+
+/* Technology heading */
+.tech-card h3{
+
+    color:white;
+
+    font-family:"Exo 2",sans-serif;
+
+    margin-bottom:10px;
+}
+
+/* Technology description */
+.tech-card p{
+
+    color:var(--muted);
+
+    line-height:1.6;
+}
+/* About page footer */
+.about-footer{
+
+    margin-top:80px;
+
+    padding:30px 0;
+
+    border-top:var(--border-rule);
+
+    text-align:center;
+}
+
+/* Copyright text */
+.about-footer p{
+
+    color:var(--muted);
+
+    font-size:.9rem;
+}
