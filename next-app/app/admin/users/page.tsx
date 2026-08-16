@@ -1,4 +1,6 @@
-﻿"use client";
+﻿// app/admin/users
+
+"use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
 // @ts-ignore: Implicit any for CSS import
 import "./admin.css";
