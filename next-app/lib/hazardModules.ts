@@ -14,8 +14,8 @@ export const hazardModules: ModuleData[] = [
 		title: 'Gas Leak Detection',
 		description:
 			'Understand how hydrogen leaks occur, why they are dangerous, and how to detect and respond to them safely.',
-		status: 'done',
-		progress: 100,
+		status: 'todo',
+		progress: 0,
 		sections: [
 			{
 				num: '01',
@@ -87,8 +87,8 @@ export const hazardModules: ModuleData[] = [
 		title: 'Ventilation System',
 		description:
 			'Learn how ventilation systems protect against hydrogen accumulation and what to do when they fail.',
-		status: 'progress',
-		progress: 50,
+		status: 'todo',
+		progress: 0,
 		sections: [
 			{
 				num: '01',
@@ -403,7 +403,7 @@ export const hazardModules: ModuleData[] = [
 	},
 ];
 
-// Helper to look up a hazard module by its numeric id string
+// Helper to look up a hazard module by its numeric id string (currently unused, considered for deletion)
 export function getHazardModuleById(id: string): ModuleData | undefined {
 	return getModuleById(hazardModules, id);	// Calls the generic helper from lib/moduleTypes.ts
 }

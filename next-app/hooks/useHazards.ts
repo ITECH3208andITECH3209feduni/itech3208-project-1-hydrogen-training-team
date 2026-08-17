@@ -88,15 +88,23 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				
 				// If rows returned from fetch, maps into hotspot objects
 				const loaded: EditableHotspot[] = json.data.map(
-					(row: { type: string; top: string; left: string; title: string; text: string }) => ({
+					(row: {
+						type: string;
+						top: string;
+						left: string;
+						title: string;
+						text: string;
+						module_section: string | null;
+						module_id: string | null;
+					}) => ({
 						type: row.type as HazardType,
 						top:  row.top,
 						left: row.left,
-						// moduleId is static — not stored in Supabase — so fall back to hazards.ts
 						info: {
-							title:    row.title,
-							text:     row.text,
-							moduleId: defaultHazardData[row.type as HazardType]?.moduleId ?? '',
+							title:         row.title,
+							text:          row.text,
+							moduleId:      row.module_id,
+							moduleSection: row.module_section,
 						},
 					})
 				);
@@ -227,7 +235,8 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				info: {
 					title: '⚠️ New Hazard',
 					text:  'Describe this hazard here.',
-					moduleId: '',
+					moduleId: null,
+					moduleSection: null,
 				},
 			};
 			const next = [...prev, newHotspot];

@@ -1,81 +1,142 @@
-// /components/Navbar.tsx
+// components/Navbar.tsx
 // Navigation bar for whole application, includes links to pages and logout button.
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
-	const pathname = usePathname();
-	const router = useRouter();
-	const { user, logout } = useAuth();
+    const pathname = usePathname();
+    const router = useRouter();
 
-	async function handleLogout() {
-		try {
-			await logout();
-			router.replace("/login");
-		} catch (error) {
-			console.error("Logout failed", error);
-		}
-	}
+    const {
+        user,
+        logout,
+        permissions,
+    } = useAuth();
 
-	return (
-		<nav className="nav">
-			<Link href="/intro" className="logo">
-				<span>
-					Hydrogen Lab Safety
-				</span>
-      </Link>
+    // Hide navbar on authentication pages
+    const hideNavbar =
+        pathname === "/login" ||
+        pathname.startsWith("/login/register") ||
+        pathname === "/login/forgot-password";
 
-			<div className="nav-links">
-				<Link
-					href="/"
-					className={`nav-link ${pathname === '/' ? 'active' : ''}`}
-				>
-					Home
-				</Link>
-				<Link
-					href="/modules/hazard-modules"
-					className={`nav-link ${pathname.startsWith('/modules') ? 'active' : ''}`}
-				>
-					Modules
-				</Link>
-				<Link
-					href="/lab"
-					className={`nav-link ${pathname === '/lab' ? 'active' : ''}`}
-				>
-					Scenarios
-				</Link>
-				<Link
-					href="/quizzes"
-					className={`nav-link ${pathname === '/quizzes' ? 'active' : ''}`}
-				>
-					Quizzes
-				</Link>
-			</div>
+    if (hideNavbar) {
+        return null;
+    }
 
-			<div className="nav-right">
-				{user && (
-					<>
-						<div
-							className="avatar"
-							title={user.email || "My Account"}
-						>
-							{user.email?.charAt(0).toUpperCase()}
-						</div>
+    async function handleLogout() {
+        try {
+            await logout();
+            router.replace("/login");
+        } catch (error) {
+            console.error("Logout failed", error);
+        }
+    }
 
-						<button
-							onClick={handleLogout}
-							className="btn-logout"
-						>
-							Logout
-						</button>
-					</>
-				)}
-			</div>
-		</nav>
-	);
+    return (
+        <nav className="nav">
+            <Link href="/intro" className="logo">
+                <span>Hydrogen Lab Safety</span>
+            </Link>
+
+            <div className="nav-links">
+                <Link
+                    href="/"
+                    className={`nav-link ${
+                        pathname === "/" ? "active" : ""
+                    }`}
+                >
+                    Home
+                </Link>
+
+                <Link
+                    href="/modules/hazard-modules"
+                    className={`nav-link ${
+                        pathname.startsWith("/modules")
+                            ? "active"
+                            : ""
+                    }`}
+                >
+                    Modules
+                </Link>
+
+                <Link
+                    href="/lab"
+                    className={`nav-link ${
+                        pathname === "/lab"
+                            ? "active"
+                            : ""
+                    }`}
+                >
+                    Scenarios
+                </Link>
+
+                <Link
+                    href="/quizzes"
+                    className={`nav-link ${
+                        pathname.startsWith("/quizzes")
+                            ? "active"
+                            : ""
+                    }`}
+                >
+                    Quizzes
+                </Link>
+
+                {/* About page */}
+                <Link
+                    href="/about"
+                    className={`nav-link ${
+                        pathname === "/about"
+                            ? "active"
+                            : ""
+                    }`}
+                >
+                    About
+                </Link>
+
+                {/* Administrator only */}
+                {permissions.canManageUsers && (
+                    <Link
+                        href="/admin/users"
+                        className={`nav-link ${
+                            pathname.startsWith("/admin")
+                                ? "active"
+                                : ""
+                        }`}
+                    >
+                        Administration
+                    </Link>
+                )}
+            </div>
+
+            <div className="nav-right">
+                {user && (
+                    <>
+                        <div
+                            className="avatar"
+                            title={
+                                user.displayName ??
+                                user.email ??
+                                "My Account"
+                            }
+                        >
+                            {user.email
+                                ?.charAt(0)
+                                .toUpperCase()}
+                        </div>
+
+                        <button
+                            onClick={handleLogout}
+                            className="btn-logout"
+                        >
+                            Logout
+                        </button>
+                    </>
+                )}
+            </div>
+        </nav>
+    );
 }

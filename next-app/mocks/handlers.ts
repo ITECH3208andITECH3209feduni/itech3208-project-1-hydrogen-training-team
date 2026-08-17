@@ -14,6 +14,8 @@ export const handlers = [
                     left: '30.0%',
                     title: 'Loaded Title',
                     text: 'Loaded description text.',
+                    module_section: 'hazard-modules',
+                    module_id: '1',
                 },
             ],
         });
@@ -26,5 +28,50 @@ export const handlers = [
     }),
     http.post('/api/upload-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/mock-image.jpg' });
+    }),
+    http.get('/api/load-modules', () => {
+        return HttpResponse.json({
+            ok: true,  
+            data: [
+                {
+                    id: '1',
+                    slug: 'gas-leak-detection',
+                    badge_num: 1,
+                    icon: '💨',
+                    icon_bg: 'rgba(0,180,216,0.15)',
+                    title: 'Gas Leak Detection',
+                    description: 'description',
+                    key_takeaway: 'key takeaway',
+                    prev_id: null,
+                    next_id: '2',
+                    module_sections: [
+                        {
+                            num: '01',
+                            heading: 'Section 1',
+                            body: 'This is the 1st section of the module.',
+                            list_type: null,
+                            items: null,
+                            callout: null,
+                        },
+                        {
+                            num: '02',
+                            heading: 'Section 2',
+                            body: 'This is the second section of the module.',
+                            list_type: 'ul',
+                            items: ["Item 1", "Item 2", "Item 3"],
+                            callout: '💡 callout',
+                        },
+                        {
+                            num: '03',
+                            heading: 'Section 3',
+                            body: 'This is the third section of the module.',
+                            list_type: 'ol',
+                            items: ["First", "Second", "Third"],
+                            callout: null,
+                        },
+                    ],
+                },
+            ],
+        });
     }),
 ];
