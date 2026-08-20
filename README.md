@@ -1,15 +1,18 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/JCT9HXj3)
 
-Project Brief: Hydrogen is a critical energy carrier as the world prepares to transition to sustainable green energy systems. However, hydrogen is very different from the traditionally used fuels (diesel, petrol) and power systems where electrons are the energy carriers. This necessitates tools to educate and increased general awareness to ensure public safety both for users and non-users.
+Project Brief: Hydrogen is a critical energy carrier as the world prepares to transition to sustainable green energy systems.
+	However, hydrogen is very different from the traditionally used fuels (diesel, petrol) and power systems where electrons are the energy carriers.
+	This necessitates tools to educate and increased general awareness to ensure public safety both for users and non-users.
 
-The project focusses on the development of virtual solutions for delivering hydrogen safety training to science and engineering undergraduate and postgraduate students.
+The project focuses on the development of virtual solutions for delivering hydrogen safety training to science and engineering undergraduate and postgraduate students.
 
 The as-developed tool should be able to educate a non-expert about:
 i. Identifying risks linked to having hydrogen in a closed space or work environment,
 ii. Critical or key aspects to look for when ensuring safety of self and co-workers/others, and
 iii. Action-steps to ensure safety upon identification of a risk.
 
-The tools, preferably interactive, would mimic simulated laboratory and/or industry environment. The tools should be designed to also be suitable for non-science industry employees looking to upgrade-skills or for increasing awareness and safe-behaviour in hydrogen-spaces.
+The tools, preferably interactive, would mimic simulated laboratory and/or industry environment.
+	The tools should be designed to also be suitable for non-science industry employees looking to upgrade-skills or for increasing awareness and safe-behaviour in hydrogen-spaces.
 
 The purpose of the tool is to take a non-expert/beginner to an intermediate stage to ensure readiness to work/navigate safely in a real hydrogen-related workspace by increasing hydrogen awareness.
 
@@ -22,7 +25,8 @@ Prof Bhavna Antony
 
 # Hydrogen Lab Safety – Next.js
 
-A **Next.js 14 App Router** application with TypeScript for hydrogen technology training. Features an interactive lab safety simulation, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these modules, scenarios, and quizzes.
+A **Next.js 14 App Router** application with TypeScript for hydrogen technology training.
+	Features an interactive lab safety simulation, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these modules, scenarios, and quizzes.
 
 This README covers project structure and getting the app running.
 	Known bugs and inconsistencies are tracked in [`BUG_REPORT.md`](./BUG_REPORT.md);
@@ -191,11 +195,50 @@ hydrogen-lab/
 | `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal              |
 | `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility     |
 
-There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404. The Navbar and dashboard both link straight to `/modules/hazard-modules`.
+There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
+	The Navbar and dashboard both link straight to `/modules/hazard-modules`.
 
 All pages except `/login`, `/login/register`, `/login/forgot-password`, `/intro`, and `/about` redirect unauthenticated users to `/login`.
 	`/admin/users` is a further exception: it checks `isAdmin` specifically and redirects anyone who fails that check to `/` rather than `/login`.
 	See `ADDITIONAL_INFO.md` for the redirect implementation pattern and per-page exceptions in more detail.
+
+---
+
+## Navigation Links
+
+| Page                           | Element                      | Links to                       |
+|--------------------------------|------------------------------|--------------------------------|
+| *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/intro`                       |
+| *(all pages)*                  | Navbar → Home                | `/`                            |
+| *(all pages)*                  | Navbar → Modules             | `/modules/hazard-modules`      |
+| *(all pages)*                  | Navbar → Scenarios           | `/lab`                         |
+| *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                     |
+| *(all pages)*                  | Navbar → About               | `/about`                       |
+| *(all pages)*                  | Navbar → Administration      | `/admin/users`                 |
+| *(all pages)*                  | Navbar → Logout              | `/login`                       |
+| `/`                            | "Modules" card               | `/modules/hazard-modules`      |
+| `/`                            | "Scenarios/Simulation" card  | `/lab`                         |
+| `/`                            | "Quizzes" card               | `/quizzes`                     |
+| `/`                            | Download Certificate →       | `/certificate`                 |
+| `/intro`                       | Get Started → / Continue →   | `/`                            |
+| `/intro`                       | Learn the Basics             | `/modules/hazard-modules`      |
+| `/modules/hazard-modules`      | 'Module' card                | `/modules/hazard-modules/[id]` |
+| `/modules/hazard-modules/[id]` | ← Hazard Modules             | `/modules/hazard-modules`      |
+| `/modules/hazard-modules/[id]` | ← Previous                   | `/modules/hazard-modules/[id]` |
+| `/modules/hazard-modules/[id]` | Next →                       | `/modules/hazard-modules/[id]` |
+| `/lab`                         | Learn More →                 | `/modules/hazard-modules/[id]` |
+| `/quizzes`                     | "Hydrogen Hazards Quiz" card | `/quizzes/hazards`             |
+| `/quizzes/hazards`             | Get Your Certificate →       | `/certificate`                 |
+| `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
+| `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
+| `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
+| `/login`                       | Sign in                      | `/`                            |
+| `/login`                       | Forgot Password?             | `/login/forgot-password`       |
+| `/login`                       | Create one                   | `/login/register`              |
+| `/login/forgot-password`       | ← Back to Login              | `/login`                       |
+| `/login/register`              | Sign in                      | `/login`                       |
+
+Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/register`, and `/login/forgot-password`.
 
 ---
 
