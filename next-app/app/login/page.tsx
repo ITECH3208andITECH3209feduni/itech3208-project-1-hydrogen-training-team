@@ -25,7 +25,7 @@ export default function LoginPage() {
 		try {
 			// If login details true, open dashboard page
 			await login(email, password);
-			router.push("/");
+			router.push("/dashboard");
 		} catch (err: any) {
 			// If login details false, send error message
 			setError(

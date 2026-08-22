@@ -42,7 +42,7 @@ const [averageProgress, setAverageProgress] =
   useEffect(() => {
     if (!loading) {
       if (!profile || !isAdmin) {
-        router.replace("/");
+        router.replace("/dashboard");
         return;
       }
 

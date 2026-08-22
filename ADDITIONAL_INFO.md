@@ -8,16 +8,16 @@ Detail on how individual features and subsystems work — background for `README
 ## Auth redirect pattern
 
 All protected pages redirect unauthenticated users to `/login`, implemented per-page rather than through Next.js middleware — there's no `middleware.ts`.
-	`app/page.tsx` shows the pattern: it calls `useAuth()` for `user`/`loading`, renders `<div>Loading...</div>` while `loading` is true, calls `router.replace('/login')` inside a `useEffect` once loading has finished and there's no `user`, and returns `null` in the render itself while that redirect is pending.
+	`app/dashboard/page.tsx` shows the pattern: it calls `useAuth()` for `user`/`loading`, renders `<div>Loading...</div>` while `loading` is true, calls `router.replace('/login')` inside a `useEffect` once loading has finished and there's no `user`, and returns `null` in the render itself while that redirect is pending.
 	Any new protected page needs to repeat this pattern (or a shared wrapper for it doesn't exist yet).
 
 Exceptions:
 - `/login`, `/login/register`, `/login/forgot-password` — auth pages themselves.
-- `/intro` — calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
+- `/` — the public landing/intro page; calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 - `/about` — doesn't call `useAuth()` at all; a fully static public page with no auth-dependent UI.
-- `/admin/users` — checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/` rather than `/login`.
+- `/admin/users` — checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/dashboard` rather than `/login`.
 
-`Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`, and links to `/intro` (the site title), `/about`, and `/quizzes` in addition to the main nav.
+`Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`. Its site-title logo links to `/` (the landing page), its "Home" nav link goes to `/dashboard`.
 
 ---
 

@@ -43,12 +43,13 @@ This README covers project structure and getting the app running.
 ```
 hydrogen-lab/
 ├── app/
-│   ├── globals.css						# Shared styles — reset, tokens, nav, panel, dashboard
+│   ├── globals.css						# Shared styles — reset, tokens, nav, panel, animations
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
-│   ├── page.tsx						# Dashboard (home page) — static placeholder data, see BUG_REPORT
-│   ├── intro/
-│   │   ├── page.tsx					# Public landing/intro page (/intro) — no login required
-│   │   └── intro.css					# Intro-specific styles
+│   ├── page.tsx              # Public landing/intro page (/) — root, no login required
+│   ├── intro.css						  # Landing-page-specific styles
+│   ├── dashboard/
+│   │   ├── page.tsx					# Dashboard (/dashboard) — static placeholder data, see BUG_REPORT
+│   │   └── dashboard.css		  # Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
 │   │   └── about.css					# About-page-specific styles
@@ -160,7 +161,7 @@ hydrogen-lab/
 │   └── adminAuth.ts					# requireAdmin(request) — verifies a Bearer ID token + checks role='admin' in Supabase
 ├── public/
 │   ├── lab.jpg							# Default lab image (fallback)
-│   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the intro page
+│   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the landing/intro page
 ├── .env.local							# Environment variables (not committed to Git)
 ├── global.d.ts							# `declare module '*.css'` — lets .tsx files import page-specific .css files without a TypeScript error
 ├── next.config.js						# Active config — sets the allowed Supabase Storage image domain
@@ -178,8 +179,8 @@ hydrogen-lab/
 
 | Route                            | File                                       | Description                                                                                   |
 |----------------------------------|--------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `/`                              | `app/page.tsx`                             | Dashboard with modules, scenarios, quizzes, and training progress                             |
-| `/intro`                         | `app/intro/page.tsx`                       | Public landing page introducing the platform — no login required                              |
+| `/`                              | `app/page.tsx`                             | Public landing page introducing the platform — no login required                              |
+| `/dashboard`                     | `app/dashboard/page.tsx`                   | Dashboard with modules, scenarios, quizzes, and training progress                             |
 | `/about`                         | `app/about/page.tsx`                       | Public "About" page — project background, platform features, tech stack; no login required    |
 | `/login`                         | `app/login/page.tsx`                       | Email and password login                                                                      |
 | `/login/register`                | `app/login/register/page.tsx`              | New account registration                                                                      |
@@ -198,8 +199,8 @@ hydrogen-lab/
 There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
 	The Navbar and dashboard both link straight to `/modules/hazard-modules`.
 
-All pages except `/login`, `/login/register`, `/login/forgot-password`, `/intro`, and `/about` redirect unauthenticated users to `/login`.
-	`/admin/users` is a further exception: it checks `isAdmin` specifically and redirects anyone who fails that check to `/` rather than `/login`.
+All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and `/about` redirect unauthenticated users to `/login`.
+	`/admin/users` is a further exception: it checks `isAdmin` specifically and redirects anyone who fails that check to `/dashboard` rather than `/login`.
 	See `ADDITIONAL_INFO.md` for the redirect implementation pattern and per-page exceptions in more detail.
 
 ---
@@ -208,20 +209,20 @@ All pages except `/login`, `/login/register`, `/login/forgot-password`, `/intro`
 
 | Page                           | Element                      | Links to                       |
 |--------------------------------|------------------------------|--------------------------------|
-| *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/intro`                       |
-| *(all pages)*                  | Navbar → Home                | `/`                            |
+| *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/`                            |
+| *(all pages)*                  | Navbar → Home                | `/dashboard`                   |
 | *(all pages)*                  | Navbar → Modules             | `/modules/hazard-modules`      |
 | *(all pages)*                  | Navbar → Scenarios           | `/lab`                         |
 | *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                     |
 | *(all pages)*                  | Navbar → About               | `/about`                       |
 | *(all pages)*                  | Navbar → Administration      | `/admin/users`                 |
 | *(all pages)*                  | Navbar → Logout              | `/login`                       |
-| `/`                            | "Modules" card               | `/modules/hazard-modules`      |
-| `/`                            | "Scenarios/Simulation" card  | `/lab`                         |
-| `/`                            | "Quizzes" card               | `/quizzes`                     |
-| `/`                            | Download Certificate →       | `/certificate`                 |
-| `/intro`                       | Get Started → / Continue →   | `/`                            |
-| `/intro`                       | Learn the Basics             | `/modules/hazard-modules`      |
+| `/`                            | Get Started → || Continue →  | `/dashboard`                   |
+| `/`                            | Learn the Basics             | `/modules/hazard-modules`      |
+| `/dashboard`                   | "Modules" card               | `/modules/hazard-modules`      |
+| `/dashboard`                   | "Scenarios/Simulation" card  | `/lab`                         |
+| `/dashboard`                   | "Quizzes" card               | `/quizzes`                     |
+| `/dashboard`                   | Download Certificate →       | `/certificate`                 |
 | `/modules/hazard-modules`      | 'Module' card                | `/modules/hazard-modules/[id]` |
 | `/modules/hazard-modules/[id]` | ← Hazard Modules             | `/modules/hazard-modules`      |
 | `/modules/hazard-modules/[id]` | ← Previous                   | `/modules/hazard-modules/[id]` |
@@ -232,10 +233,11 @@ All pages except `/login`, `/login/register`, `/login/forgot-password`, `/intro`
 | `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
 | `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
 | `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
-| `/login`                       | Sign in                      | `/`                            |
+| `/login`                       | Sign in                      | `/dashboard`                   |
 | `/login`                       | Forgot Password?             | `/login/forgot-password`       |
 | `/login`                       | Create one                   | `/login/register`              |
 | `/login/forgot-password`       | ← Back to Login              | `/login`                       |
+| `/login/register`              | Create account               | `/dashboard`                   |
 | `/login/register`              | Sign in                      | `/login`                       |
 
 Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/register`, and `/login/forgot-password`.
@@ -246,18 +248,19 @@ Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/
 
 Styles are split across several files to keep page-specific rules isolated:
 
-| File										| Scope																																	|
-|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| `app/globals.css`							| Reset, design tokens, nav, `.panel`, animations, and dashboard styles																	|
-| `app/lab/lab.css`							| Lab page only — hotspots, popup, edit mode, editor panels, save bar																	|
-| `app/modules/modules.css`					| Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, takeaway box, prev/next nav				|
-| `app/modules/components/ModuleCard.css`	| Shared base styles used by both HazardModuleCard and AdminModuleCard (found in admin folder)											|
-| `app/login/auth.css`						| Login and register pages — card, form inputs, error box																				|
-| `app/intro/intro.css`						| Intro page only — hero, quick facts, content sections, CTA																			|
-| `app/about/about.css`						| About page only — header, section cards, info/feature/tech grids, footer																|
-| `app/admin/users/admin.css`				| Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card info block, admin modules grid	|
-| `app/quizzes/quizzes.css`					| Quizzes hub and attempt pages — quiz cards, question/option list, result banner														|
-| `app/certificate/certificate.css`			| Certificate page only — name input, canvas, action buttons, blocked state																|
+| File                                    | Scope																																	                                             |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `app/globals.css`                       | Reset, design tokens, nav, `.panel`, animations                                                                    |
+| `app/intro.css`                         | Landing page only — hero, quick facts, content sections, CTA                                                       |
+| `app/dashboard/dashboard.css`           | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
+| `app/lab/lab.css`                       | Lab page only — hotspots, popup, edit mode, editor panels, save bar                                                |
+| `app/modules/modules.css`               | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav          |
+| `app/modules/components/ModuleCard.css` | Shared base styles used by both HazardModuleCard and AdminModuleCard (found in admin folder)                       |
+| `app/login/auth.css`                    | Login and register pages — card, form inputs, error box                                                            |
+| `app/about/about.css`                   | About page only — header, section cards, info/feature/tech grids, footer                                           |
+| `app/admin/users/admin.css`             | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
+| `app/quizzes/quizzes.css`               | Quizzes hub and attempt pages — quiz cards, question/option list, result banner                                    |
+| `app/certificate/certificate.css`       | Certificate page only — name input, canvas, action buttons, blocked state                                          |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The rest are imported directly by the pages/components that need them.
 
@@ -618,7 +621,7 @@ Replace `abcdefghijkl` with your actual Supabase project ID.
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. You will be redirected to `/login` until you create an account.
+Open [http://localhost:3000](http://localhost:3000) in your browser — this loads the public landing page. Log in or register to go to the dashboard.
 
 ### 7. Seed the database
 

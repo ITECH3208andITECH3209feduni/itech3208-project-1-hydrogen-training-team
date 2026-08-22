@@ -82,7 +82,7 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 
 ## Dashboard placeholder content
 
-`app/page.tsx` is entirely static JSX past the auth check — no data fetching at all, so nothing here reflects real user state:
+`app/dashboard/page.tsx` is entirely static JSX past the auth check — no data fetching at all, so nothing here reflects real user state:
 
 - The three stat cards (**Modules**, **Scenarios / Simulation**, **Quizzes**) show fixed counts (`12`, `8`, `16`) and fixed completion text (e.g. "4 completed · 3 in progress"), unrelated to the real data — there are only 5 hazard modules, one lab, and one live quiz. Their links (`/modules/hazard-modules`, `/lab`, `/quizzes`) are correct, at least.
 - The **Training Progress** panel lists five module names ("H₂ Fundamentals & Properties," "Safety Protocols & Handling," "Electrolysis & Production," "Fuel Cell Technology," "Storage & Transportation," fixed at 65%) that don't correspond to any real module. The real hazard modules are about flammability, storage, buoyancy, and detection — this looks like leftover mockup content from an earlier, differently-scoped curriculum.
