@@ -1,0 +1,254 @@
+﻿/* =========================================================
+   STUDENT LEADERBOARD
+========================================================= */
+
+.leaderboard-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 32px;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.leaderboard-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-glow);
+    border: var(--border-rule);
+    color: var(--teal);
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+}
+
+.leaderboard-header h1 {
+    font-family: "Exo 2", sans-serif;
+    font-size: 2.2rem;
+    color: var(--white);
+    margin-bottom: 10px;
+}
+
+.leaderboard-header p {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.leaderboard-podium {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.podium-card {
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    padding: 26px 18px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.podium-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--teal);
+}
+
+.podium-1 {
+    border-color: rgba(255, 215, 0, 0.45);
+}
+
+.podium-2 {
+    border-color: rgba(192, 192, 192, 0.35);
+}
+
+.podium-3 {
+    border-color: rgba(205, 127, 50, 0.35);
+}
+
+.podium-rank {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+}
+
+.podium-name {
+    color: var(--white);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.podium-score {
+    color: var(--teal);
+    font-family: "Exo 2", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.podium-attempts {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 6px;
+}
+
+.leaderboard-list {
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.leaderboard-list-header,
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 120px 120px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+}
+
+.leaderboard-list-header {
+    background: rgba(0, 180, 216, 0.08);
+    color: var(--teal);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.leaderboard-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    transition: background 0.2s ease;
+}
+
+.leaderboard-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.rank-number {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.student-name {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.student-score {
+    color: var(--teal);
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+}
+
+.student-attempts {
+    color: var(--muted);
+}
+
+.leaderboard-empty,
+.leaderboard-loading {
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    padding: 44px 30px;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 14px;
+}
+
+.leaderboard-empty h2 {
+    color: var(--white);
+    font-family: "Exo 2", sans-serif;
+    margin-bottom: 8px;
+}
+
+.leaderboard-empty p {
+    color: var(--muted);
+    margin-bottom: 24px;
+}
+
+.leaderboard-error {
+    padding: 18px;
+    border-radius: 10px;
+    background: rgba(220, 50, 50, 0.1);
+    border: 1px solid rgba(220, 50, 50, 0.35);
+    color: #ff8080;
+    text-align: center;
+}
+
+.leaderboard-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.leaderboard-button,
+.leaderboard-secondary-button {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.leaderboard-button {
+    background: linear-gradient(
+        135deg,
+        var(--teal-dark),
+        var(--teal)
+    );
+    color: white;
+    box-shadow: 0 4px 18px rgba(0, 180, 216, 0.25);
+}
+
+.leaderboard-secondary-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.leaderboard-button:hover,
+.leaderboard-secondary-button:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 700px) {
+    .leaderboard-podium {
+        grid-template-columns: 1fr;
+    }
+
+    .leaderboard-list-header,
+    .leaderboard-row {
+        grid-template-columns: 60px 1fr 80px;
+    }
+
+    .leaderboard-list-header span:last-child,
+    .student-attempts {
+        display: none;
+    }
+
+    .leaderboard-footer {
+        flex-direction: column;
+    }
+
+    .leaderboard-button,
+    .leaderboard-secondary-button {
+        width: 100%;
+        max-width: 280px;
+        text-align: center;
+    }
+}
+

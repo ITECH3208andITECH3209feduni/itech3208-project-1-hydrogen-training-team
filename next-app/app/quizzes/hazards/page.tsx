@@ -4,7 +4,7 @@
 
 import '../quizzes.css';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -32,26 +32,34 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 // Quiz Shuffler
-function shuffleQuiz(questions: QuizQuestion[]): QuizQuestion[] {
-    // Shuffle the questions
-    const shuffledQuestions = shuffleArray(questions);
+function shuffleQuiz(
+    questions: QuizQuestion[]
+): QuizQuestion[] {
+    const shuffledQuestions =
+        shuffleArray(questions);
 
     return shuffledQuestions.map((q) => {
-        const indexedOptions = q.options.map((option, index) => ({
-            option,
-            originalIndex: index,
-        }));
-
-        // Shuffle the options for each question
-        const shuffledOptions = shuffleArray(indexedOptions);
-
-        const newCorrectIndex = shuffledOptions.findIndex(
-            (o) => o.originalIndex === q.correctIndex
+        const indexedOptions = q.options.map(
+            (option, index) => ({
+                option,
+                originalIndex: index,
+            })
         );
+
+        const shuffledOptions =
+            shuffleArray(indexedOptions);
+
+        const newCorrectIndex =
+            shuffledOptions.findIndex(
+                (o) =>
+                    o.originalIndex === q.correctIndex
+            );
 
         return {
             ...q,
-            options: shuffledOptions.map((o) => o.option),
+            options: shuffledOptions.map(
+                (o) => o.option
+            ),
             correctIndex: newCorrectIndex,
         };
     });
@@ -61,27 +69,45 @@ export default function HazardsQuizPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
-    // Randomise questions and options on load
-    const [quiz, setQuiz] = useState<QuizQuestion[]>(() =>
-        shuffleQuiz(questionhazards)
-    );
+    const [quiz, setQuiz] = useState<
+        QuizQuestion[]
+    >(() => shuffleQuiz(questionhazards));
 
-    const [answers, setAnswers] = useState<(number | null)[]>(
+    const [answers, setAnswers] = useState<
+        (number | null)[]
+    >(
         Array(questionhazards.length).fill(null)
     );
 
-    const [submitted, setSubmitted] = useState(false);
+    const [submitted, setSubmitted] =
+        useState(false);
+
     const [attempt, setAttempt] = useState(1);
+
     const [error, setError] = useState('');
+
     const [saving, setSaving] = useState(false);
 
+    const [leaderboardVisible, setLeaderboardVisible] =
+        useState(false);
+
+    const [leaderboardSaving, setLeaderboardSaving] =
+        useState(false);
+
+    const [leaderboardSaved, setLeaderboardSaved] =
+        useState(false);
+
     const correctCount = answers.filter(
-        (answer, index) => answer === quiz[index].correctIndex
+        (answer, index) =>
+            answer === quiz[index].correctIndex
     ).length;
 
-    const percentage = Math.round((correctCount / quiz.length) * 100);
+    const percentage = Math.round(
+        (correctCount / quiz.length) * 100
+    );
 
-    const passed = percentage >= PASS_THRESHOLD;
+    const passed =
+        percentage >= PASS_THRESHOLD;
 
     if (loading) {
         return (
@@ -96,7 +122,10 @@ export default function HazardsQuizPage() {
         return null;
     }
 
-    function selectOption(qIndex: number, optIndex: number) {
+    function selectOption(
+        qIndex: number,
+        optIndex: number
+    ) {
         if (submitted || saving) return;
 
         setAnswers((prev) => {
@@ -111,7 +140,11 @@ export default function HazardsQuizPage() {
     async function handleSubmit() {
         if (!user) return;
 
-        if (answers.some((answer) => answer === null)) {
+        if (
+            answers.some(
+                (answer) => answer === null
+            )
+        ) {
             setError(
                 'Please answer every question before submitting.'
             );
@@ -122,16 +155,21 @@ export default function HazardsQuizPage() {
             setSaving(true);
             setError('');
 
-            const token = await user.getIdToken();
+            const token =
+                await user.getIdToken();
 
             const response = await fetch(
                 '/api/quizzes/progress',
                 {
                     method: 'POST',
+
                     headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
+                        'Content-Type':
+                            'application/json',
+                        Authorization:
+                            `Bearer ${token}`,
                     },
+
                     body: JSON.stringify({
                         score: percentage,
                         passed: passed,
@@ -139,14 +177,21 @@ export default function HazardsQuizPage() {
                 }
             );
 
-            const result = await response.json();
+            const result =
+                await response.json();
 
-            if (!response.ok || !result.ok) {
+            if (
+                !response.ok ||
+                !result.ok
+            ) {
                 throw new Error(
                     result.error ||
                         'Failed to save quiz result.'
                 );
             }
+
+            setLeaderboardVisible(false);
+            setLeaderboardSaved(false);
 
             setSubmitted(true);
 
@@ -170,15 +215,90 @@ export default function HazardsQuizPage() {
         }
     }
 
+    async function updateLeaderboardPreference(
+        visible: boolean
+    ) {
+        if (!user || leaderboardSaving) {
+            return;
+        }
+
+        try {
+            setLeaderboardSaving(true);
+            setError('');
+
+            const token =
+                await user.getIdToken();
+
+            const response = await fetch(
+                '/api/quizzes/progress',
+                {
+                    method: 'PATCH',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+                        Authorization:
+                            `Bearer ${token}`,
+                    },
+
+                    body: JSON.stringify({
+                        leaderboard_visible:
+                            visible,
+                    }),
+                }
+            );
+
+            const result =
+                await response.json();
+
+            if (
+                !response.ok ||
+                !result.ok
+            ) {
+                throw new Error(
+                    result.error ||
+                        'Failed to update leaderboard preference.'
+                );
+            }
+
+            setLeaderboardVisible(
+                visible
+            );
+
+            setLeaderboardSaved(true);
+        } catch (error) {
+            console.error(
+                'LEADERBOARD: preference update failed',
+                error
+            );
+
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to update leaderboard preference.'
+            );
+        } finally {
+            setLeaderboardSaving(false);
+        }
+    }
+
     function handleRetry() {
-        setQuiz(shuffleQuiz(questionhazards));
-        
+        setQuiz(
+            shuffleQuiz(questionhazards)
+        );
+
         setAnswers(
-            Array(questionhazards.length).fill(null)
+            Array(questionhazards.length).fill(
+                null
+            )
         );
 
         setSubmitted(false);
         setError('');
+
+        setLeaderboardVisible(false);
+        setLeaderboardSaved(false);
+
         setAttempt((a) => a + 1);
 
         window.scrollTo({
@@ -207,6 +327,7 @@ export default function HazardsQuizPage() {
             <div className="quiz-attempt">
 
                 <div className="quiz-attempt-header">
+
                     <span className="quiz-badge">
                         ⚠️ Knowledge Check
                     </span>
@@ -216,8 +337,9 @@ export default function HazardsQuizPage() {
                     <p>
                         Answer all{' '}
                         {quiz.length} questions,
-                        then submit to see your results.
-                        You need {PASS_THRESHOLD}% or
+                        then submit to see your
+                        results. You need{' '}
+                        {PASS_THRESHOLD}% or
                         higher to pass.
                     </p>
 
@@ -226,6 +348,7 @@ export default function HazardsQuizPage() {
                             Attempt #{attempt}
                         </p>
                     )}
+
                 </div>
 
                 {error && (
@@ -242,11 +365,13 @@ export default function HazardsQuizPage() {
                                 : 'quiz-result-fail'
                         }`}
                     >
+
                         <div className="quiz-result-score">
                             {percentage}%
                         </div>
 
-                        <div>
+                        <div className="quiz-result-summary">
+
                             <p className="quiz-result-headline">
                                 {passed
                                     ? 'You passed!'
@@ -254,144 +379,253 @@ export default function HazardsQuizPage() {
                             </p>
 
                             <p className="quiz-result-text">
-                                You got {correctCount} out
+                                You got{' '}
+                                {correctCount} out
                                 of {quiz.length}{' '}
                                 correct.
 
                                 {!passed &&
                                     ` You need at least ${PASS_THRESHOLD}% to pass.`}
                             </p>
+
+                        </div>
+
+                        {/* -------------------------------------------------
+                            LEADERBOARD PRIVACY
+                        ------------------------------------------------- */}
+
+                        <div className="quiz-leaderboard">
+
+                            <p className="quiz-leaderboard-title">
+                                🏆 Leaderboard
+                            </p>
+
+                            <p className="quiz-leaderboard-text">
+                                Would you like your score
+                                to appear on the student
+                                leaderboard?
+                            </p>
+
+                            <div className="quiz-leaderboard-actions">
+
+                                <button
+                                    type="button"
+                                    className="quiz-leaderboard-btn quiz-leaderboard-show"
+                                    disabled={
+                                        leaderboardSaving
+                                    }
+                                    onClick={() =>
+                                        updateLeaderboardPreference(
+                                            true
+                                        )
+                                    }
+                                >
+                                    {leaderboardSaving &&
+                                    leaderboardVisible
+                                        ? 'Saving...'
+                                        : '🏆 Show My Score'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="quiz-leaderboard-btn quiz-leaderboard-private"
+                                    disabled={
+                                        leaderboardSaving
+                                    }
+                                    onClick={() =>
+                                        updateLeaderboardPreference(
+                                            false
+                                        )
+                                    }
+                                >
+                                    {leaderboardSaving &&
+                                    !leaderboardVisible
+                                        ? 'Saving...'
+                                        : '🔒 Keep Private'}
+                                </button>
+
+                            </div>
+
+                            {leaderboardSaved && (
+                                <p className="quiz-leaderboard-saved">
+                                    {leaderboardVisible
+                                        ? '✓ Your score will appear on the leaderboard.'
+                                        : '✓ Your score will remain private.'}
+                                </p>
+                            )}
+
                         </div>
 
                         <div className="quiz-result-action">
+
                             {passed ? (
                                 <button
                                     className="btn-quiz"
-                                    onClick={handleContinue}
+                                    onClick={
+                                        handleContinue
+                                    }
                                 >
                                     Get Your Certificate →
                                 </button>
                             ) : (
                                 <button
                                     className="btn-quiz"
-                                    onClick={handleRetry}
+                                    onClick={
+                                        handleRetry
+                                    }
                                 >
                                     Retry Quiz
                                 </button>
                             )}
+
                         </div>
+
                     </div>
                 )}
 
                 <div className="quiz-question-list">
-                    {quiz.map((q, qIndex) => {
-                        const userAnswer = answers[qIndex];
 
-                        const isCorrect =
-                            userAnswer === q.correctIndex;
+                    {quiz.map(
+                        (q, qIndex) => {
+                            const userAnswer =
+                                answers[
+                                    qIndex
+                                ];
 
-                        return (
-                            <div
-                                key={q.id}
-                                className="quiz-question-card"
-                            >
-                                <p className="quiz-question-text">
-                                    {qIndex + 1}. {q.question}
-                                </p>
+                            const isCorrect =
+                                userAnswer ===
+                                q.correctIndex;
 
-                                <div className="quiz-options">
-                                    {q.options.map(
-                                        (option, optIndex) => {
-                                            const isSelected =
-                                                userAnswer ===
-                                                optIndex;
+                            return (
+                                <div
+                                    key={q.id}
+                                    className="quiz-question-card"
+                                >
 
-                                            const isCorrectOption =
-                                                optIndex ===
-                                                q.correctIndex;
+                                    <p className="quiz-question-text">
+                                        {qIndex + 1}.{' '}
+                                        {q.question}
+                                    </p>
 
-                                            let optionClass =
-                                                'quiz-option';
+                                    <div className="quiz-options">
 
-                                            let tag:
-                                                | string
-                                                | null = null;
+                                        {q.options.map(
+                                            (
+                                                option,
+                                                optIndex
+                                            ) => {
 
-                                            if (submitted) {
+                                                const isSelected =
+                                                    userAnswer ===
+                                                    optIndex;
+
+                                                const isCorrectOption =
+                                                    optIndex ===
+                                                    q.correctIndex;
+
+                                                let optionClass =
+                                                    'quiz-option';
+
+                                                let tag:
+                                                    | string
+                                                    | null =
+                                                    null;
+
                                                 if (
-                                                    isCorrectOption
+                                                    submitted
                                                 ) {
-                                                    optionClass +=
-                                                        ' quiz-option-correct';
+                                                    if (
+                                                        isCorrectOption
+                                                    ) {
+                                                        optionClass +=
+                                                            ' quiz-option-correct';
 
-                                                    tag = isSelected
-                                                        ? '✓ Your answer — Correct'
-                                                        : '✓ Correct answer';
+                                                        tag =
+                                                            isSelected
+                                                                ? '✓ Your answer — Correct'
+                                                                : '✓ Correct answer';
+                                                    } else if (
+                                                        isSelected
+                                                    ) {
+                                                        optionClass +=
+                                                            ' quiz-option-wrong';
+
+                                                        tag =
+                                                            '✗ Your answer';
+                                                    } else {
+                                                        optionClass +=
+                                                            ' quiz-option-disabled';
+                                                    }
                                                 } else if (
                                                     isSelected
                                                 ) {
                                                     optionClass +=
-                                                        ' quiz-option-wrong';
-
-                                                    tag =
-                                                        '✗ Your answer';
-                                                } else {
-                                                    optionClass +=
-                                                        ' quiz-option-disabled';
+                                                        ' quiz-option-selected';
                                                 }
-                                            } else if (
-                                                isSelected
-                                            ) {
-                                                optionClass +=
-                                                    ' quiz-option-selected';
-                                            }
 
-                                            return (
-                                                <div
-                                                    key={optIndex}
-                                                    className={
-                                                        optionClass
-                                                    }
-                                                    onClick={() =>
-                                                        selectOption(
-                                                            qIndex,
+                                                return (
+                                                    <div
+                                                        key={
                                                             optIndex
-                                                        )
-                                                    }
-                                                >
-                                                    <span className="quiz-radio">
-                                                        {isSelected
-                                                            ? '●'
-                                                            : '○'}
-                                                    </span>
+                                                        }
+                                                        className={
+                                                            optionClass
+                                                        }
+                                                        onClick={() =>
+                                                            selectOption(
+                                                                qIndex,
+                                                                optIndex
+                                                            )
+                                                        }
+                                                    >
 
-                                                    <span className="quiz-option-text">
-                                                        {option}
-                                                    </span>
-
-                                                    {tag && (
-                                                        <span className="quiz-option-tag">
-                                                            {tag}
+                                                        <span className="quiz-radio">
+                                                            {isSelected
+                                                                ? '●'
+                                                                : '○'}
                                                         </span>
-                                                    )}
-                                                </div>
-                                            );
-                                        }
-                                    )}
-                                </div>
 
-                                {submitted && !isCorrect && (
-                                    <p className="quiz-explanation">
-                                        💡 {q.explanation}
-                                    </p>
-                                )}
-                            </div>
-                        );
-                    })}
+                                                        <span className="quiz-option-text">
+                                                            {
+                                                                option
+                                                            }
+                                                        </span>
+
+                                                        {tag && (
+                                                            <span className="quiz-option-tag">
+                                                                {
+                                                                    tag
+                                                                }
+                                                            </span>
+                                                        )}
+
+                                                    </div>
+                                                );
+                                            }
+                                        )}
+
+                                    </div>
+
+                                    {submitted &&
+                                        !isCorrect && (
+                                            <p className="quiz-explanation">
+                                                💡{' '}
+                                                {
+                                                    q.explanation
+                                                }
+                                            </p>
+                                        )}
+
+                                </div>
+                            );
+                        }
+                    )}
+
                 </div>
 
                 {!submitted && (
                     <div className="quiz-submit-row">
+
                         {error && (
                             <p className="quiz-error">
                                 {error}
@@ -400,17 +634,20 @@ export default function HazardsQuizPage() {
 
                         <button
                             className="btn-quiz"
-                            onClick={handleSubmit}
+                            onClick={
+                                handleSubmit
+                            }
                             disabled={saving}
                         >
                             {saving
                                 ? 'Saving Result...'
                                 : 'Submit Answers'}
                         </button>
+
                     </div>
                 )}
+
             </div>
         </main>
     );
 }
-
