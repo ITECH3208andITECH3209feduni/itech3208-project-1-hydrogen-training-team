@@ -10,6 +10,10 @@ Known bugs and inconsistencies in the Hydrogen Lab Safety app. This is a working
 The "hidden" `H Z E D I T` edit-mode entry point on `/lab` only hides the *UI*. The two write endpoints it eventually calls — `POST /api/save-hazards` and `POST /api/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image.
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
+### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
+`GET /api/load-module-options` (added to populate the lab editor's Linked Module dropdowns) was deliberately left public, on the reasoning that it returns a subset of data — `section`, `id`, `title`, `badge_num` — already exposed publicly per-section via `GET /api/load-modules`, so gating it wouldn't reduce any real exposure. That reasoning holds on its own.
+But it was evaluated in a context where the write endpoint it feeds into, `POST /api/save-hazards`, has no auth guard either (see above) — so "is this data already effectively public" was judged against a write surface that itself shouldn't be reachable unauthenticated. Once `save-hazards`/`upload-image` get proper guards, it's worth re-confirming `load-module-options`'s public status still makes sense on its own terms, rather than carrying forward a conclusion reached alongside an open gap.
+
 ### `/admin/users/[uid]/progress` client-side gate is weaker than its parent page
 `/admin/users` checks `isAdmin` before rendering. `/admin/users/[uid]/progress` only checks that a user is logged in (`useAuth()`'s `user`), not `isAdmin`. In practice this is a shell-only gap — the API route behind it, `GET /api/admin/users/{uid}/progress`, does enforce `requireAdmin`, so a non-admin who navigates here directly gets a static shell and every data fetch comes back `403`. Still worth tightening for consistency, since relying on "the API happens to reject it" is a thinner guarantee than gating the page itself.
 
