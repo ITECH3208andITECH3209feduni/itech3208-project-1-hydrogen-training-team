@@ -6,7 +6,7 @@
 //   - public.modules          — one row per module, keyed by (section, id)
 //   - public.module_sections  — one row per numbered section within a module, keyed by (section, module_id, num), FK -> modules
 //
-// Note: status/progress are NOT stored in these tables — belong to the separate per-user progress-tracking table and aren't wired up yet.
+// Note: status/progress are NOT stored in these tables — they belong to the separate per-user progress-tracking table.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';

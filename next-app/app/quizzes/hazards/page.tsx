@@ -1,4 +1,6 @@
-﻿'use client';
+﻿// app/quizzes/hazards
+
+'use client';
 
 import '../quizzes.css';
 

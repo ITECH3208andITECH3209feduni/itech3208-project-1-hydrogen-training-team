@@ -38,15 +38,15 @@ export default function Navbar() {
 
     return (
         <nav className="nav">
-            <Link href="/intro" className="logo">
+            <Link href="/" className="logo">
                 <span>Hydrogen Lab Safety</span>
             </Link>
 
             <div className="nav-links">
                 <Link
-                    href="/"
+                    href="/dashboard"
                     className={`nav-link ${
-                        pathname === "/" ? "active" : ""
+                        pathname === "/dashboard" ? "active" : ""
                     }`}
                 >
                     Home
