@@ -40,7 +40,7 @@ export function useModuleOptions(): ModuleSectionOptions[] {
 
 				const rows: ModuleOptionRow[] = json.data ?? [];
 
-				// Group the data into entries by section.
+				// Group the data into entries by section (i.e. go from one section - one ID, to one section - many IDs)
 				const bySection = new Map<string, ModuleSectionOptions>();
 				for (const row of rows) {
 					if (!bySection.has(row.section)) {

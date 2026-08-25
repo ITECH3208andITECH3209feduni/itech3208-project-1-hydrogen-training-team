@@ -85,12 +85,96 @@ describe('4. addHotspot', () => {
   });
 });
 
+// 5. Test updateModuleLink
+// Note: same as addHotspot above — calls APIs but doesn't test them.
+describe('5. updateModuleLink', () => {
+  // Test if section and id are both written together onto the target hotspot
+  it('5.1 sets moduleSection and moduleId together on the target hotspot', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
+
+    expect(result.current.hotspots[0].info.moduleSection).toBe('guides');
+    expect(result.current.hotspots[0].info.moduleId).toBe('2');
+  });
+
+  // Test if only the targeted hotspot is affected, not every hotspot in state
+  it('5.2 only updates the targeted hotspot, leaving others unchanged', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
+
+    // index 1 should be untouched by an update targeting index 0
+    expect(result.current.hotspots[1].info.moduleSection).toBe('hazard-modules');
+    expect(result.current.hotspots[1].info.moduleId).toBe('2');
+  });
+
+  // Test if both fields can be cleared back to null in one call (e.g. "None" picked in the editor)
+  it('5.3 can clear both fields back to null', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    // Default hotspots start linked (see lib/hazards.ts)
+    expect(result.current.hotspots[0].info.moduleSection).not.toBeNull();
+
+    act(() => { result.current.updateModuleLink(0, null, null); });
+
+    expect(result.current.hotspots[0].info.moduleSection).toBeNull();
+    expect(result.current.hotspots[0].info.moduleId).toBeNull();
+  });
+});
+
+// 6. Test hasInvalidModuleLink
+describe('6. hasInvalidModuleLink', () => {
+  // Test if default hotspots return false (all links valid)
+  it('6.1 is false for the default hotspots (every link fully set)', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    expect(result.current.hasInvalidModuleLink).toBe(false);
+  });
+
+  // Test if true when have a section but no ID (mid-edit in the UI)
+  it('6.2 becomes true when a hotspot has only moduleSection set', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+
+    expect(result.current.hasInvalidModuleLink).toBe(true);
+  });
+
+  // Test if true when have an ID but no section (not reachable via the UI)
+  it('6.3 becomes true when a hotspot has only moduleId set', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.updateModuleLink(0, null, '1'); });
+
+    expect(result.current.hasInvalidModuleLink).toBe(true);
+  });
+
+  // Test if it goes back to false once the mismatched hotspot is fixed
+  it('6.4 returns to false once the mismatched hotspot is resolved', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    expect(result.current.hasInvalidModuleLink).toBe(true);
+
+    act(() => { result.current.updateModuleLink(0, null, null); });
+    expect(result.current.hasInvalidModuleLink).toBe(false);
+  });
+});
+
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 5. Test load-hazards API call
-describe('5. load-hazards', () => {
+// 7. Test load-hazards API call
+describe('7. load-hazards', () => {
   // Test if loads successfully
-  it('5.1 maps response into hotspots, including moduleId from defaults', async () => {
+  it('7.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -113,7 +197,7 @@ describe('5. load-hazards', () => {
   });
   
   // Test if uses default info when API returns empty
-  it('5.2 falls back to defaults when API returns empty', async () => {
+  it('7.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
@@ -129,7 +213,7 @@ describe('5. load-hazards', () => {
   });
   
   // Test if uses default info when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('5.3 falls back to defaults when API responds with an error', async () => {
+  it('7.3 falls back to defaults when API responds with an error', async () => {
     // Replace console error with a fake (avoids clutter)
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -149,7 +233,7 @@ describe('5. load-hazards', () => {
   });
 
   // Test if uses default info when API call fails (internet failure, server crash, etc.)
-  it('5.4 falls back to defaults on a network failure', async () => {
+  it('7.4 falls back to defaults on a network failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
@@ -166,7 +250,7 @@ describe('5. load-hazards', () => {
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
-  it('5.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+  it('7.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({
         ok: true,
@@ -195,10 +279,10 @@ describe('5. load-hazards', () => {
   });
 });
 
-// 6. Test load-image API call
-describe('6. load-image', () => {
+// 8. Test load-image API call
+describe('8. load-image', () => {
   // Test if loads successfully and sets imageUrl state
-  it('6.1 sets imageUrl from API when available', async () => {
+  it('8.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
     
@@ -206,7 +290,7 @@ describe('6. load-image', () => {
   });
 
   // Test if uses default when API returns empty
-  it('6.2 keeps the default image when no image exists in the API', async () => {
+  it('8.2 keeps the default image when no image exists in the API', async () => {
     server.use(http.get('/api/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
@@ -218,7 +302,7 @@ describe('6. load-image', () => {
   });
 
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('6.3 keeps the default image when API responds with an error', async () => {
+  it('8.3 keeps the default image when API responds with an error', async () => {
     server.use(
       http.get('/api/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
@@ -231,10 +315,10 @@ describe('6. load-image', () => {
   });
 });
 
-// 7. Test save-hazards API call
-describe('7. save-hazards', () => {
+// 9. Test save-hazards API call
+describe('9. save-hazards', () => {
   // Test a successful save
-  it('7.1 sets saveStatus to saved on a successful save', async () => {
+  it('9.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -245,7 +329,7 @@ describe('7. save-hazards', () => {
   });
 
   // Test a failed save
-  it('7.2 sets saveStatus to error if the save request fails', async () => {
+  it('9.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
       http.post('/api/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
@@ -259,7 +343,7 @@ describe('7. save-hazards', () => {
   });
 
   // Test if all fields are sent to the API (hotspots + hazardData)
-  it('7.3 sends the full hotspots + hazardData payload', async () => {
+  it('9.3 sends the full hotspots + hazardData payload', async () => {
     let capturedBody: any = null;
     server.use(
       http.post('/api/save-hazards', async ({ request }) => {
@@ -289,12 +373,64 @@ describe('7. save-hazards', () => {
       moduleSection: 'hazard-modules',
     });
   });
+
+  // Test if guards against saving when a hotspot has an invalid module link
+  it('9.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
+    let called = false;
+    server.use(
+      http.post('/api/save-hazards', () => {
+        called = true;
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+    
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    
+    // Break validity: give the (only) loaded hotspot a section but no id
+    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    expect(result.current.hasInvalidModuleLink).toBe(true);
+    
+    await act(async () => { await result.current.saveToSupabase(); });
+    
+    expect(result.current.saveStatus).toBe('error');
+    expect(called).toBe(false);
+  });
+  
+  // Test if a save proceeds normally once the link is fixed back to a valid state
+  it('9.5 proceeds with the save once the module link is valid again', async () => {
+    let called = false;
+    server.use(
+      http.post('/api/save-hazards', () => {
+        called = true;
+        return HttpResponse.json({ ok: true });
+      })
+    );
+    
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+    
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    
+    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    expect(result.current.hasInvalidModuleLink).toBe(true);
+
+    act(() => { result.current.updateModuleLink(0, null, null); });
+    expect(result.current.hasInvalidModuleLink).toBe(false);
+    
+    await act(async () => { await result.current.saveToSupabase(); });
+    
+    expect(result.current.saveStatus).toBe('saved');
+    expect(called).toBe(true);
+  });
 });
 
-// 8. Test upload-image API call
-describe('8. upload-image', () => {
+// 10. Test upload-image API call
+describe('10. upload-image', () => {
   // Test a successful upload
-  it('8.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
+  it('10.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -310,7 +446,7 @@ describe('8. upload-image', () => {
   });
 
   // Test a failed upload
-  it('8.2 sets uploadStatus to error if the upload fails', async () => {
+  it('10.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
       http.post('/api/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
