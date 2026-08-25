@@ -3,6 +3,7 @@
 // status/progress left default for now (per-user tracking not yet implemented).
 
 import { useState, useEffect } from 'react';
+import { useAuth } from "@/context/AuthContext";
 import { ModuleData, ModuleSection, getModuleById } from '@/lib/moduleTypes';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
@@ -69,6 +70,7 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 export function useModules(section: string, defaults: ModuleData[]) {
 	const [modules, setModules] = useState<ModuleData[]>(defaults);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
+	const { user, loading: authLoading } = useAuth();
 
 	useEffect(() => {
 		let cancelled = false;
@@ -97,7 +99,80 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				const byId = new Map(defaults.map((m) => [m.id, m]));
 				const merged = rows.map((row) => mergeRow(row, byId.get(row.id)));
 
-				setModules(merged);
+				let progressRecords: Array<{
+				    module_id: string | number;
+				    progress?: number | null;
+				    status?: string | null;
+				}> = [];
+
+				if (user && !authLoading) {
+				    try {
+				        const token = await user.getIdToken();
+
+				        const progressResponse = await fetch(
+				            "/api/modules/progress",
+				            {
+				                method: "GET",
+				                headers: {
+				                    Authorization: "Bearer " + token,
+				                },
+				                cache: "no-store",
+				            }
+				        );
+
+				        const progressResult = await progressResponse.json();
+
+				        if (
+				            progressResponse.ok &&
+				            progressResult.ok &&
+				            Array.isArray(progressResult.progress)
+				        ) {
+				            progressRecords = progressResult.progress;
+				        }
+				    } catch (error) {
+				        console.error("Failed to load user module progress:", error);
+				    }
+				}
+
+				const progressMap = new Map(
+				    progressRecords.map((record) => [
+				        String(record.module_id),
+				        record,
+				    ])
+				);
+
+				const modulesWithProgress = merged.map((module) => {
+				    const record = progressMap.get(String(module.id));
+
+				    if (!record) {
+				        return {
+				            ...module,
+				            progress: 0,
+				            status: "todo" as const,
+				        };
+				    }
+
+				    const numericProgress = Number(record.progress ?? 0);
+
+				    const progress = Number.isFinite(numericProgress)
+				        ? Math.max(0, Math.min(100, numericProgress))
+				        : 0;
+
+				    const status: ModuleData["status"] =
+				        record.status === "done" || progress >= 100
+				            ? "done"
+				            : progress > 0
+				                ? "progress"
+				                : "todo";
+
+				    return {
+				        ...module,
+				        progress,
+				        status,
+				    };
+				});
+
+				setModules(modulesWithProgress);
 				setLoadStatus('ready');
 			} catch {
 				if (!cancelled) {
@@ -111,7 +186,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 		return () => {
 			cancelled = true;
 		};
-	}, [section, defaults]);
+	}, [section, defaults, user, authLoading]);
 
 	return { modules, loadStatus };
 }
