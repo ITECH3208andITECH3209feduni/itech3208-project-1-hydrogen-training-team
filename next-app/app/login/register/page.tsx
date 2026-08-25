@@ -55,7 +55,7 @@ export default function RegisterPage() {
 				user_type: "public",
 			});
 
-			router.push("/");
+			router.push("/dashboard");
 		} catch (err: any) {
 			setError(
 				err.code === "auth/email-already-in-use"
