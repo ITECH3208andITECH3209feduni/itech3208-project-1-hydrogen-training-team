@@ -9,9 +9,15 @@ interface SaveBarProps {
 	// These will be passed "resetDefaults" and "saveToSupabase" respectively as props from page.tsx
 	onReset: () => void;
 	onSave: () => void;
+	// check to make sure hotspot has a valid module link or not (if invalid, disable save bar)
+	disabled?: boolean;
+	// Shown above the buttons whenever disabled is true.
+	disabledReason?: string;
 }
 
-export default function SaveBar({ saveStatus, onReset, onSave }: SaveBarProps) {
+export default function SaveBar({ saveStatus, onReset, onSave, disabled, disabledReason }: SaveBarProps) {
+	const isSaveDisabled = saveStatus === 'saving' || disabled;
+	
 	const saveLabel =
 		saveStatus === 'saving' ? '⏳ Saving…'
 		: saveStatus === 'saved'  ? '✅ Saved to database!'
@@ -24,20 +30,27 @@ export default function SaveBar({ saveStatus, onReset, onSave }: SaveBarProps) {
 		: primaryBtnStyle.background;
 	
 	return (
-		<div className="save-bar">
-			<button onClick={onReset} style={secondaryBtnStyle}>
-				🔄 Reset to Defaults
-			</button>
-			<button
-				onClick={onSave}
-				disabled={saveStatus === 'saving'}
-				style={{ ...primaryBtnStyle,
-					opacity: saveStatus === 'saving' ? 0.7 : 1,
-					background: saveBg
-				}}
-			>
-				{saveLabel}
-			</button>
-		</div>
+		<>
+			{disabled && disabledReason && (
+				<p className="save-bar-warning">⚠️ {disabledReason}</p>
+			)}
+			<div className="save-bar">
+				<button onClick={onReset} style={secondaryBtnStyle}>
+					🔄 Reset to Defaults
+				</button>
+				<button
+					onClick={onSave}
+					disabled={isSaveDisabled}
+					title={disabled ? disabledReason : undefined}
+					style={{ ...primaryBtnStyle,
+						opacity: isSaveDisabled ? 0.6 : 1,
+						cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
+						background: saveBg
+					}}
+				>
+					{saveLabel}
+				</button>
+			</div>
+		</>
 	);
 }

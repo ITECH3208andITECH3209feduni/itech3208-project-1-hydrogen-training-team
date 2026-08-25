@@ -14,6 +14,7 @@ import EditBanner from './components/EditBanner';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from './components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
+import { useModuleOptions } from '@/hooks/useModuleOptions';
 
 export default function LabPage() {
 	// Authentication
@@ -34,6 +35,8 @@ export default function LabPage() {
 		handleDragStart,
 		updateInfo,
 		updatePosition,
+		updateModuleLink,
+		hasInvalidModuleLink,
 		addHotspot,
 		deleteHotspot,
 		imageUrl,
@@ -43,6 +46,8 @@ export default function LabPage() {
 		resetDefaults,
 		liveHazardData,
 	} = useHazards(containerRef);
+
+	const moduleOptions = useModuleOptions();
 
 	useEffect(() => {
 		if (!loading && !user) {
@@ -117,9 +122,11 @@ export default function LabPage() {
 					hotspots={hotspots}
 					selected={selected}
 					uploadStatus={uploadStatus}
+					moduleOptions={moduleOptions}
 					onSelect={setSelected}
 					onUpdateInfo={updateInfo}
 					onUpdatePosition={updatePosition}
+					onUpdateModuleLink={updateModuleLink}
 					onAdd={addHotspot}
 					onDelete={deleteHotspot}
 					onUploadImage={uploadImage}
@@ -133,6 +140,8 @@ export default function LabPage() {
 					saveStatus={saveStatus}
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
+					disabled={hasInvalidModuleLink}
+					disabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
 				/>
 			)}
 			

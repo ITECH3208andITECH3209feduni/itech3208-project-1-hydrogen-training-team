@@ -224,6 +224,16 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			prev.map((hs, i) => (i === index ? { ...hs, [field]: value } : hs))
 		);
 	}, []);
+
+	// Updates the linked modules for a chosen hotspot in state (i.e. not yet saved to Supabase).
+	const updateModuleLink = useCallback(
+		(index: number, moduleSection: string | null, moduleId: string | null) => {
+			setHotspots((prev) =>
+				prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, moduleSection, moduleId } } : hs))
+			);
+		},
+		[]
+	);
 	
 	// ── Add hotspot ─────────────────────────────────────────────────────────
 	const addHotspot = useCallback(() => {
@@ -278,9 +288,21 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		}
 	}, []);
 	
+	// ── Linked-module validity ───────────────────────────────────────────────────
+	// Hotspots must have both a section and module set, or neither.
+	const hasInvalidModuleLink = hotspots.some(
+		(hs) => (hs.info.moduleSection === null) !== (hs.info.moduleId === null)
+	);
+
 	// ── Save hazards to Supabase ────────────────────────────────────────────────────
 	// Save current hotspots to Supabase
 	const saveToSupabase = useCallback(async () => {
+		// Cancel save if any hotspots have an invalid module link
+		if (hasInvalidModuleLink) {
+			setSaveStatus('error');
+			setTimeout(() => setSaveStatus('idle'), 3000);
+			return;
+		}
 		setSaveStatus('saving');	// Updated over course of function to show progress
 		try {
 			const res = await fetch('/api/save-hazards', {
@@ -323,6 +345,8 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		handleDragStart,
 		updateInfo,
 		updatePosition,
+		updateModuleLink,
+		hasInvalidModuleLink,
 		addHotspot,
 		deleteHotspot,
 		imageUrl,
