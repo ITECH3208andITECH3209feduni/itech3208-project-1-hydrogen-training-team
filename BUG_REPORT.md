@@ -46,6 +46,10 @@ The column defaults to `'hazard_modules'` (underscore); every other reference to
 ### `HazardModuleCard.tsx` name doesn't match its usage
 Originally named for the hazard-modules section, but `ModuleListingPage` imports it directly and uses it for every `app/modules/` section, `guides` included — there's no generic/section-specific split despite the hazard-specific name.
 
+### `guides`'s Supabase rows are only consulted by the hotspot editor's dropdown, not by `/modules/guides` itself
+`guides` now has real rows in `modules`/`module_sections` (seeded to match `lib/guides.ts`, so the lab editor's Linked Module dropdown has something valid to point at — `hazards_module_fk` requires the picked `(section, id)` to exist as an actual Supabase row). But `app/modules/guides/page.tsx` still doesn't call `useModules` (see `ADDITIONAL_INFO.md`) — it renders `lib/guides.ts` directly, unlike `hazard-modules`. So editing those Supabase rows now has a real, if easy to miss, split effect: it changes what a hotspot's Linked Module dropdown shows as the module's title, but does **not** change what `/modules/guides` itself displays — someone editing guides content in Supabase, expecting hazard-modules-like live behaviour, would see no change on the actual page.
+**Fix:** either wire `app/modules/guides/page.tsx`/`[id]/page.tsx` up to `useModules`/`useModuleById` (matching `hazard-modules`), or leave a comment on the seeded rows noting they're dropdown-only until that happens.
+
 ---
 
 ## Data integrity
@@ -81,6 +85,15 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 
 ### `save-hazards` does a full delete-then-reinsert, not a diff
 `/api/save-hazards` deletes every row in the `hazards` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
+
+---
+
+## Setup / onboarding
+
+### README's "Seed the database" step fails on a genuinely fresh install
+`README.md`'s Getting Started step 7 seeds the `hazards` table by entering edit mode and clicking Save Changes with the defaults unchanged. But `lib/hazards.ts`'s default hotspots all have a `moduleId`/`moduleSection` set (e.g. `gas` → `hazard-modules`/`1`), and `hazards_module_fk` (`match full`) requires that pair to exist as a real row in `modules`. On a truly fresh Supabase project — tables created per step 3(b), nothing else seeded — `modules` is empty, so this save fails with a foreign-key violation, not the success the step describes.
+This was already latent in the schema before the Linked Module editor existed; the editor's validation work this round is what surfaced it, since it required reasoning carefully through `hazards_module_fk`'s exact behaviour.
+**Fix:** either seed `modules`/`module_sections` with the real `hazard-modules` content (matching `lib/hazardModules.ts`) as an earlier Getting Started step, before step 7, or add a note to step 7 flagging the dependency and pointing to a seed script.
 
 ---
 

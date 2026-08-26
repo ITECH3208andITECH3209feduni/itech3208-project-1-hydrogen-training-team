@@ -35,6 +35,9 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 Live hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'` — edit rows there directly via the Supabase dashboard or SQL Editor to change what's shown.
 
+> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), but editing them won't change what `/modules/guides` shows — that page still renders `lib/guides.ts` directly rather than fetching from Supabase.
+	Right now those rows only feed the hotspot editor's Linked Module dropdown. See `BUG_REPORT.md`.
+
 `lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/useModules.ts` merges the two).
 
 Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/moduleTypes.ts`):
@@ -68,6 +71,14 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 ## Linking Hotspots to Modules
 
 Each hotspot can optionally link to a module, via its `moduleId`/`moduleSection` fields — this is what powers the Learn More button in the hazard popup.
-	There's currently no in-app UI for setting or changing this link — `HotspotEditor.tsx` only edits title, description, and position — so it's done directly in Supabase: set the `hazards` table's `module_section`/`module_id` columns for the relevant row via the Supabase dashboard or SQL Editor, either both to a valid `(section, id)` pair from the `modules` table, or both to `null` to remove the link.
+
+**In edit mode**, select a hotspot and use the **Linked Module** field: pick a section from the first dropdown, then a module from the second (its options are scoped to whichever section you just picked).
+	Pick "None" to remove the link — this clears both fields together, since a hotspot's link must be fully set or fully empty, never half-set.
+	If you pick a section but haven't picked a module yet (or vice versa), **Save Changes** disables with a warning until you either finish picking a module or set the section back to "None".
+
+**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/hazardModules.ts`/`lib/guides.ts`'s bundled defaults.
+	If you've added a module to one of those files but haven't seeded a matching row in Supabase yet (see "Customising Module Content" above), it won't show up here yet — add the Supabase row first.
+
+You can still set or clear a link directly in Supabase if you prefer (set the `hazards` table's `module_section`/`module_id` columns for the relevant row, either both to a valid `(section, id)` pair from the `modules` table, or both to `null`) — the in-app editor is just the more convenient path for day-to-day use now.
 
 See `ADDITIONAL_INFO.md` for how these fields are read and enforced.
