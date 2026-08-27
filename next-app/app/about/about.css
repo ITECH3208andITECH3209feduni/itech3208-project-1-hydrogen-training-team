@@ -68,7 +68,8 @@
 
     color:var(--muted);
 
-    line-height:1.9;
+    font-size:0.95rem;
+    line-height:1.7;
 
     margin-bottom:18px;
 }

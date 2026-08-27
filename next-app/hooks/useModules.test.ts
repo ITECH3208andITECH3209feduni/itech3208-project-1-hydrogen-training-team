@@ -7,8 +7,14 @@ import { mapSection, mergeRow, useModules, useModuleById } from './useModules';
 import { server } from '../mocks/server';
 import { http, HttpResponse } from 'msw';
 import { hazardModules } from '@/lib/hazardModules';
+vi.mock("@/context/AuthContext", () => ({
+    useAuth: () => ({
+        user: null,
+        loading: false,
+    }),
+}));
 
-// ─── Unit Tests (test purely internal functions) ───────────────
+// â”€â”€â”€ Unit Tests (test purely internal functions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // 1. Test mapSection
 describe('1. mapSection', () => {
@@ -20,7 +26,7 @@ describe('1. mapSection', () => {
 			body: 'This is the second section of the module.',
 			list_type: 'ul',
 			items: ['Item 1', 'Item 2', 'Item 3'],
-			callout: '💡 callout',
+			callout: 'ðŸ’¡ callout',
 		});
 
 		expect(result).toEqual({
@@ -29,7 +35,7 @@ describe('1. mapSection', () => {
 			body: 'This is the second section of the module.',
 			listType: 'ul',
 			items: ['Item 1', 'Item 2', 'Item 3'],
-			callout: '💡 callout',
+			callout: 'ðŸ’¡ callout',
 		});
 	});
 
@@ -57,7 +63,7 @@ describe('2. mergeRow', () => {
 		id: '1',
 		slug: 'gas-leak-detection',
 		badge_num: 1,
-		icon: '💨',
+		icon: 'ðŸ’¨',
 		icon_bg: 'rgba(0,180,216,0.15)',
 		title: 'Gas Leak Detection',
 		description: 'description',
@@ -84,7 +90,7 @@ describe('2. mergeRow', () => {
 		expect(result.id).toBe('1');
 		expect(result.slug).toBe('gas-leak-detection');
 		expect(result.badgeNum).toBe(1);
-		expect(result.icon).toBe('💨');
+		expect(result.icon).toBe('ðŸ’¨');
 		expect(result.iconBg).toBe('rgba(0,180,216,0.15)');
 		expect(result.title).toBe('Gas Leak Detection');
 		expect(result.description).toBe('description');
@@ -155,7 +161,7 @@ describe('3. useModuleById', () => {
 	});
 });
 
-// ─── Integration Tests (test API calls with mock server) ───────────────
+// â”€â”€â”€ Integration Tests (test API calls with mock server) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // 4. Test load-modules API call
 describe('4. load-modules', () => {
@@ -175,7 +181,7 @@ describe('4. load-modules', () => {
         expect(loadedModule.id).toBe('1');
         expect(loadedModule.slug).toBe('gas-leak-detection');
         expect(loadedModule.badgeNum).toBe(1);
-        expect(loadedModule.icon).toBe('💨');
+        expect(loadedModule.icon).toBe('\u{1F4A8}');
         expect(loadedModule.iconBg).toBe('rgba(0,180,216,0.15)');
         expect(loadedModule.title).toBe('Gas Leak Detection');
         expect(loadedModule.description).toBe('description');
@@ -193,12 +199,12 @@ describe('4. load-modules', () => {
         expect(loadedModule.sections[0].callout).toBeUndefined();
         expect(loadedModule.sections[1].listType).toBe('ul');
         expect(loadedModule.sections[1].items).toEqual(["Item 1", "Item 2", "Item 3"]);
-        expect(loadedModule.sections[1].callout).toBe('💡 callout');
+        expect(loadedModule.sections[1].callout).toBe('\u{1F4A1} callout');
         expect(loadedModule.sections[2].listType).toBe('ol');
         expect(loadedModule.sections[2].items).toEqual(["First", "Second", "Third"]);
         expect(loadedModule.sections[2].callout).toBeUndefined();
         
-        // progress & status aren't stored in Supabase — they should default to the fallback values
+        // progress & status aren't stored in Supabase â€” they should default to the fallback values
         const defaultModule = hazardModules.find((m) => m.id === '1')!;
 		expect(loadedModule.progress).toBe(defaultModule.progress);
 		expect(loadedModule.status).toBe(defaultModule.status);

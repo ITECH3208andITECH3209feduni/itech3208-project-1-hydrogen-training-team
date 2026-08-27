@@ -127,7 +127,7 @@ export default function CertificatePage() {
                 };
         }, [user]);
 
-	const displayName = user?.displayName || user?.email || 'Your Name';
+	const displayName = user?.displayName || 'Your Name';
         const totalModules = hazardModules.length;
 
         const completedModules = moduleProgress.filter(
@@ -160,7 +160,7 @@ export default function CertificatePage() {
 		});
 	}, [record, displayName]);
 
-	if (loading || record === undefined) return <div>Loading…</div>;
+	if (loading || record === undefined) return <div>Loadingâ€¦</div>;
 	if (!user) return null;
 
 	function handleDownload() {
@@ -205,13 +205,13 @@ export default function CertificatePage() {
                                                         href={`/quizzes/${QUIZ_SLUG}`}
                                                         className="btn-primary"
                                                 >
-                                                        {record ? "Retake the Quiz" : "Take the Quiz →"}
+                                                        {record ? "Retake the Quiz" : "Take the Quiz â†’"}
                                                 </Link>
                                         )}
 
                                         {needsModules && (
                                                 <Link
-                                                        href="/modules"
+                                                        href="/modules/hazard-modules"
                                                         className="btn-primary"
                                                 >
                                                         Complete Training Modules
@@ -226,7 +226,7 @@ export default function CertificatePage() {
 		<main className="main">
 			<div className="cert-page">
 				<div className="cert-page-header">
-					<span className="quiz-badge">🏆 Certification</span>
+					<span className="quiz-badge">ðŸ† Certification</span>
 					<h1
 						style={{
 							fontFamily: "'Exo 2', sans-serif",
