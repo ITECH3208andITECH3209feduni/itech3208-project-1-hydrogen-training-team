@@ -2,16 +2,17 @@
 
 How to change or update the content the app shows — hotspot data, module content, and the lab image.
 	For how the underlying systems work (data merging, progress tracking, etc.), see `ADDITIONAL_INFO.md`.
-	For known bugs affecting these flows (e.g. no server-side auth guard on the write endpoints below), see `BUG_REPORT.md`.
+	For known bugs affecting these flows (e.g. no server-side auth guard on the write endpoints below, despite the client-side edit-mode gate), see `BUG_REPORT.md`.
 
 ---
 
 ## Edit Mode
 
-Hotspot positions and text are stored in Supabase and can be edited directly in the browser via a hidden edit mode. Edit mode is invisible to regular users — no button or link exposes it.
+Hotspot positions and text are stored in Supabase and can be edited directly in the browser via edit mode.
+	Edit mode is only visible to users with the `canManageUsers` permission (i.e. are admins) — regular users see no trace of it.
 
-**To enter edit mode:** navigate to `/lab` and type `H Z E D I T` (one letter at a time, each within 2 seconds of the last, no modifier keys).
-	A yellow banner appears confirming edit mode is active. Type the same sequence again to exit.
+**To enter edit mode:** navigate to `/lab` and click the switch at the top-left of the page.
+	It expands into a banner confirming edit mode is active while it's on. Click it again to exit.
 
 **Hotspots:**
 - Hotspots turn blue — drag them to reposition.

@@ -1,7 +1,7 @@
 // hooks/useHazards.ts
 // Manages all hotspot state, Supabase load/save, drag logic, secret key sequence and lab image URL state and upload
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
 	HazardType,
 	hazardData as defaultHazardData,
@@ -23,8 +23,7 @@ export type LoadStatus = 'loading' | 'ready' | 'error';
 export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'error';
 
 // ─── Constants ──────────────────────────────────────────────────────
-const SECRET_SEQUENCE = ['h', 'z', 'e', 'd', 'i', 't'];	// Secret key sequence to unlock edit mode
-const DEFAULT_IMAGE   = '/lab.jpg';						// Default name of image file
+const DEFAULT_IMAGE = '/lab.jpg';	// Default name of image file
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Combines position data from defaultHotspots & text from defaultHazardData into editable array
@@ -60,10 +59,6 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	// Image state — starts with the local fallback, replaced by Supabase URL after load
 	const [imageUrl, setImageUrl]           = useState<string>(DEFAULT_IMAGE);
 	const [uploadStatus, setUploadStatus]   = useState<UploadStatus>('idle');
-	
-	// Refs
-	const seqRef     = useRef<string[]>([]);								// Tracks keypresses that have been typed for edit mode key sequence
-	const seqTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);	// Timer to reset edit mode key sequence
 	
 	// ── Load hazards from Supabase on mount ─────────────────────────────────────────
 	// Runs once when page first loads
@@ -137,37 +132,13 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		loadImage();
 	}, []);
 	
-	// ── Secret key listener ─────────────────────────────────────────────────
-	// Listens to keypresses on page
-	useEffect(() => {
-		const handleKey = (e: KeyboardEvent) => {
-			const tag = (e.target as HTMLElement).tagName;
-			if (tag === 'INPUT' || tag === 'TEXTAREA') return;	// Ignores keypresses inside inputs and textareas
-			
-			// Append keypresses to seqRef
-			const key   = e.key.toLowerCase();
-			const next  = [...seqRef.current, key];
-			const slice = next.slice(-SECRET_SEQUENCE.length);
-			
-			// Key sequence resets if more than 2 seconds pass before next keystroke
-			if (seqTimeout.current) clearTimeout(seqTimeout.current);
-			seqTimeout.current = setTimeout(() => { seqRef.current = []; }, 2000);
-			
-			// Check if the keypresses match the length and content of the edit mode key sequence
-			if (
-				slice.length === SECRET_SEQUENCE.length &&
-				slice.every((k, i) => k === SECRET_SEQUENCE[i])
-			) {
-				// If true, activates edit mode
-				setEditMode((v) => { if (v) setSelected(null); return !v; });
-				seqRef.current = [];
-				clearTimeout(seqTimeout.current!);
-			} else {
-				seqRef.current = slice;
-			}
-		};
-		window.addEventListener('keydown', handleKey);
-		return () => window.removeEventListener('keydown', handleKey);	// Removes listener to prevent memory leaks
+	// ── Edit mode toggle ────────────────────────────────────────────────────
+	// A toggle switch for edit mode, only seen if the user is an admin.
+	const toggleEditMode = useCallback(() => {
+		setEditMode((v) => {
+			if (v) setSelected(null);	// clear selection when leaving edit mode
+			return !v;
+		});
 	}, []);
 	
 	// ── Drag logic ──────────────────────────────────────────────────────────
@@ -340,6 +311,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		loadStatus,
 		editMode,
 		selected,
+		toggleEditMode,
 		setSelected,
 		saveStatus,
 		handleDragStart,

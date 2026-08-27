@@ -7,7 +7,7 @@ Known bugs and inconsistencies in the Hydrogen Lab Safety app. This is a working
 ## Security / access control
 
 ### `save-hazards` and `upload-image` have no server-side auth guard
-The "hidden" `H Z E D I T` edit-mode entry point on `/lab` only hides the *UI*. The two write endpoints it eventually calls — `POST /api/save-hazards` and `POST /api/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image.
+The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/save-hazards` and `POST /api/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image, regardless of the caller's permissions.
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
 ### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
@@ -112,7 +112,7 @@ This was already latent in the schema before the Linked Module editor existed; t
 ## Dead / unwired code
 
 ### 7 of 8 `Permissions` flags are computed but never consulted
-`useAuth()` derives an 8-flag `Permissions` object on every render. Only `canManageUsers` is actually read anywhere (`Navbar.tsx`, gating the Administration link). The other seven (`canAccessModules`, `canUseSimulation`, `canViewReports`, `canEditContent`, `canManageScenarios`, `canViewAnalytics`, `canViewAuditLogs`) are dead: there's no `/reports`, `/analytics`, or audit-log page for the last three to gate, and the pages that do exist (modules, lab, edit mode) check `user`/`isAdmin` directly rather than consulting any of the others.
+`useAuth()` derives an 8-flag `Permissions` object on every render. Only `canManageUsers` is actually read anywhere (`Navbar.tsx`, gating the Administration link; and `EditModeToggle.tsx`, gating the `/lab` edit-mode switch). The other seven (`canAccessModules`, `canUseSimulation`, `canViewReports`, `canEditContent`, `canManageScenarios`, `canViewAnalytics`, `canViewAuditLogs`) are dead: there's no `/reports`, `/analytics`, or audit-log page for the last three to gate, and the pages that do exist (modules, lab) check `user`/`isAdmin` directly rather than consulting any of the others. Note: `canEditContent`/`canManageScenarios` are the semantically-closer fit for gating lab edit mode than `canManageUsers`.
 
 ### `next.config.ts` coexists with `next.config.js`
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.

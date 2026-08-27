@@ -169,12 +169,61 @@ describe('6. hasInvalidModuleLink', () => {
   });
 });
 
+// 7. Test toggleEditMode
+describe('7. toggleEditMode', () => {
+  // Test if edit mode turns on from its default (off) state
+  it('7.1 turns edit mode on', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    expect(result.current.editMode).toBe(false);
+    act(() => { result.current.toggleEditMode(); });
+    expect(result.current.editMode).toBe(true);
+  });
+
+  // Test if edit mode turns back off on a second call
+  it('7.2 turns edit mode back off on a second call', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.toggleEditMode(); });  // enter edit mode
+    expect(result.current.editMode).toBe(true);
+
+    act(() => { result.current.toggleEditMode(); });  // exit edit mode
+    expect(result.current.editMode).toBe(false);
+  });
+
+  // Test if the selected hotspot is cleared when exiting edit mode
+  it('7.3 clears the selected hotspot when exiting edit mode', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.toggleEditMode(); });  // enter edit mode
+    act(() => { result.current.setSelected(0); });
+    expect(result.current.selected).toBe(0);
+
+    act(() => { result.current.toggleEditMode(); });  // exit edit mode
+    expect(result.current.editMode).toBe(false);
+    expect(result.current.selected).toBeNull();
+  });
+
+  // Test if selection is left untouched when entering edit mode
+  it('7.4 does not touch selection when entering edit mode', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    expect(result.current.selected).toBeNull();
+    act(() => { result.current.toggleEditMode(); });
+    expect(result.current.selected).toBeNull();
+  });
+});
+
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 7. Test load-hazards API call
-describe('7. load-hazards', () => {
+// 8. Test load-hazards API call
+describe('8. load-hazards', () => {
   // Test if loads successfully
-  it('7.1 maps response into hotspots, including moduleId from defaults', async () => {
+  it('8.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -197,7 +246,7 @@ describe('7. load-hazards', () => {
   });
   
   // Test if uses default info when API returns empty
-  it('7.2 falls back to defaults when API returns empty', async () => {
+  it('8.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
@@ -213,7 +262,7 @@ describe('7. load-hazards', () => {
   });
   
   // Test if uses default info when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('7.3 falls back to defaults when API responds with an error', async () => {
+  it('8.3 falls back to defaults when API responds with an error', async () => {
     // Replace console error with a fake (avoids clutter)
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -233,7 +282,7 @@ describe('7. load-hazards', () => {
   });
 
   // Test if uses default info when API call fails (internet failure, server crash, etc.)
-  it('7.4 falls back to defaults on a network failure', async () => {
+  it('8.4 falls back to defaults on a network failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
@@ -250,7 +299,7 @@ describe('7. load-hazards', () => {
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
-  it('7.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+  it('8.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({
         ok: true,
@@ -279,10 +328,10 @@ describe('7. load-hazards', () => {
   });
 });
 
-// 8. Test load-image API call
-describe('8. load-image', () => {
+// 9. Test load-image API call
+describe('9. load-image', () => {
   // Test if loads successfully and sets imageUrl state
-  it('8.1 sets imageUrl from API when available', async () => {
+  it('9.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
     
@@ -290,7 +339,7 @@ describe('8. load-image', () => {
   });
 
   // Test if uses default when API returns empty
-  it('8.2 keeps the default image when no image exists in the API', async () => {
+  it('9.2 keeps the default image when no image exists in the API', async () => {
     server.use(http.get('/api/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
@@ -302,7 +351,7 @@ describe('8. load-image', () => {
   });
 
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('8.3 keeps the default image when API responds with an error', async () => {
+  it('9.3 keeps the default image when API responds with an error', async () => {
     server.use(
       http.get('/api/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
@@ -315,10 +364,10 @@ describe('8. load-image', () => {
   });
 });
 
-// 9. Test save-hazards API call
-describe('9. save-hazards', () => {
+// 10. Test save-hazards API call
+describe('10. save-hazards', () => {
   // Test a successful save
-  it('9.1 sets saveStatus to saved on a successful save', async () => {
+  it('10.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -329,7 +378,7 @@ describe('9. save-hazards', () => {
   });
 
   // Test a failed save
-  it('9.2 sets saveStatus to error if the save request fails', async () => {
+  it('10.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
       http.post('/api/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
@@ -343,7 +392,7 @@ describe('9. save-hazards', () => {
   });
 
   // Test if all fields are sent to the API (hotspots + hazardData)
-  it('9.3 sends the full hotspots + hazardData payload', async () => {
+  it('10.3 sends the full hotspots + hazardData payload', async () => {
     let capturedBody: any = null;
     server.use(
       http.post('/api/save-hazards', async ({ request }) => {
@@ -375,7 +424,7 @@ describe('9. save-hazards', () => {
   });
 
   // Test if guards against saving when a hotspot has an invalid module link
-  it('9.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
+  it('10.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
       http.post('/api/save-hazards', () => {
@@ -400,7 +449,7 @@ describe('9. save-hazards', () => {
   });
   
   // Test if a save proceeds normally once the link is fixed back to a valid state
-  it('9.5 proceeds with the save once the module link is valid again', async () => {
+  it('10.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
       http.post('/api/save-hazards', () => {
@@ -427,10 +476,10 @@ describe('9. save-hazards', () => {
   });
 });
 
-// 10. Test upload-image API call
-describe('10. upload-image', () => {
+// 11. Test upload-image API call
+describe('11. upload-image', () => {
   // Test a successful upload
-  it('10.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
+  it('11.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -446,7 +495,7 @@ describe('10. upload-image', () => {
   });
 
   // Test a failed upload
-  it('10.2 sets uploadStatus to error if the upload fails', async () => {
+  it('11.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
       http.post('/api/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );

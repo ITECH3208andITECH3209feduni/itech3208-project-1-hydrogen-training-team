@@ -77,7 +77,7 @@ hydrogen-lab/
 │   │   ├── lab.css						# Lab-specific styles
 │   │   ├── styles.ts					# Shared inline style objects for lab components
 │   │   └── components/
-│   │       ├── EditBanner.tsx			# Yellow banner shown when edit mode is active
+│   │       ├── EditModeToggle.tsx		# Toggle switch to enter/exit edit mode; expands into the banner text when on. Only rendered for canManageUsers (an admin)
 │   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, lab image and linked module
 │   │       ├── SaveBar.tsx				# Reset and save buttons for hotspots
 │   │       └── HazardPopup.tsx			# Modal popup for hazard info
@@ -143,7 +143,7 @@ hydrogen-lab/
 ├── context/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
-│   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, secret key, image upload
+│   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload
 │   ├── useHazards.test.ts				# Unit + integration tests for useHazards.ts
 │   ├── useModules.ts					# Generic hook — loads+merges Supabase module content for any app/modules/ section
 │   ├── useModules.test.ts				# Unit + integration tests for useModules.ts
@@ -292,7 +292,7 @@ A profile's `role` is one of `"user" | "staff" | "admin"`. `useAuth()` derives a
 | `canViewAnalytics`   | admin only         |
 | `canViewAuditLogs`   | admin only         |
 
-Only `canManageUsers` is currently wired into the UI (it gates the **Administration** link in `Navbar.tsx`) — see `BUG_REPORT.md` for the other seven.
+Only `canManageUsers` is currently wired into the UI — it gates the **Administration** link in `Navbar.tsx` and the **Edit Mode** switch on `/lab` (`EditModeToggle.tsx`). see `BUG_REPORT.md` for the other seven.
 	Promoting a user to `staff`/`admin`, or changing their `user_type`/`organisation`, is done through the **Edit User** modal on `/admin/users`.
 
 Two server-side helpers protect API routes using a Firebase ID token:
@@ -631,7 +631,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser — this loa
 
 On first run the Supabase table is empty, so the app falls back to the defaults in `lib/hazards.ts`. To populate the database:
 1. Log in and navigate to `/lab`
-2. Type `H Z E D I T` to enter edit mode
+2. Click the **Edit Mode** toggle switch, (visible only if your account has `canManageUsers` [i.e. you are an admin])
 3. Without changing anything, click **Save Changes**
 
 The default hotspot data will be written to Supabase and loaded on every subsequent visit.

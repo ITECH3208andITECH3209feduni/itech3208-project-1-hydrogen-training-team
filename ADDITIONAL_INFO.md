@@ -87,7 +87,7 @@ Module content lives in Supabase, loaded per-section through `hooks/useModules.t
 Each section's data file (e.g. `lib/hazardModules.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
 
-There's currently no in-app edit mode for module content (unlike the lab's hidden hotspot editor) — changing what's in Supabase means editing rows directly via the Supabase dashboard or SQL Editor.
+There's currently no in-app edit mode for module content (unlike the lab's hotspot editor) — changing what's in Supabase means editing rows directly via the Supabase dashboard or SQL Editor.
 
 For the `ModuleData` field reference and how to edit live module content, see `EDITING_GUIDE.md`.
 
