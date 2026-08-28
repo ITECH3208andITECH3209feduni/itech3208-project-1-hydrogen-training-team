@@ -1,6 +1,5 @@
 // hooks/useModules.ts
 // Loads module content from Supabase for a given section, merged over the defaults.
-// status/progress left default for now (per-user tracking not yet implemented).
 
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";

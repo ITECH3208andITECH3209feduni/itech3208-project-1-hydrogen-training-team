@@ -19,6 +19,11 @@ Exceptions:
 
 `Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`. Its site-title logo links to `/` (the landing page), its "Home" nav link goes to `/dashboard`.
 
+**Logout** (`handleLogout` in `Navbar.tsx`) sets a `sessionStorage` flag (`logoutRedirect: "true"`), awaits Firebase `logout()`, then `router.replace('/')` — logging out now lands on the home page, not `/login`.
+	The flag exists to suppress a flash of the login form: during `await logout()`, the currently-mounted protected page's own redirect-to-`/login` effect (the pattern described above) can fire before the navbar's own `replace('/')` does, briefly navigating to `/login` first.
+	`app/login/page.tsx` checks this flag on mount; if set, it clears it and immediately redirects to `/` instead of rendering the form, hiding that flash.
+	See `BUG_REPORT.md` for a case where this flag isn't reliably cleared.
+
 ---
 
 ## Roles and permissions
@@ -47,7 +52,7 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 `lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
 
 **Route coverage:**
-- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods)
+- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`)
 - `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`)
 - No guard: `load-hazards`, `load-image`, `load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above). `save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
 
@@ -80,7 +85,9 @@ Module content lives in Supabase, loaded per-section through `hooks/useModules.t
 - **`useModuleById(section, defaults, id)`** — the same, narrowed to a single module by id.
 	This is what reader pages use in place of a section's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
 - **`mergeRow`/`mapSection`** (exported from `useModules.ts`) do the field-name translation between Supabase's snake_case row shape (`badge_num`, `icon_bg`, …) and the app's camelCase `ModuleData`/`ModuleSection` shape.
-- `status`/`progress` always come from `defaults`, never from Supabase — `status` and `progress` are deliberately not columns on `modules`; they're tracked per-user in `user_module_progress` instead (see "Module Progress Tracking"), and the listing card doesn't read from that table.
+- `status`/`progress` are never present in the Supabase `modules` row itself — they're deliberately not columns on `modules`; they're tracked per-user in `user_module_progress` instead.
+	But `useModules` now merges live per-user progress into them too: after merging content, it separately fetches `GET /api/modules/progress` (when a user is signed in) and overwrites each module's `status`/`progress` with the matching per-user record — `"done"` if the record's `status` is `"done"` or its `progress >= 100`, `"progress"` if `> 0`, else `"todo"`.
+	If there's no signed-in user, or no matching record for a given module, `status`/`progress` are forced to `"todo"`/`0` — **not** `fallback?.status`/`fallback?.progress` from `defaults`, even though `mergeRow` had just set those a moment earlier in the same function. See `BUG_REPORT.md`.
 - `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link.
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
 
@@ -138,8 +145,9 @@ For a page unrelated to the modules template:
 
 ## Module Progress Tracking
 
-Unlike the listing page's `status`/`progress` badges (always drawn from `defaults`, never Supabase), the reader page tracks live, per-user progress via `useModuleProgress` (`app/modules/hooks/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
-	The two are independent: a card can still show "Not Started" from bundled `defaults` while the signed-in user's own reader-page progress is genuinely in progress or complete. This applies to every section built on the shared template, including the unlinked `guides` example — `ModuleReaderPage` doesn't distinguish between sections.
+The reader page tracks live, per-user progress via `useModuleProgress` (`app/modules/hooks/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
+	The listing page's cards now read from the same underlying data too (see above, `useModules`' progress merge) — but the two fetch and interpret `/api/modules/progress` independently of each other, so a momentary mismatch between a card's badge and the reader page's own progress bar is possible if one has fetched more recently than the other.
+	This applies to every section built on the shared template, including the unlinked `guides` example — `ModuleReaderPage` doesn't distinguish between sections.
 
 `/api/modules/progress` (`requireUser`-gated) backs the hook:
 - **`POST`** — body `{ module_id }`. If a `(uid, section, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now. If one exists, it's a no-op (`{ ok: true, message: "Progress already exists" }`) — it never resets an existing row.
@@ -150,7 +158,7 @@ Unlike the listing page's `status`/`progress` badges (always drawn from `default
 	`useModuleProgress` itself only ever sends `progress`/`time_spent` (or `action: "restart"`) — it never touches `status`, `attempts`, or `quiz_score` directly, even though the route accepts all of them.
 
 **How progress is derived:** each section in `ModuleReaderPage` is wrapped in a `div` with `data-module-section` and `data-section-number`.
-	An `IntersectionObserver` (10% visibility threshold) watches these and, the first time a new-highest section scrolls into view, computes `progress = round(highestSectionReached / sectionCount * 100)` (capped at 99% until the last section is reached, which sets 100%).
+	An `IntersectionObserver` (50% visibility threshold) watches these and, the first time a new-highest section scrolls into view, computes `progress = round(highestSectionReached / sectionCount * 100)` (capped at 99% until the last section is reached, which sets 100%).
 	Progress is monotonic on the client — a save never lowers `lastSavedProgress`, so reopening a completed module doesn't regress its percentage. (The route itself doesn't enforce this — a direct `PATCH` with a lower `progress` value would be accepted; the monotonic guarantee is a client-side convention, not a database one.)
 
 **Time spent** is tracked alongside progress: a session timer starts on load and accumulates into `time_spent` (minutes), saved every 15 seconds while the tab is open (`setInterval`), immediately when the tab becomes hidden or the page is unloading (`visibilitychange`/`pagehide`, using `fetch(..., { keepalive: true })` so the request survives navigation), and again on unmount.
@@ -160,6 +168,7 @@ Unlike the listing page's `status`/`progress` badges (always drawn from `default
 - A progress bar + percentage, shown once `progressLoaded` and `currentProgress > 0`.
 - A "Continue from saved progress" button (shown while `0 < currentProgress < 100`) that scrolls to the section matching the saved percentage.
 - A "Module completed" banner with a Restart Module button once `currentProgress >= 100` — restart asks for confirmation (`window.confirm`), then `PATCH`es with `{ module_id, action: "restart" }` and resets local progress back to 0.
+	A `restartPendingRef` guard also suppresses the section-visibility observer until the user scrolls down past 20px, so the scroll-to-top that follows a restart doesn't immediately re-trigger progress on section 1.
 
 ---
 
@@ -167,7 +176,7 @@ Unlike the listing page's `status`/`progress` badges (always drawn from `default
 
 ### Quizzes hub (`/quizzes`)
 
-A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — currently just one, for the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`.
+A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
 
 ### Taking a quiz (`/quizzes/hazards`)
 
@@ -177,13 +186,30 @@ A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — curre
 - **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token.
 - **After submitting:** each question re-renders showing correct/incorrect/your-answer state and an explanation for anything missed.
 	A Retry Quiz button (on fail) reshuffles and resets everything, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `handleSubmit` call reaches the server.
-- **On pass**, a "Get Your Certificate" button routes to `/certificate` via a client-side write — see below.
+- **Leaderboard opt-in:** once submitted, a banner offers "🏆 Show My Score" / "🔒 Keep Private", each firing `PATCH /api/quizzes/progress` with `{ leaderboard_visible }`.
+	This is local UI state only — it always renders as unset after every fresh submit or retry, even though the server-side preference is actually preserved across retries (see "Leaderboard" below);
+	the banner doesn't fetch or reflect whatever was previously saved. See `BUG_REPORT.md`.
+- **On pass**, a "Get Your Certificate" button routes to `/certificate` via a client-side write to `localStorage` — now vestigial, see "Certificate gating" below.
+
+### Leaderboard (`/quizzes/leaderboard`)
+
+`GET /api/quizzes/leaderboard` (`requireUser`-gated — login required to view, independent of the viewer's own opt-in status) returns every `user_quiz_progress` row for the hazards quiz where `leaderboard_visible = true`, joined against `profiles` for `display_name` (falls back to `"Anonymous"` if no matching profile row exists).
+	Results are ranked by score descending, ties broken by fewer attempts, then most recent `last_attempted_at`.
+
+`leaderboard_visible` defaults to `false` on a brand-new quiz record (`POST /api/quizzes/progress`) and is explicitly preserved — not reset — across retries: the route reads the existing row's value before upserting and writes the same value back.
+	It's changed via `PATCH /api/quizzes/progress` with `{ leaderboard_visible: boolean }`, which 404s if the caller has no quiz record yet.
+
+The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 3 and a ranked list for the rest; it requires login to view (shows a "please log in" panel rather than redirecting to `/login`) but has no opt-in requirement of its own.
 
 ### Certificate gating
 
-On a passing submit, `handleContinue` writes `{ passed: true, score, date }` to `localStorage` (key `hydrogenlabsafety_quiz_hazards_${uid}`) and routes to `/certificate`. `app/certificate/page.tsx` reads only this key to decide what to show.
+`app/certificate/page.tsx` no longer reads `localStorage` at all — despite `handleContinue` in the hazards quiz page still writing a passing record there (see above), that write is now dead code.
+	Instead, on mount the certificate page fetches both `GET /api/modules/progress` and `GET /api/quizzes/progress` (both `requireUser`-gated) and computes eligibility itself:
+- **`allModulesCompleted`** — every row in the fetched `moduleProgress` array must have `status === "done"` or `progress >= 100`, checked against `hazardModules.length` as the total.
+- **`quizPassed`** — `record.score >= 70`, a hardcoded threshold independent of `PASS_THRESHOLD` (`lib/questionhazards.ts`) and independent of the `passed` boolean already computed and stored by `/api/quizzes/progress` itself. See `BUG_REPORT.md`.
+- **`certificateEligible`** — both of the above must be true.
 
-**Blocked state:** if there's no passing record, `/certificate` shows a "No certificate yet" panel with a link back to the quiz.
+**Blocked state:** if not eligible, `/certificate` shows a "No certificate yet" panel with messaging that distinguishes three cases — modules incomplete, quiz not passed, or both — each with its own explanatory text and a link to whichever is missing (`/modules/hazard-modules` and/or `/quizzes/hazards`).
 
 **The certificate itself** is drawn client-side onto an HTML `<canvas>` (`drawCertificate()` in `app/certificate/page.tsx`) — title, "Certificate of Achievement", the learner's Firebase `displayName` or `email`, `QUIZ_TITLE`, score, and a formatted date — and downloaded as a PNG via `canvas.toDataURL('image/png')`.
 	There's no server-generated file and no PDF; "printable certificate" (per the About page's copy) means printing this downloaded PNG yourself, not an in-app print/PDF flow.
@@ -207,7 +233,9 @@ On a passing submit, `handleContinue` writes `{ passed: true, score, date }` to 
 - **Module data is static here, not live** — unlike the student-facing reader (`useModuleById`, live from Supabase), this page maps over the bundled `hazardModules` array directly and merges each with the matching `moduleProgress` record (by `module_id`).
 	A module that exists only in Supabase wouldn't appear here, even though it'd show up for students.
 - **`ModuleProgress`** — one row per module the user has touched, straight from `user_module_progress`: `uid`, `module_id`, `status`, `progress`, `quiz_score`, `attempts`, `time_spent`, `started_at`, `last_accessed`, `completed_at`.
-- **`QuizProgress`** — one row per quiz, from `user_quiz_progress`: `uid`, `quiz_id`, `score`, `attempts`, `passed`, `last_attempted_at`. This page's Quiz panel only ever reads `quizProgress[0]`; there's only one quiz today, even though the schema (`quiz_id` as part of a composite key) supports more.
+- **`QuizProgress`** — one row per quiz, from `user_quiz_progress`: `uid`, `quiz_id`, `score`, `attempts`, `passed`, `last_attempted_at`, and now `leaderboard_visible` (the route selects `*`, so it comes through automatically).
+	This page's Quiz panel only ever reads `quizProgress[0]`; there's only one quiz today, even though the schema (`quiz_id` as part of a composite key) supports more.
+	Nothing in the admin UI currently displays `leaderboard_visible`.
 - Each module is rendered via `AdminModuleCard.tsx` (imported under the local alias `ModuleCard`) with `mode="admin"` and `adminProgress={module.adminProgress}`.
 
 ---

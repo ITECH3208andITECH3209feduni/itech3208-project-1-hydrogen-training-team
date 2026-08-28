@@ -18,7 +18,7 @@ But it was evaluated in a context where the write endpoint it feeds into, `POST 
 `/admin/users` checks `isAdmin` before rendering. `/admin/users/[uid]/progress` only checks that a user is logged in (`useAuth()`'s `user`), not `isAdmin`. In practice this is a shell-only gap — the API route behind it, `GET /api/admin/users/{uid}/progress`, does enforce `requireAdmin`, so a non-admin who navigates here directly gets a static shell and every data fetch comes back `403`. Still worth tightening for consistency, since relying on "the API happens to reject it" is a thinner guarantee than gating the page itself.
 
 ### Status-code mapping is inconsistent between the two auth helpers
-Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"Missing authorization token"`, `"User profile not found"`) to `403`; anything else becomes `500`. Routes using `requireUser` (`/api/modules/progress`, `/api/quizzes/progress`) return a blanket `401` for anything thrown in the `try` block — including non-auth errors, such as a malformed JSON body (both routes call `request.json()` with no validation of their own). A malformed request currently looks identical to an auth failure on these routes.
+Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"Missing authorization token"`, `"User profile not found"`) to `403`; anything else becomes `500`. Routes using `requireUser` (`/api/modules/progress`, `/api/quizzes/progress`, `/api/quizzes/leaderboard`) return a blanket `401` for anything thrown in the `try` block — including non-auth errors, such as a malformed JSON body (`/api/modules/progress` and `/api/quizzes/progress` call `request.json()` with no validation of their own). A malformed request currently looks identical to an auth failure on these routes.
 
 ---
 
@@ -34,8 +34,8 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 **Fix:** correct `UserProfile['user_type']` in `AuthContext.tsx` to the real 6-value set, update the modal's options to match, and add server-side validation in the PATCH route.
 
 ### `POST /api/modules/progress` hardcodes `section: "hazard-modules"` on every insert
-This ignores which section the module actually belongs to. The `user_module_progress` table's real uniqueness constraint is on `(uid, section, module_id)` — per-section — which is presumably why `guides` gets working progress tracking at all (same `ModuleReaderPage`/hook, different section). But since the route always writes `"hazard-modules"`, a `guides` module and a `hazard-modules` module that happen to share an `id` (e.g. both `"1"`) would collide on the same row.
-**Fix:** derive `section` from the request/module instead of hardcoding it.
+This ignores which section the module actually belongs to. The `user_module_progress` table's real uniqueness constraint is on `(uid, section, module_id)` — per-section — which is presumably why `guides` gets working progress tracking at all (same `ModuleReaderPage`/hook, different section). But since the route always writes `"hazard-modules"`, a `guides` module and a `hazard-modules` module that happen to share an `id` (e.g. both `"1"`) would collide on the same row. The same unscoped matching now also affects `useModules`' listing-card progress merge, not just `useModuleProgress` — both key off `module_id` alone with no `section` check.
+**Fix:** derive `section` from the request/module instead of hardcoding it, and filter by it on the client wherever `module_id` is matched against fetched progress rows.
 
 ### `user_module_progress.section`'s SQL default doesn't match the app's slug
 The column defaults to `'hazard_modules'` (underscore); every other reference to this section in the app uses `'hazard-modules'` (hyphen). Moot in practice since `/api/modules/progress` always sets `section` explicitly on insert, but worth fixing so the default isn't actively wrong if anything ever relies on it.
@@ -50,21 +50,29 @@ Originally named for the hazard-modules section, but `ModuleListingPage` imports
 `guides` now has real rows in `modules`/`module_sections` (seeded to match `lib/guides.ts`, so the lab editor's Linked Module dropdown has something valid to point at — `hazards_module_fk` requires the picked `(section, id)` to exist as an actual Supabase row). But `app/modules/guides/page.tsx` still doesn't call `useModules` (see `ADDITIONAL_INFO.md`) — it renders `lib/guides.ts` directly, unlike `hazard-modules`. So editing those Supabase rows now has a real, if easy to miss, split effect: it changes what a hotspot's Linked Module dropdown shows as the module's title, but does **not** change what `/modules/guides` itself displays — someone editing guides content in Supabase, expecting hazard-modules-like live behaviour, would see no change on the actual page.
 **Fix:** either wire `app/modules/guides/page.tsx`/`[id]/page.tsx` up to `useModules`/`useModuleById` (matching `hazard-modules`), or leave a comment on the seeded rows noting they're dropdown-only until that happens.
 
+### Quiz ID is hardcoded independently in two places
+`const QUIZ_ID = "hydrogen-hazards"` is declared separately in both `app/api/quizzes/progress/route.ts` and `app/api/quizzes/leaderboard/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the two `QUIZ_ID` copies staying in sync — if one is ever changed without the other (e.g. when a second quiz is added and this gets refactored), the leaderboard would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning an empty leaderboard rather than an error.
+**Fix:** export `QUIZ_ID` from a single shared location (e.g. alongside `QUIZ_SLUG` in `lib/questionhazards.ts`) and import it in both routes.
+
 ---
 
 ## Data integrity
 
+### `useModules` discards bundled defaults instead of falling back to them
+`useModules`' new progress-merge step (see `ADDITIONAL_INFO.md`) is meant to fall back to each module's bundled default `status`/`progress` when there's no live per-user record — but it doesn't. For any module with no matching row (every module for a logged-out visitor, or a logged-in user who's never opened it), the code unconditionally sets `progress: 0, status: "todo"`, discarding the `fallback?.status`/`fallback?.progress` that `mergeRow` had just set moments earlier from `defaults`. Any section whose bundled defaults include a non-`"todo"`/non-`0` example value (e.g. demo content marked partially or fully complete) would now show as "Not Started" on the listing page regardless. The test suite doesn't catch this because its fixture default happens to already be `todo`/`0`, and `hooks/useModules.test.ts` mocks `useAuth` to always return `user: null`, so the "logged in with a real progress record" branch isn't exercised by any test.
+**Fix:** fall back to `module.status`/`module.progress` (i.e. what `mergeRow` already set) instead of a hardcoded `"todo"`/`0` when no matching record exists.
+
 ### Quiz submissions overwrite prior results with no "best attempt" logic
-`POST /api/quizzes/progress` `upsert`s onto `(uid, quiz_id)`: `attempts` increments, but `score`/`passed` are simply overwritten by the latest submission. There's no history. Passing a quiz, then retrying and failing, replaces the stored `passed: true` with `false` — the prior pass is lost.
+`POST /api/quizzes/progress` `upsert`s onto `(uid, quiz_id)`: `attempts` increments, but `score`/`passed` are simply overwritten by the latest submission. There's no history. Passing a quiz, then retrying and failing, replaces the stored `passed: true` with `false` — the prior pass is lost. This has a downstream effect on the leaderboard page: since `GET /api/quizzes/leaderboard` reads `score` straight from `user_quiz_progress`, a student who posts a high score, opts into the leaderboard, then retries and does worse will see their leaderboard rank drop to match the new (lower) score - there's not "best score" retained anywhere to rank on instead.
 **Fix:** either keep a best-attempt column separately, or stop clearing `passed` on a failed retry.
 
-### Certificate gating is entirely client-side and disconnected from the server record
-On a passing submit, `/quizzes/hazards` writes a record directly to `localStorage` (key `hydrogenlabsafety_quiz_hazards_${uid}`) and routes to `/certificate`. `/certificate` reads *only* this `localStorage` key — it never calls `/api/quizzes/progress` or any other endpoint. Consequences:
-- The `user_quiz_progress` row and the `localStorage` record are two independent, only loosely related copies of "did this user pass" — nothing keeps them in sync, and the server-side one can itself regress on a failed retry (see above) while the `localStorage` one, once set, never does.
-- A user who passes on one browser/device won't see their certificate on another, or after clearing site data, even if their `user_quiz_progress` row still shows a pass.
-- The admin panel's "Certificate eligibility" indicator (see below) measures something different from what `/certificate` actually gates on.
+### `handleContinue`'s `localStorage` write is now dead code
+`/certificate` used to gate entirely on a `localStorage` record written by `/quizzes/hazards`'s `handleContinue` — this has been fixed; the page now fetches `/api/modules/progress` and `/api/quizzes/progress` server-side instead (see `ADDITIONAL_INFO.md`). But `handleContinue` still writes `{ passed: true, score, date }` to `localStorage` (key `hydrogenlabsafety_quiz_hazards_${uid}`) before routing to `/certificate`, and `/certificate` no longer reads that key at all. The write, and the `storageKey()` helper that builds it, currently do nothing.
+**Fix:** remove the `localStorage` write (and `storageKey()`) from `handleContinue`.
 
-**Fix:** have `/certificate` check `/api/quizzes/progress` (or a dedicated endpoint) instead of, or in addition to, `localStorage`.
+### Admin "Certificate eligibility" and the real `/certificate` page use overlapping but different criteria
+Previously these were entirely unrelated criteria (module completion vs. a `localStorage`-only quiz pass). Now that `/certificate` is server-driven, it requires **both** all modules completed *and* a passing quiz score — but the admin panel's "Certificate eligibility" indicator still only checks module completion (`completedModules >= totalModules`) and ignores the quiz entirely. So a user who's completed every module but never taken (or passed) the quiz now shows "Eligible" in admin while still seeing "No certificate yet" on the real page.
+**Fix:** have the admin indicator also require a quiz pass, matching `/certificate`'s real logic.
 
 ### Admin panel's two progress numbers disagree with each other, and with reality
 `GET /api/admin/users` already returns a server-computed `statistics` object (`totalUsers`, `administrators`, `learners`, `trainingCompleted`, `averageProgress`, `totalModules`), derived from `user_module_progress` using `hazardModules.length` (currently 5) as `totalModules` and `progress >= 100` as "complete." **The admin page ignores this entirely.** Instead, for every non-admin, non-`public`-type user, it separately fetches `GET /api/admin/users/{uid}/progress` and recomputes the same two numbers itself:
@@ -80,8 +88,18 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 ### `quiz_score` column is dead scaffolding
 `user_module_progress.quiz_score` is a real, nullable column, and the `PATCH /api/modules/progress` route accepts it — but nothing in the frontend (`useModuleProgress`, `ModuleReaderPage`, `SectionBlock`) ever sends it. Looks like scaffolding for a since-descoped or not-yet-built per-module quiz feature; safe to leave alone but worth knowing it does nothing today.
 
-### Certificate pass-threshold copy is hardcoded separately from the real threshold
-`/certificate`'s "No certificate yet" panel hardcodes "70% or higher" as prose text, independent of `PASS_THRESHOLD` in `lib/questionhazards.ts` (used by the actual scoring logic). If `PASS_THRESHOLD` ever changes, this string won't update with it.
+### Certificate pass-threshold is hardcoded separately from the real threshold — now in both copy and logic
+`/certificate`'s "No certificate yet" panel hardcodes "70% or higher" as prose text, independent of `PASS_THRESHOLD` in `lib/questionhazards.ts` (used by the actual scoring logic). This now goes beyond copy: `quizPassed` itself is computed as `record.score >= 70`, a second independent hardcoded `70`, rather than trusting the `passed` boolean that `/api/quizzes/progress` already computed and stored from `PASS_THRESHOLD` at submit time. If `PASS_THRESHOLD` ever changes, both this string and the certificate's actual gating logic would silently disagree with the real threshold — and with each other.
+**Fix:** import `PASS_THRESHOLD` in both the prose and `quizPassed`, or gate on `record.passed` directly instead of recomputing it from `score`.
+
+### Leaderboard opt-in banner doesn't reflect the already-saved preference
+After submitting, `/quizzes/hazards` shows a "Show My Score" / "Keep Private" banner that always starts unset, even on a retry where the user already has a saved `leaderboard_visible` preference from a prior attempt (which `POST /api/quizzes/progress` explicitly preserves rather than resetting). A student who already opted in, retries, and doesn't touch the buttons again stays opted in server-side — but the UI gives no indication of that, and re-clicking "Keep Private" out of habit would silently opt them back out.
+**Fix:** fetch the existing `leaderboard_visible` value (e.g. via `GET /api/quizzes/progress`) and pre-select/label the banner accordingly.
+
+### Logout's `sessionStorage` flag can go stale, silently eating the next Login click
+`Navbar.tsx`'s `handleLogout` sets `sessionStorage.setItem("logoutRedirect", "true")` before logging out, meant to be consumed by `/login` on its next mount to suppress a flash of the login form during the logout redirect race (see `ADDITIONAL_INFO.md`). But it's only consumed if `/login` actually mounts during that race — which only happens if the page the user logged out *from* has its own competing redirect-to-`/login` effect. Logging out from `/` or `/about` (both allow logged-in users and have no such effect) means the flag is never cleared at logout time; it just persists in `sessionStorage` for that tab.
+The next time the user visits `/login` in that tab — e.g. clicking "Login" from the navbar to sign back in — the page finds the stale flag, silently redirects straight back to `/`, and only then clears it. The user's first "Login" click after such a logout does nothing visible; they have to click it again to actually see the form.
+**Fix:** clear the flag in `handleLogout` itself once its own `router.replace('/')` fires (rather than relying solely on `/login` to consume it), or use a one-shot mechanism that doesn't depend on `/login` being the next page visited.
 
 ### `save-hazards` does a full delete-then-reinsert, not a diff
 `/api/save-hazards` deletes every row in the `hazards` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
@@ -116,6 +134,9 @@ This was already latent in the schema before the Linked Module editor existed; t
 
 ### `next.config.ts` coexists with `next.config.js`
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.
+
+### `leaderboard_visible` is returned by the admin per-user progress route but never displayed
+`GET /api/admin/users/{uid}/progress` selects `*` on `user_quiz_progress`, so `leaderboard_visible` comes through in the response, but no admin UI currently reads or shows it.
 
 ### `eslint.config.mjs` references packages that aren't installed
 The config references `eslint-config-next`, but neither it nor `eslint` itself appear in `package.json`. Linting likely doesn't currently run as configured.

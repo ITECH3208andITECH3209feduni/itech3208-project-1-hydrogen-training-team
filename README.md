@@ -99,45 +99,50 @@ hydrogen-lab/
 │   │       ├── page.tsx				# Example second section (/modules/guides) — not linked in nav
 │   │       └── [id]/
 │   │           └── page.tsx			# Example reader page
-│   ├── api/
-│   │   ├── load-hazards/
-│   │   │   └── route.ts				# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
-│   │   ├── save-hazards/
-│   │   │   └── route.ts				# POST — saves hazard data to Supabase (delete-all, then re-insert); no auth guard
-│   │   ├── load-image/
-│   │   │   └── route.ts				# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
-│   │   ├── upload-image/
-│   │   │   └── route.ts				# POST — uploads lab image to Supabase Storage, always as `lab.jpg` (overwrites); no auth guard
-│   │   ├── load-modules/
-│   │   │   └── route.ts				# GET — loads module content + sections from Supabase for a given section (public read)
-│   │   ├── load-module-options/
-│   │   │   └── route.ts				# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
-│   │   ├── modules/
-│   │   │   └── progress/
-│   │   │       └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress`
-│   │   ├── admin/
-│   │   │   └── users/
-│   │   │       ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
-│   │   │       └── [uid]/
-│   │   │           ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
-│   │   │           └── progress/
-│   │   │               └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
-│   │   ├── quizzes/
-│   │   │   └── progress/
-│   │   │       └── route.ts			# GET/POST — per-user quiz result (`requireUser`-gated)
-│   │   └── profile/
-│   │       ├── get/
-│   │       │   └── route.ts			# GET — loads a user profile by Firebase uid (no auth guard)
-│   │       └── create/
-│   │           └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
 │   ├── quizzes/
 │   │   ├── quizzes.css					# Shared styles for the quizzes hub and attempt pages
 │   │   ├── page.tsx					# Quizzes hub — lists available quizzes (currently just one, Hazards)
+│   │   ├── leaderboard/
+│   │   │   ├── page.tsx				# Student leaderboard (/quizzes/leaderboard) — top scorers who opted in
+│   │   │   └── leaderboard.css			# Leaderboard-specific styles
 │   │   └── hazards/
 │   │       └── page.tsx				# Hazards quiz attempt page
-│   └── certificate/
-│       ├── certificate.css				# Styles for the certificate page
-│       └── page.tsx					# Certificate page — client-side canvas certificate, gated by localStorage
+│   ├── certificate/
+│   │   ├── certificate.css				# Styles for the certificate page
+│   │   └── page.tsx					# Certificate page — client-side canvas certificate, gated by localStorage
+│   └── api/
+│       ├── load-hazards/
+│       │   └── route.ts				# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
+│       ├── save-hazards/
+│       │   └── route.ts				# POST — saves hazard data to Supabase (delete-all, then re-insert); no auth guard
+│       ├── load-image/
+│       │   └── route.ts				# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
+│       ├── upload-image/
+│       │   └── route.ts				# POST — uploads lab image to Supabase Storage, always as `lab.jpg` (overwrites); no auth guard
+│       ├── load-modules/
+│       │   └── route.ts				# GET — loads module content + sections from Supabase for a given section (public read)
+│       ├── load-module-options/
+│       │   └── route.ts				# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
+│       ├── modules/
+│       │   └── progress/
+│       │       └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress` and `useModules`' listing-card progress
+│       ├── admin/
+│       │   └── users/
+│       │       ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
+│       │       └── [uid]/
+│       │           ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
+│       │           └── progress/
+│       │               └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
+│       ├── quizzes/
+│       │   ├── progress/
+│       │   │   └── route.ts			# GET/POST/PATCH — per-user quiz result + leaderboard opt-in (`requireUser`-gated)
+│       │   └── leaderboard/
+│       │       └── route.ts			# GET — ranked leaderboard of opted-in scores (`requireUser`-gated)
+│       └── profile/
+│           ├── get/
+│           │   └── route.ts			# GET — loads a user profile by Firebase uid (no auth guard)
+│           └── create/
+│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
 ├── components/
 │   └── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
 ├── context/
@@ -145,7 +150,7 @@ hydrogen-lab/
 ├── hooks/
 │   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload
 │   ├── useHazards.test.ts				# Unit + integration tests for useHazards.ts
-│   ├── useModules.ts					# Generic hook — loads+merges Supabase module content for any app/modules/ section
+│   ├── useModules.ts					# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ section
 │   ├── useModules.test.ts				# Unit + integration tests for useModules.ts
 │   ├── useModuleOptions.ts				# Hook — flat Supabase (section, id, title, badgeNum) list, grouped per section
 │   └── useModuleOptions.test.ts		# Integration tests for useModuleOptions.ts
@@ -181,24 +186,25 @@ hydrogen-lab/
 
 ## Pages
 
-| Route                            | File                                       | Description                                                                                   |
-|----------------------------------|--------------------------------------------|-----------------------------------------------------------------------------------------------|
-| `/`                              | `app/page.tsx`                             | Public landing page introducing the platform — no login required                              |
-| `/dashboard`                     | `app/dashboard/page.tsx`                   | Dashboard with modules, scenarios, quizzes, and training progress                             |
-| `/about`                         | `app/about/page.tsx`                       | Public "About" page — project background, platform features, tech stack; no login required    |
-| `/login`                         | `app/login/page.tsx`                       | Email and password login                                                                      |
-| `/login/register`                | `app/login/register/page.tsx`              | New account registration                                                                      |
-| `/login/forgot-password`         | `app/login/forgot-password/page.tsx`       | Firebase password-reset email request                                                         |
-| `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                                                |
-| `/modules/hazard-modules`        | `app/modules/hazard-modules/page.tsx`      | Hazard module listing grid with status filter bar                                             |
-| `/modules/hazard-modules/[id]`   | `app/modules/hazard-modules/[id]/page.tsx` | Hazard module reader — sections, callouts, key takeaway, prev/next nav                        |
-| `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav                         |
-| `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                                                    |
-| `/quizzes`                       | `app/quizzes/page.tsx`                     | Quizzes hub — currently lists one quiz, Hazards                                               |
-| `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — randomised questions/options, scored, saved                            |
-| `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated by a passing quiz result in `localStorage`, not server state |
-| `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal              |
-| `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility     |
+| Route                            | File                                       | Description                                                                                 |
+|----------------------------------|--------------------------------------------|---------------------------------------------------------------------------------------------|
+| `/`                              | `app/page.tsx`                             | Public landing page introducing the platform — no login required                            |
+| `/dashboard`                     | `app/dashboard/page.tsx`                   | Dashboard with modules, scenarios, quizzes, and training progress                           |
+| `/about`                         | `app/about/page.tsx`                       | Public "About" page — project background, platform features, tech stack; no login required  |
+| `/login`                         | `app/login/page.tsx`                       | Email and password login                                                                    |
+| `/login/register`                | `app/login/register/page.tsx`              | New account registration                                                                    |
+| `/login/forgot-password`         | `app/login/forgot-password/page.tsx`       | Firebase password-reset email request                                                       |
+| `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                                              |
+| `/modules/hazard-modules`        | `app/modules/hazard-modules/page.tsx`      | Hazard module listing grid with status filter bar                                           |
+| `/modules/hazard-modules/[id]`   | `app/modules/hazard-modules/[id]/page.tsx` | Hazard module reader — sections, callouts, key takeaway, prev/next nav                      |
+| `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav                       |
+| `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                                                  |
+| `/quizzes`                       | `app/quizzes/page.tsx`                     | Quizzes hub — lists the Hazards quiz and links to the Leaderboard                           |
+| `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — randomised questions/options, scored, saved                          |
+| `/quizzes/leaderboard`           | `app/quizzes/leaderboard/page.tsx`         | Student leaderboard — top scorers who opted in, requires login                              |
+| `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
+| `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
+| `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
 
 There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
 	The Navbar and dashboard both link straight to `/modules/hazard-modules`.
@@ -220,7 +226,7 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                     |
 | *(all pages)*                  | Navbar → About               | `/about`                       |
 | *(all pages)*                  | Navbar → Administration      | `/admin/users`                 |
-| *(all pages)*                  | Navbar → Logout              | `/login`                       |
+| *(all pages)*                  | Navbar → Logout              | `/`                            |
 | `/`                            | Get Started → || Continue →  | `/dashboard`                   |
 | `/`                            | Learn the Basics             | `/modules/hazard-modules`      |
 | `/dashboard`                   | "Modules" card               | `/modules/hazard-modules`      |
@@ -233,7 +239,11 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | `/modules/hazard-modules/[id]` | Next →                       | `/modules/hazard-modules/[id]` |
 | `/lab`                         | Learn More →                 | `/modules/hazard-modules/[id]` |
 | `/quizzes`                     | "Hydrogen Hazards Quiz" card | `/quizzes/hazards`             |
+| `/quizzes`                     | "Student Leaderboard" card   | `/quizzes/leaderboard`         |
 | `/quizzes/hazards`             | Get Your Certificate →       | `/certificate`                 |
+| `/quizzes/leaderboard`         | ← Back to Quizzes            | `/quizzes`                     |
+| `/quizzes/leaderboard`         | Take Quiz →                  | `/quizzes/hazards`             |
+| `/quizzes/leaderboard`         | Login → (logged out)         | `/login`                       |
 | `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
 | `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
 | `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
@@ -252,19 +262,20 @@ Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/
 
 Styles are split across several files to keep page-specific rules isolated:
 
-| File                                    | Scope																																	                                             |
-|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `app/globals.css`                       | Reset, design tokens, nav, `.panel`, animations                                                                    |
-| `app/intro.css`                         | Landing page only — hero, quick facts, content sections, CTA                                                       |
-| `app/dashboard/dashboard.css`           | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
-| `app/lab/lab.css`                       | Lab page only — hotspots, popup, edit mode, editor panels, save bar                                                |
-| `app/modules/modules.css`               | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav          |
-| `app/modules/components/ModuleCard.css` | Shared base styles used by both HazardModuleCard and AdminModuleCard (found in admin folder)                       |
-| `app/login/auth.css`                    | Login and register pages — card, form inputs, error box                                                            |
-| `app/about/about.css`                   | About page only — header, section cards, info/feature/tech grids, footer                                           |
-| `app/admin/users/admin.css`             | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
-| `app/quizzes/quizzes.css`               | Quizzes hub and attempt pages — quiz cards, question/option list, result banner                                    |
-| `app/certificate/certificate.css`       | Certificate page only — name input, canvas, action buttons, blocked state                                          |
+| File                                      | Scope																																	                                             |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `app/globals.css`                         | Reset, design tokens, nav, `.panel`, animations                                                                    |
+| `app/intro.css`                           | Landing page only — hero, quick facts, content sections, CTA                                                       |
+| `app/dashboard/dashboard.css`             | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
+| `app/lab/lab.css`                         | Lab page only — hotspots, popup, edit mode, editor panels, save bar                                                |
+| `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav          |
+| `app/modules/components/ModuleCard.css`   | Shared base styles used by both HazardModuleCard and AdminModuleCard (found in admin folder)                       |
+| `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
+| `app/about/about.css`                     | About page only — header, section cards, info/feature/tech grids, footer                                           |
+| `app/admin/users/admin.css`               | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
+| `app/quizzes/quizzes.css`                 | Quizzes hub and attempt pages — quiz cards, question/option list, result banner, leaderboard opt-in banner         |
+| `app/quizzes/leaderboard/leaderboard.css` | Leaderboard page only — badge, podium (top 3), ranked list, empty/error states                                     |
+| `app/certificate/certificate.css`         | Certificate page only — name input, canvas, action buttons, blocked state                                          |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The rest are imported directly by the pages/components that need them.
 
@@ -443,14 +454,15 @@ create table public.user_module_progress (
 );
 
 create table public.user_quiz_progress (
-  id                 bigint generated by default as identity,
-  uid                text not null,
-  quiz_id            text not null,
-  score              integer not null default 0,
-  attempts           integer not null default 0,
-  passed             boolean not null default false,
-  last_attempted_at  timestamptz null,
-  created_at         timestamptz not null default now(),
+  id                  bigint generated by default as identity,
+  uid                 text not null,
+  quiz_id             text not null,
+  score               integer not null default 0,
+  attempts            integer not null default 0,
+  passed              boolean not null default false,
+  leaderboard_visible boolean not null default false,
+  last_attempted_at   timestamptz null,
+  created_at          timestamptz not null default now(),
   constraint user_quiz_progress_pkey primary key (id),
   constraint user_quiz_progress_uid_quiz_unique unique (uid, quiz_id)
 );
