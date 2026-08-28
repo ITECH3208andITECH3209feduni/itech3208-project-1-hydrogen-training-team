@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/adminAuth";
+import { hazardModules } from "@/lib/hazardModules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -108,7 +109,7 @@ export async function GET(
         // ---------------------------------------------------------
         // Calculate overall module progress
         // ---------------------------------------------------------
-        const totalModules = 5;
+        const totalModules = hazardModules.length;
 
         const completedModules =
             moduleProgress?.filter(

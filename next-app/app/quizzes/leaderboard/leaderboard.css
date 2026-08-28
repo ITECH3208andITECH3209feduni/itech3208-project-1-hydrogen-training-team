@@ -1,0 +1,784 @@
+﻿/* =========================================================
+   STUDENT LEADERBOARD
+========================================================= */
+
+.leaderboard-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 32px;
+}
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.leaderboard-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-glow);
+    border: var(--border-rule);
+    color: var(--teal);
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+}
+
+.leaderboard-header h1 {
+    font-family: "Exo 2", sans-serif;
+    font-size: 2.2rem;
+    color: var(--white);
+    margin-bottom: 10px;
+}
+
+.leaderboard-header p {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.leaderboard-podium {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    align-items: end;
+    gap: 0;
+    margin: 34px auto 28px;
+    max-width: 760px;
+    min-height: 300px;
+}
+
+/*
+ * The JSX renders students in rank order:
+ * 1st, 2nd, 3rd.
+ *
+ * CSS repositions them visually into:
+ *
+ *          1st
+ *     2nd       3rd
+ */
+/* ---------------------------------------------------------
+   PODIUM PLATFORM EFFECT
+   --------------------------------------------------------- */
+
+.podium-card {
+    position: relative;
+    overflow: visible;
+}
+
+/* Gold podium top */
+.podium-1::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 7%;
+    right: 7%;
+    height: 20px;
+
+    background: linear-gradient(
+        90deg,
+        #b8860b,
+        #ffd700,
+        #fff3a0,
+        #ffd700,
+        #b8860b
+    );
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 3px 8px rgba(255, 215, 0, 0.35);
+
+    z-index: 1;
+}
+
+/* Silver podium top */
+.podium-2::after {
+    content: "";
+    position: absolute;
+    top: -9px;
+    left: 7%;
+    right: 7%;
+    height: 18px;
+
+    background: linear-gradient(
+        90deg,
+        #808080,
+        #d9d9d9,
+        #ffffff,
+        #d9d9d9,
+        #808080
+    );
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 3px 8px rgba(220, 220, 220, 0.3);
+
+    z-index: 1;
+}
+
+/* Bronze podium top */
+.podium-3::after {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 7%;
+    right: 7%;
+    height: 17px;
+
+    background: linear-gradient(
+        90deg,
+        #7a421d,
+        #b87333,
+        #e0a06a,
+        #b87333,
+        #7a421d
+    );
+
+    border-radius: 50%;
+
+    box-shadow:
+        0 3px 8px rgba(205, 127, 50, 0.3);
+
+    z-index: 1;
+}
+
+/* Make the podium bodies more solid */
+.podium-1 {
+    background:
+        linear-gradient(
+            to bottom,
+            #252525 0%,
+            #111111 70%,
+            #080808 100%
+        );
+
+    box-shadow:
+        inset 0 -12px 0 rgba(255, 215, 0, 0.22),
+        0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+.podium-2 {
+    background:
+        linear-gradient(
+            to bottom,
+            #252525 0%,
+            #111111 70%,
+            #080808 100%
+        );
+
+    box-shadow:
+        inset 0 -12px 0 rgba(192, 192, 192, 0.18),
+        0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+.podium-3 {
+    background:
+        linear-gradient(
+            to bottom,
+            #252525 0%,
+            #111111 70%,
+            #080808 100%
+        );
+
+    box-shadow:
+        inset 0 -12px 0 rgba(205, 127, 50, 0.20),
+        0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Keep the contents above the podium top */
+.podium-rank,
+.podium-name,
+.podium-score,
+.podium-attempts {
+    position: relative;
+    z-index: 3;
+}
+.podium-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    background: linear-gradient(
+        to bottom,
+        var(--card-bg),
+        rgba(255, 255, 255, 0.025)
+    );
+    border: var(--border-rule);
+    border-radius: 12px 12px 4px 4px;
+    padding: 22px 14px 20px;
+    text-align: center;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+/* First place — centre and tallest */
+.podium-1 {
+    order: 2;
+    min-height: 150px;
+    border-color: rgba(255, 215, 0, 0.65);
+    box-shadow:
+        0 0 28px rgba(255, 215, 0, 0.12),
+        inset 0 -5px 0 rgba(255, 215, 0, 0.35);
+    z-index: 2;
+}
+
+/* Second place — left and medium height */
+.podium-2 {
+    order: 1;
+    min-height: 190px;
+    border-color: rgba(192, 192, 192, 0.55);
+    box-shadow:
+        0 0 20px rgba(192, 192, 192, 0.08),
+        inset 0 -5px 0 rgba(192, 192, 192, 0.28);
+}
+
+/* Third place — right and shortest */
+.podium-3 {
+    order: 3;
+    min-height: 150px;
+    border-color: rgba(205, 127, 50, 0.55);
+    box-shadow:
+        0 0 20px rgba(205, 127, 50, 0.08),
+        inset 0 -5px 0 rgba(205, 127, 50, 0.28);
+}
+
+.podium-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--teal);
+}
+
+.podium-rank {
+    font-size: 2.5rem;
+    line-height: 1;
+    margin-bottom: 14px;
+}
+
+.podium-1 .podium-rank {
+    font-size: 3.2rem;
+}
+
+.podium-name {
+    color: var(--white);
+    font-family: "Exo 2", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.podium-score {
+    color: var(--teal);
+    font-family: "Exo 2", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.podium-1 .podium-score {
+    font-size: 2.4rem;
+    color: #ffd700;
+}
+
+.podium-attempts {
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-top: 6px;
+}
+
+.leaderboard-list {
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.leaderboard-list-header,
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 120px 120px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+}
+
+.leaderboard-list-header {
+    background: rgba(0, 180, 216, 0.08);
+    color: var(--teal);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.leaderboard-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    transition: background 0.2s ease;
+}
+
+.leaderboard-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.rank-number {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.student-name {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.student-score {
+    color: var(--teal);
+    font-family: "Exo 2", sans-serif;
+    font-weight: 700;
+}
+
+.student-attempts {
+    color: var(--muted);
+}
+
+.leaderboard-empty,
+.leaderboard-loading {
+    background: var(--card-bg);
+    border: var(--border-rule);
+    border-radius: var(--radius);
+    padding: 44px 30px;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 14px;
+}
+
+.leaderboard-empty h2 {
+    color: var(--white);
+    font-family: "Exo 2", sans-serif;
+    margin-bottom: 8px;
+}
+
+.leaderboard-empty p {
+    color: var(--muted);
+    margin-bottom: 24px;
+}
+
+.leaderboard-error {
+    padding: 18px;
+    border-radius: 10px;
+    background: rgba(220, 50, 50, 0.1);
+    border: 1px solid rgba(220, 50, 50, 0.35);
+    color: #ff8080;
+    text-align: center;
+}
+
+.leaderboard-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+}
+
+.leaderboard-button,
+.leaderboard-secondary-button {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-family: "Exo 2", sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.leaderboard-button {
+    background: linear-gradient(
+        135deg,
+        var(--teal-dark),
+        var(--teal)
+    );
+    color: white;
+    box-shadow: 0 4px 18px rgba(0, 180, 216, 0.25);
+}
+
+.leaderboard-secondary-button {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.leaderboard-button:hover,
+.leaderboard-secondary-button:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 700px) {
+    .leaderboard-podium {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        min-height: auto;
+        margin-top: 24px;
+    }
+
+    .podium-card,
+    .podium-1,
+    .podium-2,
+    .podium-3 {
+        min-height: 150px;
+        order: initial;
+    }
+
+    .podium-1 {
+        order: 1;
+    }
+
+    .podium-2 {
+        order: 2;
+    }
+
+    .podium-3 {
+        order: 3;
+    }
+
+    .leaderboard-list-header,
+    .leaderboard-row {
+        grid-template-columns: 60px 1fr 80px;
+    }
+
+    .leaderboard-list-header span:last-child,
+    .student-attempts {
+        display: none;
+    }
+
+    .leaderboard-footer {
+        flex-direction: column;
+    }
+
+    .leaderboard-button,
+    .leaderboard-secondary-button {
+        width: 100%;
+        max-width: 280px;
+        text-align: center;
+    }
+}
+
+/* =========================================================
+   FINAL PODIUM DESIGN
+   Compact award-style podium
+   ========================================================= */
+
+.leaderboard-podium {
+    display: grid;
+    grid-template-columns: 165px 195px 150px;
+    align-items: end;
+    justify-content: center;
+    gap: 0;
+
+    width: fit-content;
+    max-width: 100%;
+
+    margin: 34px auto 35px;
+    min-height: 150px;
+}
+
+/* ---------------------------------------------------------
+   Base podium card
+   --------------------------------------------------------- */
+
+.podium-card {
+    position: relative;
+    overflow: visible;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    background:
+        linear-gradient(
+            90deg,
+            #101010 0%,
+            #242424 48%,
+            #101010 100%
+        );
+
+    border: 1px solid rgba(255, 255, 255, 0.14);
+
+    border-radius: 4px 4px 2px 2px;
+
+    text-align: center;
+
+    padding: 46px 12px 18px;
+
+    box-shadow:
+        inset 7px 0 10px rgba(255, 255, 255, 0.025),
+        inset -7px 0 10px rgba(0, 0, 0, 0.35),
+        0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------------------------------------------------------
+   Podium heights and positions
+   --------------------------------------------------------- */
+
+/* SECOND — LEFT */
+.podium-2 {
+    order: 1;
+
+    min-height: 190px;
+
+    border-color: rgba(192, 192, 192, 0.45);
+
+    box-shadow:
+        inset 0 -7px 0 rgba(192, 192, 192, 0.30),
+        inset 7px 0 10px rgba(255, 255, 255, 0.025),
+        0 6px 14px rgba(0, 0, 0, 0.25);
+
+    z-index: 2;
+}
+
+/* FIRST — CENTRE */
+.podium-1 {
+    order: 2;
+
+    min-height: 270px;
+
+    border-color: rgba(255, 215, 0, 0.55);
+
+    box-shadow:
+        inset 0 -8px 0 rgba(255, 215, 0, 0.32),
+        inset 7px 0 10px rgba(255, 255, 255, 0.025),
+        0 8px 17px rgba(0, 0, 0, 0.30);
+
+    z-index: 3;
+}
+
+/* THIRD — RIGHT */
+.podium-3 {
+    order: 3;
+
+    min-height: 150px;
+
+    border-color: rgba(205, 127, 50, 0.48);
+
+    box-shadow:
+        inset 0 -7px 0 rgba(205, 127, 50, 0.30),
+        inset 7px 0 10px rgba(255, 255, 255, 0.025),
+        0 6px 14px rgba(0, 0, 0, 0.25);
+
+    z-index: 1;
+}
+
+/* ---------------------------------------------------------
+   Small coloured podium tops
+   --------------------------------------------------------- */
+
+.podium-1::before,
+.podium-2::before,
+.podium-3::before {
+    content: "";
+
+    display: block !important;
+
+    position: absolute;
+
+    left: -1px;
+    right: -1px;
+    top: -7px;
+
+    height: 15px;
+
+    border-radius: 50%;
+
+    z-index: 1;
+}
+
+/* GOLD */
+.podium-1::before {
+    background:
+        linear-gradient(
+            90deg,
+            #b88900 0%,
+            #ffd700 40%,
+            #fff2a6 50%,
+            #ffd700 60%,
+            #b88900 100%
+        );
+
+    box-shadow:
+        0 2px 5px rgba(255, 215, 0, 0.25);
+}
+
+/* SILVER */
+.podium-2::before {
+    background:
+        linear-gradient(
+            90deg,
+            #8f8f8f 0%,
+            #d5d5d5 40%,
+            #ffffff 50%,
+            #d5d5d5 60%,
+            #8f8f8f 100%
+        );
+
+    box-shadow:
+        0 2px 5px rgba(220, 220, 220, 0.20);
+}
+
+/* BRONZE */
+.podium-3::before {
+    background:
+        linear-gradient(
+            90deg,
+            #7c431c 0%,
+            #cd7f32 40%,
+            #e8aa70 50%,
+            #cd7f32 60%,
+            #7c431c 100%
+        );
+
+    box-shadow:
+        0 2px 5px rgba(205, 127, 50, 0.20);
+}
+
+/* ---------------------------------------------------------
+   Keep podium content above the top surface
+   --------------------------------------------------------- */
+
+.podium-rank,
+.podium-name,
+.podium-score,
+.podium-attempts {
+    position: relative;
+    z-index: 3;
+}
+
+/* ---------------------------------------------------------
+   Medals
+   --------------------------------------------------------- */
+
+.podium-rank {
+    font-size: 1.8rem;
+    line-height: 1;
+
+    margin-bottom: 8px;
+}
+
+.podium-1 .podium-rank {
+    font-size: 2.2rem;
+}
+
+/* ---------------------------------------------------------
+   Student names
+   --------------------------------------------------------- */
+
+.podium-name {
+    color: var(--white);
+
+    font-family: "Exo 2", sans-serif;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    margin-bottom: 5px;
+
+    max-width: 100%;
+
+    overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------
+   Scores
+   --------------------------------------------------------- */
+
+.podium-score {
+    color: var(--teal);
+
+    font-family: "Exo 2", sans-serif;
+
+    font-size: 1.8rem;
+    font-weight: 700;
+
+    line-height: 1.1;
+}
+
+.podium-1 .podium-score {
+    color: #ffd700;
+    font-size: 2.1rem;
+}
+
+/* ---------------------------------------------------------
+   Attempts
+   --------------------------------------------------------- */
+
+.podium-attempts {
+    color: var(--muted);
+
+    font-size: 0.75rem;
+
+    margin-top: 5px;
+}
+
+/* ---------------------------------------------------------
+   Subtle hover
+   --------------------------------------------------------- */
+
+.podium-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.28);
+}
+
+
+/* =========================================================
+   MOBILE PODIUM
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .leaderboard-podium {
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        gap: 12px;
+
+        width: auto;
+
+        min-height: auto;
+
+        margin: 25px 12px 30px;
+    }
+
+    .podium-card,
+    .podium-1,
+    .podium-2,
+    .podium-3 {
+        order: initial;
+
+        min-height: 150px;
+
+        padding-top: 42px;
+    }
+
+    .podium-1 {
+        order: 1;
+        min-height: 270px;
+    }
+
+    .podium-2 {
+        order: 2;
+    }
+
+    .podium-3 {
+        order: 3;
+    }
+}

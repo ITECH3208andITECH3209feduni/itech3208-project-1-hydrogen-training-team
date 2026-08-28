@@ -46,6 +46,7 @@ export function useModuleProgress({
 
     const lastSavedProgress = useRef(0);
     const highestSectionReached = useRef(0);
+    const restartPendingRef = useRef(false);
 
     // ---------------------------------------------------------
     // Time state
@@ -483,7 +484,6 @@ export function useModuleProgress({
     // ---------------------------------------------------------
     // Section progress tracking
     // ---------------------------------------------------------
-
     useEffect(() => {
         if (
             loading ||
@@ -500,27 +500,44 @@ export function useModuleProgress({
                 "[data-module-section]"
             );
 
-        if (
-            sectionElements.length === 0
-        ) {
+        if (sectionElements.length === 0) {
             return;
         }
 
         const handleSectionVisible = (
             sectionNumber: number
         ) => {
+            if (restartPendingRef.current) {
+                if (window.scrollY <= 20) {
+                    return;
+                }
+
+                restartPendingRef.current = false;
+            }
             if (
-                sectionNumber <=
-                highestSectionReached.current
+                sectionNumber <= 0 ||
+                sectionNumber >
+                    sectionCount
             ) {
                 return;
             }
 
+            /*
+             * Only allow the next section to advance progress.
+             *
+             * This prevents IntersectionObserver from reporting
+             * later sections during initial page layout and
+             * incorrectly jumping progress forward.
+             */
+            const nextSection =
+                highestSectionReached.current + 1;
+
+            if (sectionNumber !== nextSection) {
+                return;
+            }
+
             highestSectionReached.current =
-                Math.max(
-                    highestSectionReached.current,
-                    sectionNumber
-                );
+                sectionNumber;
 
             const progress =
                 sectionNumber >= sectionCount
@@ -528,7 +545,7 @@ export function useModuleProgress({
                     : Math.min(
                           99,
                           Math.round(
-                              (highestSectionReached.current /
+                              (sectionNumber /
                                   sectionCount) *
                                   100
                           )
@@ -564,18 +581,14 @@ export function useModuleProgress({
                                     )
                                 );
 
-                            if (
-                                sectionNumber > 0
-                            ) {
-                                handleSectionVisible(
-                                    sectionNumber
-                                );
-                            }
+                            handleSectionVisible(
+                                sectionNumber
+                            );
                         }
                     );
                 },
                 {
-                    threshold: 0.1,
+                    threshold: 0.5,
                 }
             );
 
@@ -634,7 +647,7 @@ export function useModuleProgress({
             }
 
             target.scrollIntoView({
-                behavior: "smooth",
+                behavior: "auto",
                 block: "start",
             });
         }, [
@@ -716,6 +729,7 @@ export function useModuleProgress({
 
                 lastSavedProgress.current = 0;
                 highestSectionReached.current = 0;
+                restartPendingRef.current = true;
 
                 savedTimeMinutes.current = 0;
                 sessionStart.current =
@@ -724,7 +738,7 @@ export function useModuleProgress({
                 // Start again from the top.
                 window.scrollTo({
                     top: 0,
-                    behavior: "smooth",
+                    behavior: "auto",
                 });
             } catch (error) {
                 console.error(
