@@ -7,7 +7,7 @@ Known bugs and inconsistencies in the Hydrogen Lab Safety app. This is a working
 ## Security / access control
 
 ### `save-hazards` and `upload-image` have no server-side auth guard
-The "hidden" `H Z E D I T` edit-mode entry point on `/lab` only hides the *UI*. The two write endpoints it eventually calls — `POST /api/save-hazards` and `POST /api/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image.
+The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/save-hazards` and `POST /api/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image, regardless of the caller's permissions.
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
 ### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
@@ -45,6 +45,10 @@ The column defaults to `'hazard_modules'` (underscore); every other reference to
 
 ### `HazardModuleCard.tsx` name doesn't match its usage
 Originally named for the hazard-modules section, but `ModuleListingPage` imports it directly and uses it for every `app/modules/` section, `guides` included — there's no generic/section-specific split despite the hazard-specific name.
+
+### `guides`'s Supabase rows are only consulted by the hotspot editor's dropdown, not by `/modules/guides` itself
+`guides` now has real rows in `modules`/`module_sections` (seeded to match `lib/guides.ts`, so the lab editor's Linked Module dropdown has something valid to point at — `hazards_module_fk` requires the picked `(section, id)` to exist as an actual Supabase row). But `app/modules/guides/page.tsx` still doesn't call `useModules` (see `ADDITIONAL_INFO.md`) — it renders `lib/guides.ts` directly, unlike `hazard-modules`. So editing those Supabase rows now has a real, if easy to miss, split effect: it changes what a hotspot's Linked Module dropdown shows as the module's title, but does **not** change what `/modules/guides` itself displays — someone editing guides content in Supabase, expecting hazard-modules-like live behaviour, would see no change on the actual page.
+**Fix:** either wire `app/modules/guides/page.tsx`/`[id]/page.tsx` up to `useModules`/`useModuleById` (matching `hazard-modules`), or leave a comment on the seeded rows noting they're dropdown-only until that happens.
 
 ---
 
@@ -84,6 +88,15 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 
 ---
 
+## Setup / onboarding
+
+### README's "Seed the database" step fails on a genuinely fresh install
+`README.md`'s Getting Started step 7 seeds the `hazards` table by entering edit mode and clicking Save Changes with the defaults unchanged. But `lib/hazards.ts`'s default hotspots all have a `moduleId`/`moduleSection` set (e.g. `gas` → `hazard-modules`/`1`), and `hazards_module_fk` (`match full`) requires that pair to exist as a real row in `modules`. On a truly fresh Supabase project — tables created per step 3(b), nothing else seeded — `modules` is empty, so this save fails with a foreign-key violation, not the success the step describes.
+This was already latent in the schema before the Linked Module editor existed; the editor's validation work this round is what surfaced it, since it required reasoning carefully through `hazards_module_fk`'s exact behaviour.
+**Fix:** either seed `modules`/`module_sections` with the real `hazard-modules` content (matching `lib/hazardModules.ts`) as an earlier Getting Started step, before step 7, or add a note to step 7 flagging the dependency and pointing to a seed script.
+
+---
+
 ## Dashboard placeholder content
 
 `app/dashboard/page.tsx` is entirely static JSX past the auth check — no data fetching at all, so nothing here reflects real user state:
@@ -99,7 +112,7 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 ## Dead / unwired code
 
 ### 7 of 8 `Permissions` flags are computed but never consulted
-`useAuth()` derives an 8-flag `Permissions` object on every render. Only `canManageUsers` is actually read anywhere (`Navbar.tsx`, gating the Administration link). The other seven (`canAccessModules`, `canUseSimulation`, `canViewReports`, `canEditContent`, `canManageScenarios`, `canViewAnalytics`, `canViewAuditLogs`) are dead: there's no `/reports`, `/analytics`, or audit-log page for the last three to gate, and the pages that do exist (modules, lab, edit mode) check `user`/`isAdmin` directly rather than consulting any of the others.
+`useAuth()` derives an 8-flag `Permissions` object on every render. Only `canManageUsers` is actually read anywhere (`Navbar.tsx`, gating the Administration link; and `EditModeToggle.tsx`, gating the `/lab` edit-mode switch). The other seven (`canAccessModules`, `canUseSimulation`, `canViewReports`, `canEditContent`, `canManageScenarios`, `canViewAnalytics`, `canViewAuditLogs`) are dead: there's no `/reports`, `/analytics`, or audit-log page for the last three to gate, and the pages that do exist (modules, lab) check `user`/`isAdmin` directly rather than consulting any of the others. Note: `canEditContent`/`canManageScenarios` are the semantically-closer fit for gating lab edit mode than `canManageUsers`.
 
 ### `next.config.ts` coexists with `next.config.js`
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.

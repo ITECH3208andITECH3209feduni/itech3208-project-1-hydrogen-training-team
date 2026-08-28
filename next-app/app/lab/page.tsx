@@ -1,6 +1,5 @@
 // app/lab/page.tsx  –  Interactive Hydrogen Lab
-// Secret key sequence to enter edit mode: H → Z → E → D → I → T
-// (type each character in the sequence, in order, within 2 seconds of each other)
+// Edit mode entered/exited via toggle switch (only visible to admins)
 
 'use client';
 
@@ -10,7 +9,7 @@ import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import HazardPopup from './components/HazardPopup';
-import EditBanner from './components/EditBanner';
+import EditModeToggle from './components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from './components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
@@ -18,7 +17,7 @@ import { useModuleOptions } from '@/hooks/useModuleOptions';
 
 export default function LabPage() {
 	// Authentication
-	const { user, loading } = useAuth();
+	const { user, loading, permissions } = useAuth();
 	const router = useRouter();
 
 	// Page constants
@@ -29,6 +28,7 @@ export default function LabPage() {
 		hotspots,
 		loadStatus,
 		editMode,
+		toggleEditMode,
 		selected,
 		setSelected,
 		saveStatus,
@@ -55,6 +55,13 @@ export default function LabPage() {
 		}
 	}, [user, loading, router]);
 
+	// Safety Net - Exit edit mode if lose permission mid-session (e.g. role change)
+	useEffect(() => {
+		if (editMode && !permissions.canManageUsers) {
+			toggleEditMode();
+		}
+	}, [editMode, permissions.canManageUsers, toggleEditMode]);
+
 	if (loading) {
 		return <div>Loading...</div>;
 	}
@@ -66,9 +73,14 @@ export default function LabPage() {
 	return (
 		<main className="main">
 
-			{editMode && <EditBanner />}
+			{/* Edit mode toggle */}
+			{/* Top right, under navbar. Only visible to permitted users */}
+			{permissions.canManageUsers && (
+				<EditModeToggle editMode={editMode} onToggle={toggleEditMode} />
+			)}
 			
-			{/* Header - Title and subtitle (latter changes based on loadStatus and editMode */}
+			{/* Header */}
+			{/* Title and subtitle (latter changes based on loadStatus and editMode */}
 			<h1 className="lab-title">Interactive Hydrogen Lab</h1>
 			<p className="lab-subtitle">
 				{editMode ? 'Drag hotspots · select to edit · save when done'

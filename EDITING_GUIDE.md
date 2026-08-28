@@ -2,16 +2,17 @@
 
 How to change or update the content the app shows — hotspot data, module content, and the lab image.
 	For how the underlying systems work (data merging, progress tracking, etc.), see `ADDITIONAL_INFO.md`.
-	For known bugs affecting these flows (e.g. no server-side auth guard on the write endpoints below), see `BUG_REPORT.md`.
+	For known bugs affecting these flows (e.g. no server-side auth guard on the write endpoints below, despite the client-side edit-mode gate), see `BUG_REPORT.md`.
 
 ---
 
 ## Edit Mode
 
-Hotspot positions and text are stored in Supabase and can be edited directly in the browser via a hidden edit mode. Edit mode is invisible to regular users — no button or link exposes it.
+Hotspot positions and text are stored in Supabase and can be edited directly in the browser via edit mode.
+	Edit mode is only visible to users with the `canManageUsers` permission (i.e. are admins) — regular users see no trace of it.
 
-**To enter edit mode:** navigate to `/lab` and type `H Z E D I T` (one letter at a time, each within 2 seconds of the last, no modifier keys).
-	A yellow banner appears confirming edit mode is active. Type the same sequence again to exit.
+**To enter edit mode:** navigate to `/lab` and click the switch at the top-left of the page.
+	It expands into a banner confirming edit mode is active while it's on. Click it again to exit.
 
 **Hotspots:**
 - Hotspots turn blue — drag them to reposition.
@@ -34,6 +35,9 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 ## Customising Module Content
 
 Live hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'` — edit rows there directly via the Supabase dashboard or SQL Editor to change what's shown.
+
+> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), but editing them won't change what `/modules/guides` shows — that page still renders `lib/guides.ts` directly rather than fetching from Supabase.
+	Right now those rows only feed the hotspot editor's Linked Module dropdown. See `BUG_REPORT.md`.
 
 `lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/useModules.ts` merges the two).
 
@@ -68,6 +72,14 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 ## Linking Hotspots to Modules
 
 Each hotspot can optionally link to a module, via its `moduleId`/`moduleSection` fields — this is what powers the Learn More button in the hazard popup.
-	There's currently no in-app UI for setting or changing this link — `HotspotEditor.tsx` only edits title, description, and position — so it's done directly in Supabase: set the `hazards` table's `module_section`/`module_id` columns for the relevant row via the Supabase dashboard or SQL Editor, either both to a valid `(section, id)` pair from the `modules` table, or both to `null` to remove the link.
+
+**In edit mode**, select a hotspot and use the **Linked Module** field: pick a section from the first dropdown, then a module from the second (its options are scoped to whichever section you just picked).
+	Pick "None" to remove the link — this clears both fields together, since a hotspot's link must be fully set or fully empty, never half-set.
+	If you pick a section but haven't picked a module yet (or vice versa), **Save Changes** disables with a warning until you either finish picking a module or set the section back to "None".
+
+**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/hazardModules.ts`/`lib/guides.ts`'s bundled defaults.
+	If you've added a module to one of those files but haven't seeded a matching row in Supabase yet (see "Customising Module Content" above), it won't show up here yet — add the Supabase row first.
+
+You can still set or clear a link directly in Supabase if you prefer (set the `hazards` table's `module_section`/`module_id` columns for the relevant row, either both to a valid `(section, id)` pair from the `modules` table, or both to `null`) — the in-app editor is just the more convenient path for day-to-day use now.
 
 See `ADDITIONAL_INFO.md` for how these fields are read and enforced.
