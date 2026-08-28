@@ -108,147 +108,277 @@
 	transform: translateX(4px);
 }
 
-/* ─── Bottom grid ────────────────────────────────────────────────────────── */
-.bottom-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 20px;
+/* ─── Dashboard lower panels ───────────────────────────────────────────── */
+
+.dashboard-lower-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
 }
 
-/* Staggered panel animations on the dashboard only */
-.bottom-grid .panel { animation: fadeUp 0.5s ease both; }
-.bottom-grid .panel:nth-child(2) { animation-delay: 0.1s; }
+/* ─── Shared panel ─────────────────────────────────────────────────────── */
 
-/* ─── Training progress ──────────────────────────────────────────────────── */
-.progress-row {
-	display: flex;
-	align-items: center;
-	gap: 14px;
-	margin-bottom: 20px;
-}
-.progress-track {
-	flex: 1;
-	height: 10px;
-	background: rgba(255,255,255,0.08);
-	border-radius: var(--radius-pill);
-	overflow: hidden;
-}
-.progress-fill {
-	height: 100%;
-	border-radius: var(--radius-pill);
-	width: 65%;
-	background: linear-gradient(90deg, var(--teal-dark), var(--progress));
-	box-shadow: 0 0 10px rgba(0,212,255,0.4);
-}
-.progress-pct {
-	font-family: 'Exo 2', sans-serif;
-	font-weight: 700;
-	font-size: 1rem;
-	color: var(--teal);
-	min-width: 42px;
-	text-align: right;
+.dashboard-panel {
+        background: var(--card-bg);
+        border: var(--border-rule);
+        border-radius: var(--radius);
+        overflow: hidden;
+        animation: fadeUp 0.5s ease both;
 }
 
-/* ─── Module progress list ───────────────────────────────────────────────── */
-.module-list {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-}
-.module-item {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 10px 14px;
-	background: rgba(255,255,255,0.03);
-	border-radius: 8px;
-	border: 1px solid rgba(255,255,255,0.06);
-	font-size: 0.85rem;
-}
-.module-dot {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	flex-shrink: 0;
-}
-.dot-done { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.dot-prog { background: var(--teal);  box-shadow: 0 0 6px var(--teal); }
-.dot-todo { background: rgba(255,255,255,0.2); }
-
-.module-name { flex: 1; color: var(--text); }
-
-.module-status {
-	font-size: 0.75rem;
-	font-weight: 500;
-	padding: 2px 10px;
-	border-radius: var(--radius-pill);
-}
-.status-done { background: rgba(0,229,160,0.12); color: var(--green); }
-.status-prog { background: rgba(0,180,216,0.12); color: var(--teal); }
-.status-todo { background: rgba(255,255,255,0.06); color: var(--muted); }
-
-/* ─── Certificate panel ──────────────────────────────────────────────────── */
-.cert-body {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 20px;
-	padding: 32px 22px;
-}
-.cert-icon {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 90px;
-	height: 90px;
-	border-radius: 50%;
-	background: radial-gradient(circle, rgba(0,180,216,0.15), rgba(0,119,168,0.08));
-	border: 2px solid var(--border);
-	font-size: 2.5rem;
-	animation: certPulse 3s ease-in-out infinite;
-}
-@keyframes certPulse {
-	0%,100% { box-shadow: 0 0 0 0    rgba(0,180,216,0.25); }
-	50%      { box-shadow: 0 0 0 14px rgba(0,180,216,0); }
-}
-.cert-text { text-align: center; }
-.cert-text h3 {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1.1rem;
-	font-weight: 700;
-	color: var(--white);
-	margin-bottom: 6px;
-}
-.cert-text p {
-	font-size: 0.82rem;
-	color: var(--muted);
-	line-height: 1.5;
+.dashboard-panel:nth-child(2) {
+        animation-delay: 0.1s;
 }
 
-.btn-cert {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 11px 26px;
-	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
-	color: white;
-	border: none;
-	border-radius: 8px;
-	font-family: 'Exo 2', sans-serif;
-	font-size: 0.9rem;
-	font-weight: 600;
-	cursor: pointer;
-	text-decoration: none;
-	transition: all 0.2s;
-	box-shadow: 0 4px 20px rgba(0,180,216,0.3);
-}
-.btn-cert:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 6px 28px rgba(0,180,216,0.5);
+.dashboard-panel .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 62px;
+        padding: 0 22px;
+        background: rgba(0,180,216,0.05);
+        border-bottom: 1px solid rgba(0,180,216,0.16);
 }
 
-/* ─── Responsive ─────────────────────────────────────────────────────────── */
+.panel-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+}
+
+.panel-title-icon {
+        font-size: 1.15rem;
+        line-height: 1;
+}
+
+.panel-title h2 {
+        margin: 0;
+        color: var(--teal);
+        font-family: 'Exo 2', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+}
+
+.panel-link {
+        color: var(--teal);
+        font-size: 0.76rem;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+}
+
+.panel-link:hover {
+        color: var(--white);
+}
+
+/* ─── Training Topics ──────────────────────────────────────────────────── */
+
+.topic-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px;
+}
+
+.topic-item {
+        display: flex;
+        align-items: center;
+        min-height: 52px;
+        padding: 0 14px;
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 9px;
+        color: var(--white);
+        text-decoration: none;
+        transition: all 0.2s ease;
+}
+
+.topic-item:hover {
+        background: rgba(0,180,216,0.08);
+        border-color: rgba(0,180,216,0.28);
+        transform: translateX(2px);
+}
+
+.topic-number {
+        width: 30px;
+        flex-shrink: 0;
+        color: var(--teal);
+        font-family: 'Exo 2', sans-serif;
+        font-size: 0.74rem;
+        font-weight: 700;
+}
+
+.topic-divider {
+        width: 1px;
+        height: 22px;
+        margin-right: 16px;
+        background: rgba(255,255,255,0.16);
+}
+
+.topic-title {
+        flex: 1;
+        color: var(--white);
+        font-family: 'Exo 2', sans-serif;
+        font-size: 0.88rem;
+        font-weight: 600;
+}
+
+.topic-arrow {
+        margin-left: 12px;
+        color: var(--teal);
+        font-size: 1rem;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+}
+
+.topic-item:hover .topic-arrow {
+        opacity: 1;
+        transform: translateX(3px);
+}
+
+.topics-footer {
+        margin: 0 14px;
+        padding: 13px 0 16px;
+        border-top: 1px solid rgba(0,180,216,0.12);
+        text-align: center;
+}
+
+.topics-footer a {
+        color: var(--teal);
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-decoration: none;
+}
+
+.topics-footer a:hover {
+        color: var(--white);
+}
+
+.topics-loading {
+        padding: 30px 10px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-align: center;
+}
+
+/* ─── Certificate panel ───────────────────────────────────────────────── */
+
+.certificate-panel {
+        display: flex;
+        flex-direction: column;
+}
+
+.certificate-content {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 365px;
+        padding: 28px 30px;
+        text-align: center;
+}
+
+.certificate-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 76px;
+        height: 76px;
+        margin-bottom: 20px;
+        border: 2px solid rgba(0,180,216,0.30);
+        border-radius: 50%;
+        background: rgba(0,180,216,0.06);
+        font-size: 2rem;
+}
+
+.certificate-text {
+        max-width: 420px;
+}
+
+.certificate-text h3 {
+        margin: 0 0 8px;
+        color: var(--white);
+        font-family: 'Exo 2', sans-serif;
+        font-size: 1.12rem;
+        font-weight: 700;
+}
+
+.certificate-text p {
+        margin: 0 auto 22px;
+        color: var(--muted);
+        font-size: 0.81rem;
+        line-height: 1.5;
+}
+
+.certificate-panel .btn-cert {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 26px;
+        background: linear-gradient(
+                135deg,
+                var(--teal-dark),
+                var(--teal)
+        );
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: 'Exo 2', sans-serif;
+        font-size: 0.86rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 20px rgba(0,180,216,0.3);
+}
+
+.certificate-panel .btn-cert:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(0,180,216,0.5);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────────────── */
+
 @media (max-width: 900px) {
-	.stat-cards  { grid-template-columns: 1fr; }
-	.bottom-grid { grid-template-columns: 1fr; }
+
+        .stat-cards {
+                grid-template-columns: 1fr;
+        }
+
+        .dashboard-lower-grid {
+                grid-template-columns: 1fr;
+        }
+}
+
+@media (max-width: 600px) {
+
+        .dashboard-panel .panel-header {
+                padding: 0 16px;
+        }
+
+        .panel-link {
+                display: none;
+        }
+
+        .topic-list {
+                padding: 10px;
+        }
+
+        .topic-item {
+                min-height: 48px;
+                padding: 0 11px;
+        }
+
+        .topic-title {
+                font-size: 0.84rem;
+        }
+
+        .topic-divider {
+                margin-right: 11px;
+        }
+
+        .certificate-content {
+                min-height: 280px;
+                padding: 24px 18px;
+        }
 }

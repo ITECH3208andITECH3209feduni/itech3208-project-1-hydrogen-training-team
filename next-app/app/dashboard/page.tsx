@@ -1,139 +1,418 @@
-// app/page.tsx  –  Hydrogen Lab Safety Dashboard
+// app/dashboard/page.tsx - Hydrogen Lab Safety Dashboard
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useModules } from "@/hooks/useModules";
+import { hazardModules } from "@/lib/hazardModules";
 import "./dashboard.css";
 
+type QuizProgress = {
+    score: number;
+    passed: boolean;
+    attempts: number;
+    last_attempted_at?: string | null;
+};
+
 export default function Dashboard() {
-	// Authentication
-	const { user, loading } = useAuth();
-	const router = useRouter();
+    const { user, loading } = useAuth();
+    const router = useRouter();
 
-	useEffect(() => {
-		if (!loading && !user) {
-			router.replace("/login");
-		}
-	}, [user, loading, router]);
+    const {
+        modules,
+        loadStatus,
+    } = useModules("hazard-modules", hazardModules);
 
-	if (loading) {
-		return <div>Loading...</div>;
-	}
+    const [quizProgress, setQuizProgress] =
+        useState<QuizProgress | null>(null);
 
-	if (!user) {
-		return null;
-	}
+    const [quizLoading, setQuizLoading] =
+        useState(true);
 
-	return (
-		<main className="main">
-			{/* User Greeting */}
-			<div className="greeting">
-				<h1>
-					Welcome back,
-					<span className="greeting-accent">
-						{" "}
-						{user.displayName || user.email}
-					</span>
-					👋
-				</h1>
-				<p>Continue your hydrogen technology training journey</p>
-			</div>
-			
-			{/* Stat Cards */}
-			<div className="stat-cards">
-				<Link href="/modules/hazard-modules" className="stat-card">
-					<div className="stat-icon modules">📚</div>
-					<div className="stat-info">
-						<div className="label">Modules</div>
-						<div className="count">12</div>
-						<div className="sub">4 completed · 3 in progress</div>
-					</div>
-					<div className="stat-arrow">→</div>
-				</Link>
+    // Redirect unauthenticated users
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace("/login");
+        }
+    }, [user, loading, router]);
 
-				<Link href="/lab" className="stat-card">
-					<div className="stat-icon scenarios">🔬</div>
-					<div className="stat-info">
-						<div className="label">Scenarios / Simulation</div>
-						<div className="count">8</div>
-						<div className="sub">2 completed · 1 in progress</div>
-					</div>
-					<div className="stat-arrow">→</div>
-				</Link>
+    // Load user's quiz progress
+    useEffect(() => {
+        async function loadQuizProgress() {
+            try {
+                setQuizLoading(true);
 
-				<Link href="/quizzes" className="stat-card">
-					<div className="stat-icon quizzes">📝</div>
-					<div className="stat-info">
-						<div className="label">Quizzes</div>
-						<div className="count">16</div>
-						<div className="sub">6 completed · avg score 84%</div>
-					</div>
-					<div className="stat-arrow">→</div>
-				</Link>
-			</div>
-			
-			{/* Bottom Grid */}
-			<div className="bottom-grid">
-				
-				{/* Training Progress */}
-				<div className="panel">
-					<div className="panel-header">📊 Training Progress</div>
-					<div className="panel-body">
-						<div className="progress-row">
-							<div className="progress-track">
-								<div className="progress-fill"></div>
-							</div>
-							<div className="progress-pct">65%</div>
-						</div>
-						<div className="module-list">
-							<div className="module-item">
-								<div className="module-dot dot-done"></div>
-								<div className="module-name">H₂ Fundamentals &amp; Properties</div>
-								<div className="module-status status-done">Done</div>
-							</div>
-							<div className="module-item">
-								<div className="module-dot dot-done"></div>
-								<div className="module-name">Safety Protocols &amp; Handling</div>
-								<div className="module-status status-done">Done</div>
-							</div>
-							<div className="module-item">
-								<div className="module-dot dot-prog"></div>
-								<div className="module-name">Electrolysis &amp; Production</div>
-								<div className="module-status status-prog">In Progress</div>
-							</div>
-							<div className="module-item">
-								<div className="module-dot dot-todo"></div>
-								<div className="module-name">Fuel Cell Technology</div>
-								<div className="module-status status-todo">Not Started</div>
-							</div>
-							<div className="module-item">
-								<div className="module-dot dot-todo"></div>
-								<div className="module-name">Storage &amp; Transportation</div>
-								<div className="module-status status-todo">Not Started</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				
-				{/* Certificate */}
-				<div className="panel">
-					<div className="panel-header">🏆 Completed Modules</div>
-					<div className="cert-body">
-						<div className="cert-icon">🎓</div>
-						<div className="cert-text">
-							<h3>Hydrogen Safety Certification</h3>
-							<p>
-								You&apos;ve completed the Safety Protocols &amp; Handling module.
-								<br />Download your certificate of completion.
-							</p>
-						</div>
-						<Link href="/certificate" className="btn-cert">Download Certificate →</Link>
-					</div>
-				</div>
-			</div>
-		</main>
-	);
+                if (!user) {
+                    setQuizProgress(null);
+                    return;
+                }
+
+                const token = await user.getIdToken();
+
+                const response = await fetch(
+                    "/api/quizzes/progress",
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        cache: "no-store",
+                    }
+                );
+
+                const data = await response.json();
+
+                if (
+                    response.ok &&
+                    data.ok &&
+                    data.progress
+                ) {
+                    setQuizProgress({
+                        score: Number(
+                            data.progress.score ?? 0
+                        ),
+                        passed: Boolean(
+                            data.progress.passed
+                        ),
+                        attempts: Number(
+                            data.progress.attempts ?? 0
+                        ),
+                        last_attempted_at:
+                            data.progress
+                                .last_attempted_at ?? null,
+                    });
+                } else {
+                    setQuizProgress(null);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to load dashboard quiz progress:",
+                    error
+                );
+
+                setQuizProgress(null);
+            } finally {
+                setQuizLoading(false);
+            }
+        }
+
+        if (!loading) {
+            loadQuizProgress();
+        }
+    }, [user, loading]);
+
+    // Module statistics
+    const totalModules = modules.length;
+
+    const completedModules = useMemo(
+        () =>
+            modules.filter(
+                (module) =>
+                    module.status === "done" ||
+                    Number(module.progress) >= 100
+            ).length,
+        [modules]
+    );
+
+    const inProgressModules = useMemo(
+        () =>
+            modules.filter(
+                (module) =>
+                    Number(module.progress) > 0 &&
+                    Number(module.progress) < 100
+            ).length,
+        [modules]
+    );
+
+    // Certificate eligibility
+    const allModulesCompleted =
+        totalModules > 0 &&
+        completedModules === totalModules;
+
+    const certificateEligible =
+        allModulesCompleted &&
+        !!quizProgress &&
+        quizProgress.score >= 70;
+
+    // Training topics
+    const trainingTopics = useMemo(
+        () =>
+            modules.map((module) => ({
+                id: module.id,
+                title: module.title,
+            })),
+        [modules]
+    );
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!user) {
+        return null;
+    }
+
+    return (
+        <main className="main">
+
+            {/* User Greeting */}
+            <div className="greeting">
+                <h1>
+                    Welcome back,
+                    <span className="greeting-accent">
+                        {" "}
+                        {user.displayName || user.email}
+                    </span>{" "}
+                    &#128075;
+                </h1>
+
+                <p>
+                    Continue your hydrogen technology
+                    training journey
+                </p>
+            </div>
+
+            {/* Top Stat Cards */}
+            <div className="stat-cards">
+
+                {/* Modules */}
+                <Link
+                    href="/modules/hazard-modules"
+                    className="stat-card"
+                >
+                    <div className="stat-icon modules">
+                        &#128218;
+                    </div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Modules
+                        </div>
+
+                        <div className="count">
+                            {loadStatus === "loading"
+                                ? "—"
+                                : totalModules}
+                        </div>
+
+                        <div className="sub">
+                            {loadStatus === "loading"
+                                ? "Loading..."
+                                : `${completedModules} completed · ${inProgressModules} in progress`}
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">
+                        →
+                    </div>
+                </Link>
+
+                {/* Scenarios - static for now */}
+                <Link
+                    href="/lab"
+                    className="stat-card"
+                >
+                    <div className="stat-icon scenarios">
+                        &#128300;
+                    </div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Scenarios / Simulation
+                        </div>
+
+                        <div className="count">
+                            8
+                        </div>
+
+                        <div className="sub">
+                            2 completed · 1 in progress
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">
+                        →
+                    </div>
+                </Link>
+
+                {/* Quizzes */}
+                <Link
+                    href="/quizzes"
+                    className="stat-card"
+                >
+                    <div className="stat-icon quizzes">
+                        &#128221;
+                    </div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Quizzes
+                        </div>
+
+                        <div className="count">
+                            {quizLoading
+                                ? "—"
+                                : quizProgress
+                                    ? `${quizProgress.score}%`
+                                    : "—"}
+                        </div>
+
+                        <div className="sub">
+                            {quizLoading
+                                ? "Loading..."
+                                : quizProgress
+                                    ? quizProgress.passed
+                                        ? "Passed · Final Quiz"
+                                        : `${quizProgress.attempts} attempt${quizProgress.attempts === 1 ? "" : "s"}`
+                                    : "Not attempted"}
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">
+                        →
+                    </div>
+                </Link>
+            </div>
+
+            {/* Lower Dashboard Panels */}
+            <div className="dashboard-lower-grid">
+
+                {/* Training Topics */}
+                <section className="dashboard-panel topics-panel">
+
+                    <div className="panel-header">
+                        <div className="panel-title">
+                            <span className="panel-title-icon">
+                                &#128218;
+                            </span>
+
+                            <h2>
+                                Training Topics
+                            </h2>
+                        </div>
+
+                        <Link
+                            href="/modules/hazard-modules"
+                            className="panel-link"
+                        >
+                            View Modules →
+                        </Link>
+                    </div>
+
+                    <div className="topic-list">
+
+                        {trainingTopics.length > 0 ? (
+                            trainingTopics.map(
+                                (topic, index) => (
+                                    <Link
+                                        key={topic.id}
+                                        href={`/modules/hazard-modules/${topic.id}`}
+                                        className="topic-item"
+                                    >
+                                        <span className="topic-number">
+                                            {String(
+                                                index + 1
+                                            ).padStart(
+                                                2,
+                                                "0"
+                                            )}
+                                        </span>
+
+                                        <span className="topic-divider" />
+
+                                        <span className="topic-title">
+                                            {topic.title}
+                                        </span>
+
+                                        <span className="topic-arrow">
+                                            →
+                                        </span>
+                                    </Link>
+                                )
+                            )
+                        ) : (
+                            <div className="topics-loading">
+                                Training topics are loading...
+                            </div>
+                        )}
+
+                    </div>
+
+                    <div className="topics-footer">
+                        <Link
+                            href="/modules/hazard-modules"
+                        >
+                            View all modules →
+                        </Link>
+                    </div>
+
+                </section>
+
+                {/* Completed Modules / Certification */}
+                <section className="dashboard-panel certificate-panel">
+
+                    <div className="panel-header">
+                        <div className="panel-title">
+                            <span className="panel-title-icon">
+                                &#127942;
+                            </span>
+
+                            <h2>
+                                Completed Modules
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div className="certificate-content">
+
+                        <div className="certificate-icon">
+                            &#127891;
+                        </div>
+
+                        <div className="certificate-text">
+                            <h3>
+                                Hydrogen Safety
+                                Certification
+                            </h3>
+
+                            {certificateEligible ? (
+                                <p>
+                                    Congratulations! You
+                                    have completed all
+                                    required training
+                                    modules and passed
+                                    the final quiz.
+                                </p>
+                            ) : (
+                                <p>
+                                    Complete all required
+                                    training modules and
+                                    pass the final quiz
+                                    with a score of 70%
+                                    or higher to unlock
+                                    your certificate.
+                                </p>
+                            )}
+                        </div>
+
+                        <Link
+                            href="/certificate"
+                            className="btn-cert"
+                        >
+                            {certificateEligible
+                                ? "View Certificate →"
+                                : "Check Eligibility →"}
+                        </Link>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+    );
 }
