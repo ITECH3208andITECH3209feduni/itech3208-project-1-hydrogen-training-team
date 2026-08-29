@@ -45,3 +45,12 @@ export interface ModuleData {
 export function getModuleById<T extends ModuleData>(items: T[], id: string): T | undefined {
 	return items.find((item) => item.id === id);
 }
+
+// A module is locked when it has a prevId and that prerequisite isn't done yet.
+// Missing prerequisite data fails open (not locked) rather than blocking access on a data gap.
+export function isModuleLocked<T extends ModuleData>(module: T, items: T[]): boolean {
+	if (!module.prevId) return false;
+	const prev = getModuleById(items, module.prevId);
+	if (!prev) return false;
+	return prev.status !== 'done';
+}

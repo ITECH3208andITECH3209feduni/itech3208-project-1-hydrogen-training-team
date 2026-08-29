@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
+import { ModuleData, ModuleStatus, getModuleById, isModuleLocked } from '@/lib/moduleTypes';
 import HazardModuleCard from './HazardModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;
@@ -70,14 +70,21 @@ export default function ModuleListingPage({
 			
 			{/* Module grid */}
 			<div className="modules-grid">
-				{visible.map((item, i) => (
-					<HazardModuleCard
-						key={item.id}
-						item={item}
-						basePath={basePath}
-						animationDelay={i * 0.07}
-					/>
-				))}
+				{visible.map((item, i) => {
+					const locked = isModuleLocked(item, items);
+					const prevTitle = item.prevId ? getModuleById(items, item.prevId)?.title : undefined;
+
+					return (
+						<HazardModuleCard
+							key={item.id}
+							item={item}
+							basePath={basePath}
+							animationDelay={i * 0.07}
+							locked={locked}
+							lockedReason={locked && prevTitle ? `Complete "${prevTitle}" to unlock this module` : undefined}
+						/>
+					);
+				})}
 
 				{/* If no modules available/match filter, show instead */}
 				{visible.length === 0 && (
