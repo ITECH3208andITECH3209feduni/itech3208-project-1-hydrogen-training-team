@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 	const { data, error } = await supabase
 		.from('modules')
 		.select(
-			`id, slug, badge_num, icon, icon_bg, title, description, key_takeaway, prev_id, next_id, sort_order,
+			`id, slug, badge_num, icon, icon_bg, title, description, key_takeaway, prev_id, next_id, video_url, video_type, sort_order,
 			 module_sections ( num, heading, body, list_type, items, callout, sort_order )`
 		)
 		.eq('section', section)
