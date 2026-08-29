@@ -39,8 +39,9 @@ export interface ModuleData {
 	 * Not used for routing — routes built from `id` — but kept for analytics event names, test selectors, or a future move to slug-based URLs.
 	 */
 	slug?: string;
+	videoUrl?: string | null;
+	videoType?: "youtube" | "mp4" | null;
 }
-
 // Helper to look up a module by its numeric id string
 export function getModuleById<T extends ModuleData>(items: T[], id: string): T | undefined {
 	return items.find((item) => item.id === id);

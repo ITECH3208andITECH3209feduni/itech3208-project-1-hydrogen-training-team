@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { ModuleData } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
 import { useModuleProgress } from "../hooks/useModuleProgress";
+import ModuleVideo from "./ModuleVideo";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
@@ -206,6 +207,12 @@ export default function ModuleReaderPage({
                     />
                 </div>
             ))}
+
+	    {/* Module Video */}
+	    <ModuleVideo 
+        videoUrl={item.videoUrl} 
+        videoType={item.videoType}
+        />
 
             {/* Key Takeaway */}
             <div className="takeaway-box">
