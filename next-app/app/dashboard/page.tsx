@@ -413,6 +413,34 @@ export default function Dashboard() {
 
             </div>
 
+                        {/* Feedback */}
+            <section className="feedback-panel">
+
+                <div className="feedback-icon">
+                    &#128172;
+                </div>
+
+                <div className="feedback-info">
+                    <h2>
+                        Feedback
+                    </h2>
+
+                    <p>
+                        Help us improve the Hydrogen Lab Safety
+                        training experience by sharing your
+                        feedback.
+                    </p>
+                </div>
+
+                <Link
+                    href="/feedback"
+                    className="feedback-button"
+                >
+                    Give Feedback &#8594;
+                </Link>
+
+            </section>
+
         </main>
     );
 }
