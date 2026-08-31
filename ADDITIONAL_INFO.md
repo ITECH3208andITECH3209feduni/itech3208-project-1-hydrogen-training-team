@@ -65,13 +65,13 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 - **Hazard Modules** (`/modules/hazard-modules`) — the hydrogen hazards content, defined in `lib/hazardModules.ts`.
 	Linked from the Navbar and the dashboard's Modules stat card.
 - **Guides** (`/modules/guides`) — an example second section demonstrating the pattern, defined in `lib/guides.ts`.
-	Not currently linked from navigation. It's a working example of a section built on the shared template, but hasn't been migrated to Supabase yet — no `useModules` call, data comes straight from `lib/guides.ts`.
-	Treat it as a reference for the overall section shape, not the live-loading pattern (follow `hazard-modules` for that).
+	Not currently linked from navigation — it's a template section, kept unlinked deliberately so its placeholder content stays available as a reference rather than needing to look like real content.
+	It follows the same live-loading pattern as `hazard-modules`: `app/modules/guides/page.tsx`/`[id]/page.tsx` call `useModules`/`useModuleById` with `section: 'guides'`, merging over `lib/guides.ts` as `defaults`.
 
 The shared template lives in `app/modules/components/`:
 - `ModuleListingPage.tsx` — filter bar, grid, auth redirect
 - `ModuleReaderPage.tsx` — breadcrumb, hero, sections, key takeaway, prev/next nav, and the progress UI described under "Module Progress Tracking" below
-- `HazardModuleCard.tsx` — card shown in the listing page, used for every section
+- `ModuleCard.tsx` — card shown in the listing page, used for every section
 - `SectionBlock.tsx` — renders a single numbered section. Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
 
 Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/moduleTypes.ts`.
@@ -79,15 +79,17 @@ Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getM
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
 Module content lives in Supabase, loaded per-section through `hooks/useModules.ts`:
-- **`useModules(section, defaults)`** — fetches `GET /api/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus }`.
+- **`useModules(section, defaults)`** — fetches `GET /api/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
 	A successful, non-empty response is authoritative for whatever it contains — any missing modules from the fallback version are considered purposefully deleted.
 	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the section hasn't been seeded yet (empty response).
-- **`useModuleById(section, defaults, id)`** — the same, narrowed to a single module by id.
+	`usingDefaults` is `true` in exactly those fallback cases (an error, an empty response, or a network failure), `false` on a verified live load.
+- **`useModuleById(section, defaults, id)`** — the same, narrowed to a single module by id; returns `{ item, loadStatus, usingDefaults }`.
 	This is what reader pages use in place of a section's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
 - **`mergeRow`/`mapSection`** (exported from `useModules.ts`) do the field-name translation between Supabase's snake_case row shape (`badge_num`, `icon_bg`, …) and the app's camelCase `ModuleData`/`ModuleSection` shape.
 - `status`/`progress` are never present in the Supabase `modules` row itself — they're deliberately not columns on `modules`; they're tracked per-user in `user_module_progress` instead.
-	But `useModules` now merges live per-user progress into them too: after merging content, it separately fetches `GET /api/modules/progress` (when a user is signed in) and overwrites each module's `status`/`progress` with the matching per-user record — `"done"` if the record's `status` is `"done"` or its `progress >= 100`, `"progress"` if `> 0`, else `"todo"`.
-	If there's no signed-in user, or no matching record for a given module, `status`/`progress` are forced to `"todo"`/`0` — **not** `fallback?.status`/`fallback?.progress` from `defaults`, even though `mergeRow` had just set those a moment earlier in the same function. See `BUG_REPORT.md`.
+	`useModules` merges live per-user progress into module content: after merging content, it fetches `GET /api/modules/progress?section=...` (when a user is signed in) and overwrites each module's `status`/`progress` with the matching per-user record — `"done"` if the record's `status` is `"done"` or its `progress >= 100`, `"progress"` if `> 0`, else `"todo"`.
+	The `?section=` query param scopes the fetch to the current section, so a `module_id` shared across two sections (e.g. `hazard-modules` and `guides` both using `"1"`) can't have its progress conflated.
+	If there's no signed-in user, or no matching record for a given module, that module's `status`/`progress` are left as whatever `mergeRow` already set from `defaults`.
 - `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link.
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
 
@@ -145,17 +147,18 @@ For a page unrelated to the modules template:
 
 ## Module Progress Tracking
 
-The reader page tracks live, per-user progress via `useModuleProgress` (`app/modules/hooks/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
+The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
 	The listing page's cards now read from the same underlying data too (see above, `useModules`' progress merge) — but the two fetch and interpret `/api/modules/progress` independently of each other, so a momentary mismatch between a card's badge and the reader page's own progress bar is possible if one has fetched more recently than the other.
-	This applies to every section built on the shared template, including the unlinked `guides` example — `ModuleReaderPage` doesn't distinguish between sections.
+	This applies to every section built on the shared template, including the unlinked `guides` example — each section passes its own `section` string into `ModuleReaderPage`/`useModuleProgress`/`useModules`, so progress stays correctly scoped per section even where module ids collide across sections.
 
 `/api/modules/progress` (`requireUser`-gated) backs the hook:
-- **`POST`** — body `{ module_id }`. If a `(uid, section, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now. If one exists, it's a no-op (`{ ok: true, message: "Progress already exists" }`) — it never resets an existing row.
-- **`GET`** — returns every progress row for the caller (`{ ok, progress: ModuleProgress[] }`); the hook finds the one matching the current `moduleId`.
-- **`PATCH`** — body `{ module_id, progress?, status?, quiz_score?, attempts?, time_spent?, action? }`, all optional except `module_id`.
+- **`POST`** — body `{ module_id, section }`. If a `(uid, section, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now.
+	If one exists, it's a no-op (`{ ok: true, message: "Progress already exists" }`) — it never resets an existing row.
+- **`GET`** — returns every progress row for the caller (`{ ok, progress: ModuleProgress[] }`), optionally scoped to one section via a `?section=` query param; the hook finds the one matching the current `moduleId`.
+- **`PATCH`** — body `{ module_id, section, progress?, status?, attempts?, time_spent?, action? }`, all optional except `module_id`/`section`.
 	Setting `progress` also auto-derives `status` (`>= 100` → `"done"` + stamps `completed_at`; `> 0` → `"progress"`) unless `status` is passed explicitly, in which case that wins and setting it to `"done"` directly forces `progress` to `100` too.
 	`action: "restart"` ignores every other field, looks the row up first (404s if it doesn't exist), and resets it: `progress: 0`, `status: "progress"`, `completed_at: null`, `time_spent: 0`, `attempts` incremented, `started_at`/`last_accessed` refreshed.
-	`useModuleProgress` itself only ever sends `progress`/`time_spent` (or `action: "restart"`) — it never touches `status`, `attempts`, or `quiz_score` directly, even though the route accepts all of them.
+	`useModuleProgress` itself always sends `module_id`/`section`, and otherwise only ever sends `progress`/`time_spent` (or `action: "restart"`) — it never touches `status` or `attempts` directly, even though the route accepts both.
 
 **How progress is derived:** each section in `ModuleReaderPage` is wrapped in a `div` with `data-module-section` and `data-section-number`.
 	An `IntersectionObserver` (50% visibility threshold) watches these and, the first time a new-highest section scrolls into view, computes `progress = round(highestSectionReached / sectionCount * 100)` (capped at 99% until the last section is reached, which sets 100%).
@@ -204,8 +207,9 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 ### Certificate gating
 
 `app/certificate/page.tsx` no longer reads `localStorage` at all — despite `handleContinue` in the hazards quiz page still writing a passing record there (see above), that write is now dead code.
-	Instead, on mount the certificate page fetches both `GET /api/modules/progress` and `GET /api/quizzes/progress` (both `requireUser`-gated) and computes eligibility itself:
+	Instead, on mount the certificate page fetches both `GET /api/modules/progress?section=hazard-modules` and `GET /api/quizzes/progress` (both `requireUser`-gated) and computes eligibility itself:
 - **`allModulesCompleted`** — every row in the fetched `moduleProgress` array must have `status === "done"` or `progress >= 100`, checked against `hazardModules.length` as the total.
+	The `?section=hazard-modules` scoping keeps a `guides` progress row from being counted toward this.
 - **`quizPassed`** — `record.score >= 70`, a hardcoded threshold independent of `PASS_THRESHOLD` (`lib/questionhazards.ts`) and independent of the `passed` boolean already computed and stored by `/api/quizzes/progress` itself. See `BUG_REPORT.md`.
 - **`certificateEligible`** — both of the above must be true.
 
@@ -232,11 +236,12 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 
 - **Module data is static here, not live** — unlike the student-facing reader (`useModuleById`, live from Supabase), this page maps over the bundled `hazardModules` array directly and merges each with the matching `moduleProgress` record (by `module_id`).
 	A module that exists only in Supabase wouldn't appear here, even though it'd show up for students.
-- **`ModuleProgress`** — one row per module the user has touched, straight from `user_module_progress`: `uid`, `module_id`, `status`, `progress`, `quiz_score`, `attempts`, `time_spent`, `started_at`, `last_accessed`, `completed_at`.
+	The underlying `user_module_progress` query (in both this route and `GET /api/admin/users`) is scoped to `section = "hazard-modules"`, so a learner's progress in any other section (currently just `guides`) never appears anywhere in the admin panel — see `BUG_REPORT.md`.
+- **`ModuleProgress`** — one row per module the user has touched, straight from `user_module_progress`: `uid`, `module_id`, `status`, `progress`, `attempts`, `time_spent`, `started_at`, `last_accessed`, `completed_at`.
 - **`QuizProgress`** — one row per quiz, from `user_quiz_progress`: `uid`, `quiz_id`, `score`, `attempts`, `passed`, `last_attempted_at`, and now `leaderboard_visible` (the route selects `*`, so it comes through automatically).
 	This page's Quiz panel only ever reads `quizProgress[0]`; there's only one quiz today, even though the schema (`quiz_id` as part of a composite key) supports more.
 	Nothing in the admin UI currently displays `leaderboard_visible`.
-- Each module is rendered via `AdminModuleCard.tsx` (imported under the local alias `ModuleCard`) with `mode="admin"` and `adminProgress={module.adminProgress}`.
+- Each module is rendered via `AdminModuleCard.tsx` with `mode="admin"` and `adminProgress={module.adminProgress}`.
 
 ---
 

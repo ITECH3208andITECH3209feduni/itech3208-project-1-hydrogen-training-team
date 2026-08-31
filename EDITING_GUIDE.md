@@ -36,8 +36,8 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 Live hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'` — edit rows there directly via the Supabase dashboard or SQL Editor to change what's shown.
 
-> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), but editing them won't change what `/modules/guides` shows — that page still renders `lib/guides.ts` directly rather than fetching from Supabase.
-	Right now those rows only feed the hotspot editor's Linked Module dropdown. See `BUG_REPORT.md`.
+> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `hazard-modules` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
+	`guides` is a template section not linked from navigation, so day-to-day editing here is mainly relevant for keeping the dropdown's options in sync with any real section you build from it.
 
 `lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/useModules.ts` merges the two).
 
@@ -47,7 +47,8 @@ Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections
 	It is also under consideration for replacing the current url scheme, going from '/section/id' to '/section/slug'.
 - `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`
 - `title`, `icon`, `iconBg`, `description` — used by the listing card
-- `status`, `progress` — used by the listing card, but **not** stored in Supabase at all; always drawn from `lib/hazardModules.ts`, pending a separate per-user progress-tracking table
+- `status`, `progress` — used by the listing card; live per-user values come from the separate `user_module_progress` table, merged in by `useModules` for a signed-in user.
+	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/` file (e.g. `lib/hazardModules.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
 - `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects;
 	in Supabase this is the `module_sections` table (one row per section, foreign-keyed to its parent `modules` row, deleted automatically via `on delete cascade` if the module is deleted)
 - `keyTakeaway` — displayed at the bottom of the reader

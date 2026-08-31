@@ -33,22 +33,8 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 
 **Fix:** correct `UserProfile['user_type']` in `AuthContext.tsx` to the real 6-value set, update the modal's options to match, and add server-side validation in the PATCH route.
 
-### `POST /api/modules/progress` hardcodes `section: "hazard-modules"` on every insert
-This ignores which section the module actually belongs to. The `user_module_progress` table's real uniqueness constraint is on `(uid, section, module_id)` — per-section — which is presumably why `guides` gets working progress tracking at all (same `ModuleReaderPage`/hook, different section). But since the route always writes `"hazard-modules"`, a `guides` module and a `hazard-modules` module that happen to share an `id` (e.g. both `"1"`) would collide on the same row. The same unscoped matching now also affects `useModules`' listing-card progress merge, not just `useModuleProgress` — both key off `module_id` alone with no `section` check.
-**Fix:** derive `section` from the request/module instead of hardcoding it, and filter by it on the client wherever `module_id` is matched against fetched progress rows.
-
-### `user_module_progress.section`'s SQL default doesn't match the app's slug
-The column defaults to `'hazard_modules'` (underscore); every other reference to this section in the app uses `'hazard-modules'` (hyphen). Moot in practice since `/api/modules/progress` always sets `section` explicitly on insert, but worth fixing so the default isn't actively wrong if anything ever relies on it.
-
 ### Quiz ID naming mismatch
 `POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug.
-
-### `HazardModuleCard.tsx` name doesn't match its usage
-Originally named for the hazard-modules section, but `ModuleListingPage` imports it directly and uses it for every `app/modules/` section, `guides` included — there's no generic/section-specific split despite the hazard-specific name.
-
-### `guides`'s Supabase rows are only consulted by the hotspot editor's dropdown, not by `/modules/guides` itself
-`guides` now has real rows in `modules`/`module_sections` (seeded to match `lib/guides.ts`, so the lab editor's Linked Module dropdown has something valid to point at — `hazards_module_fk` requires the picked `(section, id)` to exist as an actual Supabase row). But `app/modules/guides/page.tsx` still doesn't call `useModules` (see `ADDITIONAL_INFO.md`) — it renders `lib/guides.ts` directly, unlike `hazard-modules`. So editing those Supabase rows now has a real, if easy to miss, split effect: it changes what a hotspot's Linked Module dropdown shows as the module's title, but does **not** change what `/modules/guides` itself displays — someone editing guides content in Supabase, expecting hazard-modules-like live behaviour, would see no change on the actual page.
-**Fix:** either wire `app/modules/guides/page.tsx`/`[id]/page.tsx` up to `useModules`/`useModuleById` (matching `hazard-modules`), or leave a comment on the seeded rows noting they're dropdown-only until that happens.
 
 ### Quiz ID is hardcoded independently in two places
 `const QUIZ_ID = "hydrogen-hazards"` is declared separately in both `app/api/quizzes/progress/route.ts` and `app/api/quizzes/leaderboard/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the two `QUIZ_ID` copies staying in sync — if one is ever changed without the other (e.g. when a second quiz is added and this gets refactored), the leaderboard would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning an empty leaderboard rather than an error.
@@ -57,10 +43,6 @@ Originally named for the hazard-modules section, but `ModuleListingPage` imports
 ---
 
 ## Data integrity
-
-### `useModules` discards bundled defaults instead of falling back to them
-`useModules`' new progress-merge step (see `ADDITIONAL_INFO.md`) is meant to fall back to each module's bundled default `status`/`progress` when there's no live per-user record — but it doesn't. For any module with no matching row (every module for a logged-out visitor, or a logged-in user who's never opened it), the code unconditionally sets `progress: 0, status: "todo"`, discarding the `fallback?.status`/`fallback?.progress` that `mergeRow` had just set moments earlier from `defaults`. Any section whose bundled defaults include a non-`"todo"`/non-`0` example value (e.g. demo content marked partially or fully complete) would now show as "Not Started" on the listing page regardless. The test suite doesn't catch this because its fixture default happens to already be `todo`/`0`, and `hooks/useModules.test.ts` mocks `useAuth` to always return `user: null`, so the "logged in with a real progress record" branch isn't exercised by any test.
-**Fix:** fall back to `module.status`/`module.progress` (i.e. what `mergeRow` already set) instead of a hardcoded `"todo"`/`0` when no matching record exists.
 
 ### Quiz submissions overwrite prior results with no "best attempt" logic
 `POST /api/quizzes/progress` `upsert`s onto `(uid, quiz_id)`: `attempts` increments, but `score`/`passed` are simply overwritten by the latest submission. There's no history. Passing a quiz, then retrying and failing, replaces the stored `passed: true` with `false` — the prior pass is lost. This has a downstream effect on the leaderboard page: since `GET /api/quizzes/leaderboard` reads `score` straight from `user_quiz_progress`, a student who posts a high score, opts into the leaderboard, then retries and does worse will see their leaderboard rank drop to match the new (lower) score - there's not "best score" retained anywhere to rank on instead.
@@ -85,8 +67,9 @@ Previously these were entirely unrelated criteria (module completion vs. a `loca
 ### Admin "Certificate eligibility" measures a different thing than the real certificate page
 The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalModules` (module completion). The real `/certificate` page gates on a passed **quiz** result in `localStorage` (see above). These are different criteria entirely, not just different data sources — someone who's finished every module but never passed the quiz shows "Eligible" in admin while seeing "No certificate yet" on the real page, and vice versa.
 
-### `quiz_score` column is dead scaffolding
-`user_module_progress.quiz_score` is a real, nullable column, and the `PATCH /api/modules/progress` route accepts it — but nothing in the frontend (`useModuleProgress`, `ModuleReaderPage`, `SectionBlock`) ever sends it. Looks like scaffolding for a since-descoped or not-yet-built per-module quiz feature; safe to leave alone but worth knowing it does nothing today.
+### Admin progress views only account for `hazard-modules`, not `guides`
+`GET /api/admin/users` and `GET /api/admin/users/{uid}/progress` both scope their `user_module_progress` queries to `section = "hazard-modules"`, and `totalModules` is `hazardModules.length` in both routes. A learner's progress in any other `app/modules/` section (currently just `guides`) never appears anywhere in the admin panel — not in the dashboard statistics, the per-user progress page, or certificate eligibility. `guides` is a template section not linked in navigation, so this is low-priority today, but the admin routes would need to generalize before any future real second section could get admin visibility.
+**Fix:** generalize the admin routes' section scoping (aggregate across sections, or accept a section list) if/when a second section needs admin visibility, rather than hardcoding `hazard-modules`.
 
 ### Certificate pass-threshold is hardcoded separately from the real threshold — now in both copy and logic
 `/certificate`'s "No certificate yet" panel hardcodes "70% or higher" as prose text, independent of `PASS_THRESHOLD` in `lib/questionhazards.ts` (used by the actual scoring logic). This now goes beyond copy: `quizPassed` itself is computed as `record.score >= 70`, a second independent hardcoded `70`, rather than trusting the `passed` boolean that `/api/quizzes/progress` already computed and stored from `PASS_THRESHOLD` at submit time. If `PASS_THRESHOLD` ever changes, both this string and the certificate's actual gating logic would silently disagree with the real threshold — and with each other.

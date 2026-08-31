@@ -69,6 +69,7 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 export function useModules(section: string, defaults: ModuleData[]) {
 	const [modules, setModules] = useState<ModuleData[]>(defaults);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
+	const [usingDefaults, setUsingDefaults] = useState(false);	// For if using defaults and showing inaccurate progress
 	const { user, loading: authLoading } = useAuth();
 
 	useEffect(() => {
@@ -85,14 +86,18 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				// If fetch fails, keep the defaults already sitting in state
 				if (!json.ok) {
 					console.error('load-modules API error:', json.error);
+					setUsingDefaults(true);
 					setLoadStatus('error');
 					return;
 				}
 
 				if (!json.data?.length) {
+					setUsingDefaults(true);
 					setLoadStatus('ready');
 					return;
 				}
+
+				setUsingDefaults(false);
 
 				const rows: SupabaseModuleRow[] = json.data;
 				const byId = new Map(defaults.map((m) => [m.id, m]));
@@ -109,7 +114,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				        const token = await user.getIdToken();
 
 				        const progressResponse = await fetch(
-				            "/api/modules/progress",
+				            `/api/modules/progress?section=${encodeURIComponent(section)}`,
 				            {
 				                method: "GET",
 				                headers: {
@@ -144,11 +149,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				    const record = progressMap.get(String(module.id));
 
 				    if (!record) {
-				        return {
-				            ...module,
-				            progress: 0,
-				            status: "todo" as const,
-				        };
+				        return module;
 				    }
 
 				    const numericProgress = Number(record.progress ?? 0);
@@ -176,6 +177,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 			} catch {
 				if (!cancelled) {
 					console.error(`Failed to load "${section}" modules from Supabase — using defaults`);
+					setUsingDefaults(true);
 					setLoadStatus('error');
 				}
 			}
@@ -187,12 +189,12 @@ export function useModules(section: string, defaults: ModuleData[]) {
 		};
 	}, [section, defaults, user, authLoading]);
 
-	return { modules, loadStatus };
+	return { modules, loadStatus, usingDefaults };
 }
 
 // Convenience wrapper for reader pages that just need one module by id.
 export function useModuleById(section: string, defaults: ModuleData[], id: string | undefined) {
-	const { modules, loadStatus } = useModules(section, defaults);
+	const { modules, loadStatus, usingDefaults } = useModules(section, defaults);
 	const item = id ? getModuleById(modules, id) : undefined;
-	return { item, loadStatus };
+	return { item, loadStatus, usingDefaults };
 }

@@ -85,4 +85,10 @@ export const handlers = [
             ],
         });
     }),
+    http.get('/api/modules/progress', () => {
+        return HttpResponse.json({
+            ok: true,
+            progress: [{ module_id: '1', progress: 100, status: 'done' }],
+        });
+    }),
 ];

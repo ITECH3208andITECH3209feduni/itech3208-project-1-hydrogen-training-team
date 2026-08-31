@@ -45,11 +45,11 @@ hydrogen-lab/
 ├── app/
 │   ├── globals.css						# Shared styles — reset, tokens, nav, panel, animations
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
-│   ├── page.tsx              # Public landing/intro page (/) — root, no login required
-│   ├── intro.css						  # Landing-page-specific styles
+│   ├── page.tsx              			# Public landing/intro page (/) — root, no login required
+│   ├── intro.css						# Landing-page-specific styles
 │   ├── dashboard/
 │   │   ├── page.tsx					# Dashboard (/dashboard) — static placeholder data, see BUG_REPORT
-│   │   └── dashboard.css		  # Dashboard-specific styles
+│   │   └── dashboard.css				# Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
 │   │   └── about.css					# About-page-specific styles
@@ -71,7 +71,7 @@ hydrogen-lab/
 │   │       │       └── page.tsx		# Per-user training record (/admin/users/[uid]/progress) — read-only, admin-facing
 │   │       └── components/
 │   │           ├── EditUserModal.tsx	# Modal for editing a user's role, user_type, and organisation
-│   │           └── AdminModuleCard.tsx	# Read-only per-user module progress card; shares ModuleCard.css with HazardModuleCard
+│   │           └── AdminModuleCard.tsx	# Read-only per-user module progress card; shares ModuleCard.css with ModuleCard
 │   ├── lab/
 │   │   ├── page.tsx					# Interactive hydrogen lab (/lab)
 │   │   ├── lab.css						# Lab-specific styles
@@ -86,17 +86,15 @@ hydrogen-lab/
 │   │   ├── components/
 │   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
 │   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — also wires up live progress tracking
-│   │   │   ├── HazardModuleCard.tsx	# Card component for each module in the listing page (used generically by every section)
-│   │   │   ├── ModuleCard.css			# Styles for HazardModuleCard, shared with AdminModuleCard (app/admin/users/components/)
+│   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every section)
+│   │   │   ├── ModuleCard.css			# Styles for ModuleCard, shared with AdminModuleCard (app/admin/users/components/)
 │   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page — body supports embedded HTML
-│   │   ├── hooks/
-│   │   │   └── useModuleProgress.ts	# Per-user progress/time tracking for the reader page
 │   │   ├── hazard-modules/
 │   │   │   ├── page.tsx				# Hazard module listing (/modules/hazard-modules)
 │   │   │   └── [id]/
 │   │   │       └── page.tsx			# Hazard module reader (/modules/hazard-modules/1 … 5)
 │   │   └── guides/
-│   │       ├── page.tsx				# Example second section (/modules/guides) — not linked in nav
+│   │       ├── page.tsx				# Example second section (/modules/guides) — template, not linked in nav
 │   │       └── [id]/
 │   │           └── page.tsx			# Example reader page
 │   ├── quizzes/
@@ -153,7 +151,8 @@ hydrogen-lab/
 │   ├── useModules.ts					# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ section
 │   ├── useModules.test.ts				# Unit + integration tests for useModules.ts
 │   ├── useModuleOptions.ts				# Hook — flat Supabase (section, id, title, badgeNum) list, grouped per section
-│   └── useModuleOptions.test.ts		# Integration tests for useModuleOptions.ts
+│   ├── useModuleOptions.test.ts		# Integration tests for useModuleOptions.ts
+│   └── useModuleProgress.ts			# Per-user progress/time tracking for the reader page
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
@@ -269,7 +268,7 @@ Styles are split across several files to keep page-specific rules isolated:
 | `app/dashboard/dashboard.css`             | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
 | `app/lab/lab.css`                         | Lab page only — hotspots, popup, edit mode, editor panels, save bar                                                |
 | `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav          |
-| `app/modules/components/ModuleCard.css`   | Shared base styles used by both HazardModuleCard and AdminModuleCard (found in admin folder)                       |
+| `app/modules/components/ModuleCard.css`   | Shared base styles used by both ModuleCard and AdminModuleCard (found in admin folder)                             |
 | `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
 | `app/about/about.css`                     | About page only — header, section cards, info/feature/tech grids, footer                                           |
 | `app/admin/users/admin.css`               | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
@@ -432,11 +431,10 @@ create table public.profiles (
 create table public.user_module_progress (
   id              uuid not null default gen_random_uuid(),
   uid             text not null,
-  section         text not null default 'hazard_modules',
+  section         text not null,
   module_id       text not null,
   status          text not null default 'todo',
   progress        integer not null default 0,
-  quiz_score      integer null,
   attempts        integer not null default 0,
   time_spent      integer not null default 0,
   started_at      timestamptz null,
@@ -449,8 +447,7 @@ create table public.user_module_progress (
   constraint fk_user_progress foreign key (uid) references public.profiles (uid) on delete cascade,
   constraint fk_user_progress_module foreign key (section, module_id) references public.modules (section, id) on delete restrict,
   constraint user_module_progress_status_check check (status in ('todo', 'progress', 'done')),
-  constraint user_module_progress_progress_check check (progress >= 0 and progress <= 100),
-  constraint user_module_progress_quiz_score_check check (quiz_score >= 0 and quiz_score <= 100)
+  constraint user_module_progress_progress_check check (progress >= 0 and progress <= 100)
 );
 
 create table public.user_quiz_progress (

@@ -14,7 +14,7 @@ import { hazardModules } from '@/lib/hazardModules';
 interface QuizRecord {
 	passed: boolean;
 	score: number;
-    last_attempted_at?: string | null;
+        last_attempted_at?: string | null;
 }
 
 interface ModuleProgressRecord {
@@ -34,10 +34,10 @@ export default function CertificatePage() {
 	useEffect(() => {
 		if (!loading && !user) router.replace('/login');
 	}, [user, loading, router]);
+
         useEffect(() => {
                 if (!user) return;
                 const currentUser = user;
-
                 let cancelled = false;
 
                 async function loadCertificateProgress() {
@@ -48,73 +48,45 @@ export default function CertificatePage() {
                                         Authorization: "Bearer " + token,
                                 };
 
-                                const [moduleResponse, quizResponse] =
-                                        await Promise.all([
-                                                fetch("/api/modules/progress", {
-                                                        method: "GET",
-                                                        headers,
-                                                        cache: "no-store",
-                                                }),
+                                const [moduleResponse, quizResponse] = await Promise.all([
+                                        fetch("/api/modules/progress?section=hazard-modules", {
+                                                method: "GET",
+                                                headers,
+                                                cache: "no-store",
+                                        }),
 
-                                                fetch("/api/quizzes/progress", {
-                                                        method: "GET",
-                                                        headers,
-                                                        cache: "no-store",
-                                                }),
-                                        ]);
+                                        fetch("/api/quizzes/progress", {
+                                                method: "GET",
+                                                headers,
+                                                cache: "no-store",
+                                        }),
+                                ]);
 
-                                const moduleResult =
-                                        await moduleResponse.json();
-
-                                const quizResult =
-                                        await quizResponse.json();
+                                const moduleResult = await moduleResponse.json();
+                                const quizResult = await quizResponse.json();
 
                                 if (cancelled) return;
 
                                 if (!moduleResponse.ok || !moduleResult.ok) {
-                                        throw new Error(
-                                                moduleResult.error ||
-                                                        "Unable to load module progress."
-                                        );
+                                        throw new Error(moduleResult.error || "Unable to load module progress.");
                                 }
 
                                 if (!quizResponse.ok || !quizResult.ok) {
-                                        throw new Error(
-                                                quizResult.error ||
-                                                        "Unable to load quiz progress."
-                                        );
+                                        throw new Error(quizResult.error || "Unable to load quiz progress.");
                                 }
 
-                                setModuleProgress(
-                                        Array.isArray(moduleResult.progress)
-                                                ? moduleResult.progress
-                                                : []
-                                );
+                                setModuleProgress(Array.isArray(moduleResult.progress) ? moduleResult.progress : []);
 
-                                setRecord(
-                                        quizResult.progress
-                                                ? {
-                                                          passed: Boolean(
-                                                                  quizResult.progress.passed
-                                                          ),
-                                                          score: Number(
-                                                                  quizResult.progress.score ?? 0
-                                                          ),
-                                                          last_attempted_at:
-                                                                  quizResult.progress
-                                                                          .last_attempted_at ??
-                                                                  null,
-                                                  }
-                                                : null
+                                setRecord(quizResult.progress
+                                        ? {
+                                                passed: Boolean(quizResult.progress.passed),
+                                                score: Number(quizResult.progress.score ?? 0),
+                                                last_attempted_at: quizResult.progress.last_attempted_at ?? null,
+                                        } : null
                                 );
                         } catch (error) {
                                 if (cancelled) return;
-
-                                console.error(
-                                        "Failed to load certificate progress:",
-                                        error
-                                );
-
+                                console.error("Failed to load certificate progress:", error);
                                 setRecord(null);
                                 setModuleProgress([]);
                         }
@@ -131,21 +103,12 @@ export default function CertificatePage() {
         const totalModules = hazardModules.length;
 
         const completedModules = moduleProgress.filter(
-                (module) =>
-                        module.status === "done" ||
-                        Number(module.progress ?? 0) >= 100
+                (module) => module.status === "done" || Number(module.progress ?? 0) >= 100
         ).length;
 
-        const allModulesCompleted =
-                totalModules > 0 &&
-                completedModules >= totalModules;
-
-        const quizPassed =
-                !!record &&
-                Number(record.score) >= 70;
-
-        const certificateEligible =
-                allModulesCompleted && quizPassed;
+        const allModulesCompleted = totalModules > 0 && completedModules >= totalModules;
+        const quizPassed = !!record && Number(record.score) >= 70;
+        const certificateEligible = allModulesCompleted && quizPassed;
 
 	useEffect(() => {
 		if (!certificateEligible) return;
@@ -160,7 +123,7 @@ export default function CertificatePage() {
 		});
 	}, [record, displayName]);
 
-	if (loading || record === undefined) return <div>Loadingâ€¦</div>;
+	if (loading || record === undefined) return <div>Loading…</div>;
 	if (!user) return null;
 
 	function handleDownload() {
@@ -182,15 +145,11 @@ export default function CertificatePage() {
                                         <h1>No certificate yet</h1>
 
                                         {needsModules && needsQuiz && (
-                                                <p>
-                                                        Please complete all training modules and pass the {QUIZ_TITLE} with a score of 70% or higher before you can claim your certificate.
-                                                </p>
+                                                <p>Please complete all training modules and pass the {QUIZ_TITLE} with a score of 70% or higher before you can claim your certificate.</p>
                                         )}
 
                                         {needsModules && !needsQuiz && (
-                                                <p>
-                                                        You have not yet completed all training modules. Complete all {totalModules} modules before you can claim your certificate.
-                                                </p>
+                                                <p>You have not yet completed all training modules. Complete all {totalModules} modules before you can claim your certificate.</p>
                                         )}
 
                                         {!needsModules && needsQuiz && (
@@ -205,7 +164,7 @@ export default function CertificatePage() {
                                                         href={`/quizzes/${QUIZ_SLUG}`}
                                                         className="btn-primary"
                                                 >
-                                                        {record ? "Retake the Quiz" : "Take the Quiz â†’"}
+                                                        {record ? "Retake the Quiz" : "Take the Quiz →"}
                                                 </Link>
                                         )}
 
@@ -226,19 +185,12 @@ export default function CertificatePage() {
 		<main className="main">
 			<div className="cert-page">
 				<div className="cert-page-header">
-					<span className="quiz-badge">ðŸ† Certification</span>
-					<h1
-						style={{
-							fontFamily: "'Exo 2', sans-serif",
-							fontSize: '2rem',
-							fontWeight: 700,
-							color: 'var(--white)',
-						}}
-					>
+					<span className="cert-badge">🏆 Certification</span>
+					<h1>
 						Your Certificate is Ready
 					</h1>
 					<p>
-						You scored {record.score}% on the {QUIZ_TITLE}. Here&apos;s your certificate,
+						You scored {record.score}% on the {QUIZ_TITLE}. Here is your certificate,
 						ready to download.
 					</p>
 				</div>
@@ -246,7 +198,7 @@ export default function CertificatePage() {
 				<canvas ref={canvasRef} width={1200} height={800} className="cert-canvas" />
 
 				<div className="cert-actions">
-					<button className="btn-quiz" onClick={handleDownload}>
+					<button className="btn-primary" onClick={handleDownload}>
 						Download Certificate
 					</button>
 					<Link href={`/quizzes/${QUIZ_SLUG}`} className="btn-outline">

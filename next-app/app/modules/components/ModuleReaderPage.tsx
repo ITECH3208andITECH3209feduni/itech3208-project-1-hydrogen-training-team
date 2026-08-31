@@ -9,22 +9,26 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import { useModuleProgress } from "../hooks/useModuleProgress";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
+    section: string;
     basePath: string;
     badgeLabel?: string;
     heroHint: string;
     backLabel?: string;
+    usingDefaults?: boolean;
 }
 
 export default function ModuleReaderPage({
     item,
+    section,
     basePath,
     badgeLabel,
     heroHint,
     backLabel = "Back",
+    usingDefaults = false,
 }: ModuleReaderPageProps) {
     const { user, loading } = useAuth();
     const router = useRouter();
@@ -37,6 +41,7 @@ export default function ModuleReaderPage({
         restartModule,
     } = useModuleProgress({
         moduleId: item?.id ?? "",
+        section,
         sectionCount: item?.sections.length ?? 0,
         user,
         loading,
@@ -115,6 +120,18 @@ export default function ModuleReaderPage({
                     <p>{heroHint}</p>
                 </div>
             </div>
+
+            {/* Fallback content warning */}
+            {usingDefaults && (
+                <div className="fallback-warning">
+                    ⚠️ You are viewing fallback
+                    content because live content
+                    could not be loaded. Your
+                    progress on this module may not
+                    accurately reflect the current
+                    version.
+                </div>
+            )}
 
             {/* Saved progress */}
             {progressLoaded &&

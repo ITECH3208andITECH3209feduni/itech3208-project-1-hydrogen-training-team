@@ -14,7 +14,7 @@ export default function SectionBlock({ section }: SectionBlockProps) {
 			<h2>{section.heading}</h2>
 
 			{/* Body — split on double newline to produce separate <p> tags */}
-			{section.body.split('\n\n').map((para, i) => (
+			{section.body.replace(/\r\n/g, '\n').split('\n\n').map((para, i) => (
 				<p key={i} dangerouslySetInnerHTML={{ __html: para }} />
 			))}
 

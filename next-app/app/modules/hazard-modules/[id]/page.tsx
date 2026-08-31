@@ -13,15 +13,17 @@ import { hazardModules } from '@/lib/hazardModules';
 export default function HazardModulePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item } = useModuleById('hazard-modules', hazardModules, id);
+	const { item, usingDefaults } = useModuleById('hazard-modules', hazardModules, id);
 
 	return (
 		<ModuleReaderPage
 			item={item}
+			section="hazard-modules"
 			basePath="/modules/hazard-modules"
 			badgeLabel="⚠ Hazard"
 			backLabel="Hazard Modules"
 			heroHint="Read through all sections to complete this module. Then test your knowledge in the Quiz."
+			usingDefaults={usingDefaults}
 		/>
 	);
 }

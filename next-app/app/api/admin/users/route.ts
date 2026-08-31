@@ -47,9 +47,8 @@ export async function GET(request: NextRequest) {
       error: progressError,
     } = await supabaseServer
       .from("user_module_progress")
-      .select(
-        "uid, module_id, progress, status"
-      );
+      .select("uid, module_id, progress, status")
+      .eq("section", "hazard-modules"); // Scoped to hazard-modules
 
     if (progressError) {
       console.error(
@@ -81,95 +80,49 @@ export async function GET(request: NextRequest) {
     // Calculate progress for each learner
     // ---------------------------------------------------------
 
-    const learnerProgress =
-      learners.map((learner) => {
-        const learnerRecords =
-          (moduleProgress ?? []).filter(
-            (record) =>
-              record.uid === learner.uid
-          );
+    const learnerProgress = learners.map((learner) => {
+      const learnerRecords = (moduleProgress ?? []).filter(
+        (record) => record.uid === learner.uid
+      );
 
-        const modulePercentages =
-          hazardModules.map((module) => {
-            const record =
-              learnerRecords.find(
-                (item) =>
-                  String(
-                    item.module_id
-                  ) ===
-                  String(module.id)
-              );
+      const modulePercentages = hazardModules.map((module) => {
+        const record = learnerRecords.find(
+          (item) => String(item.module_id) === String(module.id)
+        );
 
-            if (!record) {
-              return 0;
-            }
+        if (!record) {
+          return 0;
+        }
 
-            return Math.max(
-              0,
-              Math.min(
-                100,
-                Number(
-                  record.progress ?? 0
-                )
-              )
-            );
-          });
-
-        const totalProgress =
-          modulePercentages.reduce(
-            (sum, value) =>
-              sum + value,
-            0
-          );
-
-        const overallProgress =
-          totalModules > 0
-            ? Math.round(
-                totalProgress /
-                  totalModules
-              )
-            : 0;
-
-        const completedModules =
-          modulePercentages.filter(
-            (value) =>
-              value >= 100
-          ).length;
-
-        const trainingCompleted =
-          completedModules >=
-          totalModules;
-
-        return {
-          uid: learner.uid,
-          overallProgress,
-          completedModules,
-          trainingCompleted,
-        };
+        return Math.max(0, Math.min(100, Number(record.progress ?? 0)));
       });
+
+      const totalProgress = modulePercentages.reduce((sum, value) => sum + value, 0);
+
+      const overallProgress = totalModules > 0
+        ? Math.round(totalProgress / totalModules)
+        : 0;
+
+      const completedModules = modulePercentages.filter((value) => value >= 100).length;
+      const trainingCompleted = completedModules >= totalModules;
+
+      return {
+        uid: learner.uid,
+        overallProgress,
+        completedModules,
+        trainingCompleted,
+      };
+    });
 
     // ---------------------------------------------------------
     // Dashboard statistics
     // ---------------------------------------------------------
 
-    const trainingCompleted =
-      learnerProgress.filter(
-        (learner) =>
-          learner.trainingCompleted
-      ).length;
+    const trainingCompleted = learnerProgress.filter((learner) => learner.trainingCompleted).length;
 
-    const averageProgress =
-      learnerProgress.length > 0
-        ? Math.round(
-            learnerProgress.reduce(
-              (sum, learner) =>
-                sum +
-                learner.overallProgress,
-              0
-            ) /
-              learnerProgress.length
-          )
-        : 0;
+    const averageProgress = learnerProgress.length > 0
+      ? Math.round(learnerProgress.reduce((sum, learner) => sum + learner.overallProgress, 0) / learnerProgress.length)
+      : 0;
 
     // ---------------------------------------------------------
     // Return users + statistics
@@ -177,42 +130,25 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-
       users: users ?? [],
-
       statistics: {
-        totalUsers:
-          users?.length ?? 0,
-
-        administrators:
-          (users ?? []).filter(
-            (user) =>
-              user.role === "admin"
-          ).length,
-
-        learners:
-          learners.length,
-
+        totalUsers: users?.length ?? 0,
+        administrators: (users ?? []).filter((user) => user.role === "admin").length,
+        learners: learners.length,
         trainingCompleted,
-
         averageProgress,
-
         totalModules,
       },
     });
   } catch (err) {
-    console.error(
-      "ADMIN USERS API FAILED:",
-      err
-    );
+    console.error("ADMIN USERS API FAILED:", err);
 
     return NextResponse.json(
       {
         ok: false,
-        error:
-          err instanceof Error
-            ? err.message
-            : String(err),
+        error: err instanceof Error
+          ? err.message
+          : String(err),
       },
       { status: 500 }
     );
