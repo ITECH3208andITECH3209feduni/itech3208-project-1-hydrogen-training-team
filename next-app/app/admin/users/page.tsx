@@ -1,4 +1,4 @@
-﻿// app/admin/users
+// app/admin/users
 
 "use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
@@ -131,7 +131,7 @@ const [averageProgress, setAverageProgress] =
     const completedCount =
       validProgressResults.filter(
         (result) =>
-          result.completedModules >= 5
+          result.completedModules >= result.totalModules && result.quizPassed
       ).length;
 
     const average =
