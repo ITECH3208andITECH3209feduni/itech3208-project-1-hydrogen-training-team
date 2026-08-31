@@ -295,6 +295,19 @@
         border-color: var(--teal);
 }
 
+.quiz-leaderboard-btn.active {
+        background: linear-gradient(
+                135deg,
+                var(--teal-dark),
+                var(--teal)
+        );
+        color: white;
+        border: 2px solid var(--teal);
+        box-shadow:
+                0 0 0 2px var(--teal),
+                0 0 20px rgba(0, 180, 216, 0.4);
+        transform: translateY(-2px);
+}
 .quiz-leaderboard-btn:disabled {
         opacity: 0.55;
         cursor: not-allowed;
@@ -333,4 +346,19 @@
         align-items: center;
         gap: 18px;
         text-align: center;
+}
+
+.quiz-leaderboard-btn.active::after {
+        content: " ✓";
+        font-weight: 700;
+        margin-left: 4px;
+}
+/* Only the selected leaderboard option uses the cyan active style */
+.quiz-leaderboard-show:not(.active),
+.quiz-leaderboard-private:not(.active) {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--white);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: none;
+        transform: none;
 }
