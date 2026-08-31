@@ -558,7 +558,7 @@ export default function AdminModulesPage() {
                                     <>
                                         <div className="video-status">
                                             <span>
-                                                âœ“
+                                                &#10003;
                                             </span>
 
                                             <div>
@@ -751,3 +751,4 @@ export default function AdminModulesPage() {
         </main>
     );
 }
+

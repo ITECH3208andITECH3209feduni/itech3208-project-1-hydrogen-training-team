@@ -36,8 +36,7 @@ export default function AdminPage() {
                         color: "var(--muted)",
                     }}
                 >
-                    Manage users and Hydrogen Safety
-                    Modules.
+                    Manage users, training modules and learner feedback.
                 </p>
 
                 <div
@@ -103,9 +102,39 @@ export default function AdminPage() {
                             Modules.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/admin/feedback"
+                        style={{
+                            gridColumn: "1 / -1",
+                            padding: "28px",
+                            minHeight: "180px",
+                            borderRadius: "14px",
+                            border:
+                                "1px solid rgba(255,255,255,.12)",
+                            background:
+                                "rgba(255,255,255,.04)",
+                            color: "inherit",
+                            textDecoration: "none",
+                        }}
+                    >
+                        <h2>Feedback</h2>
+
+                        <p
+                            style={{
+                                marginTop: "10px",
+                                color: "var(--muted)",
+                            }}
+                        >
+                            Review learner feedback,
+                            ratings and comments from
+                            the training experience.
+                        </p>
+                    </Link>
                 </div>
             </div>
         </main>
     );
 }
+
 
