@@ -4,12 +4,11 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "../../admin.css";
 import { hazardModules } from "@/lib/hazardModules";
 import ModuleCard from "@/app/admin/users/components/AdminModuleCard";
 import { useAuth } from "@/context/AuthContext";
-import type { ModuleStatus } from "@/lib/moduleTypes";
 
 interface Profile {
     uid: string;
@@ -65,45 +64,6 @@ export default function UserProgressPage() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [overridingModuleId, setOverridingModuleId] = useState<string | null>(null);
-    const [overrideError, setOverrideError] = useState("");
-
-    const loadProgress = useCallback(async () => {
-        if (!user) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError("");
-
-            const token = await user.getIdToken();
-
-            const response = await fetch(`/api/admin/users/${uid}/progress`, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                cache: "no-store",
-            });
-
-            const result: ProgressResponse = await response.json();
-
-            if (!response.ok || !result.ok) {
-                throw new Error(
-                    result.error || "Failed to load user progress."
-                );
-            }
-
-            setData(result);
-        } catch (err) {
-            console.error("ADMIN PROGRESS LOAD ERROR:", err);
-
-            setError(err instanceof Error ? err.message : "Failed to load user progress.");
-        } finally {
-            setLoading(false);
-        }
-    }, [user, uid]);
 
     useEffect(() => {
         if (authLoading) {
@@ -118,44 +78,47 @@ export default function UserProgressPage() {
             return;
         }
 
-        loadProgress();
-    }, [user, authLoading, loadProgress]);
+        async function loadProgress() {
+            try {
+                setLoading(true);
+                setError("");
 
-    async function handleOverride(moduleId: string, status: ModuleStatus) {
-        if (!user) {
-            return;
-        }
+               if (!user) {
+                  return;
+                }
 
-        setOverridingModuleId(moduleId);
-        setOverrideError("");
+                const token = await user.getIdToken();
 
-        try {
-            const token = await user.getIdToken();
+                const response = await fetch(`/api/admin/users/${uid}/progress`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        cache: "no-store",
+                    }
+                );
 
-            const response = await fetch(`/api/admin/users/${uid}/progress`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ module_id: moduleId, status }),
-            });
+                const result: ProgressResponse = await response.json();
 
-            const result = await response.json();
+                if (!response.ok || !result.ok) {
+                    throw new Error(
+                        result.error ||
+                            "Failed to load user progress."
+                    );
+                }
 
-            if (!response.ok || !result.ok) {
-                throw new Error(result.error || "Failed to override progress.");
+                setData(result);
+            } catch (err) {
+                console.error("ADMIN PROGRESS LOAD ERROR:", err);
+
+                setError(err instanceof Error ? err.message : "Failed to load user progress.");
+            } finally {
+                setLoading(false);
             }
-
-            await loadProgress();
-        } catch (err) {
-            console.error("ADMIN PROGRESS OVERRIDE ERROR:", err);
-
-            setOverrideError(err instanceof Error ? err.message : "Failed to override progress.");
-        } finally {
-            setOverridingModuleId(null);
         }
-    }
+
+        loadProgress();
+    }, [user, authLoading, uid]);
 
     /*
      * ---------------------------------------------------------
@@ -446,12 +409,9 @@ export default function UserProgressPage() {
                     Hydrogen Safety Modules
                 </h2>
                 <p>
-                    Administrator View — you can manually override a module&apos;s
-                    status below to unlock content for this user.
+                    Administrator View
+                    (Read Only)
                 </p>
-                {overrideError && (
-                    <p className="quiz-error">{overrideError}</p>
-                )}
             </div>
 
             <div className="modules-grid">
@@ -467,8 +427,6 @@ export default function UserProgressPage() {
                             adminProgress={
                                 module.adminProgress
                             }
-                            onOverride={handleOverride}
-                            overriding={overridingModuleId === String(module.id)}
                         />
                     )
                 )}

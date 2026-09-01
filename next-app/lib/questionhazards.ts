@@ -11,10 +11,6 @@ export interface QuizQuestion {
 
 export const QUIZ_TITLE = 'Hydrogen Hazards Quiz';
 export const QUIZ_SLUG = 'hazards';
-// Matches the quiz_id used in the user_quiz_progress and quiz_requirements
-// tables (see app/api/quizzes/progress/route.ts and lib/quizRequirements.sql)
-// — not the same as QUIZ_SLUG, which is only the URL segment.
-export const QUIZ_ID = 'hydrogen-hazards';
 export const PASS_THRESHOLD = 70; // percent required to pass
 
 export const questionhazards: QuizQuestion[] = [

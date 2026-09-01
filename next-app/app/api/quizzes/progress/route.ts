@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireUser } from "@/lib/authUser";
-import { isQuizLockedForUser } from "@/lib/progressLock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,16 +82,6 @@ export async function POST(request: NextRequest) {
 					error: "score must be between 0 and 100",
 				},
 				{ status: 400 }
-			);
-		}
-
-		if (await isQuizLockedForUser(uid, QUIZ_ID)) {
-			return NextResponse.json(
-				{
-					ok: false,
-					error: "This quiz is locked until its required module is completed.",
-				},
-				{ status: 403 }
 			);
 		}
 

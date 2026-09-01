@@ -213,40 +213,6 @@
 }
 .btn-quiz:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,180,216,0.5); }
 
-/* ─── Locked state (quiz requirement not met) ────────────────────────────── */
-.quiz-blocked {
-	max-width: 480px;
-	margin: 60px auto;
-	text-align: center;
-	background: var(--card-bg);
-	border: var(--border-rule);
-	border-radius: var(--radius);
-	padding: 40px 32px;
-	animation: fadeUp 0.5s ease both;
-}
-.quiz-blocked h1 {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1.3rem;
-	font-weight: 700;
-	color: var(--white);
-	margin-bottom: 12px;
-}
-.quiz-blocked p {
-	font-size: 0.88rem;
-	color: var(--muted);
-	line-height: 1.7;
-}
-
-.quiz-card-locked {
-	cursor: not-allowed;
-	opacity: 0.55;
-}
-.quiz-card-locked:hover {
-	transform: none;
-	border-color: var(--border);
-	background: var(--card-bg);
-}
-
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
 	.quizzes-grid { grid-template-columns: 1fr; }
