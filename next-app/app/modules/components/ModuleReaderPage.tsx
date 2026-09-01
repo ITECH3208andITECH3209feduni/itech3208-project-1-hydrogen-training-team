@@ -7,12 +7,13 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { ModuleData } from "@/lib/moduleTypes";
+import { ModuleData, isModuleLocked } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
 import { useModuleProgress } from "../hooks/useModuleProgress";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
+    allModules: ModuleData[];
     basePath: string;
     badgeLabel?: string;
     heroHint: string;
@@ -21,6 +22,7 @@ interface ModuleReaderPageProps {
 
 export default function ModuleReaderPage({
     item,
+    allModules,
     basePath,
     badgeLabel,
     heroHint,
@@ -28,6 +30,7 @@ export default function ModuleReaderPage({
 }: ModuleReaderPageProps) {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const locked = item ? isModuleLocked(item, allModules) : false;
 
     const {
         currentProgress,
@@ -54,6 +57,12 @@ export default function ModuleReaderPage({
         }
     }, [loading, user, item, router, basePath]);
 
+    useEffect(() => {
+        if (!loading && user && item && locked) {
+            router.replace(basePath);
+        }
+    }, [loading, user, item, locked, router, basePath]);
+
     if (loading) {
         return <div>Loading…</div>;
     }
@@ -63,6 +72,10 @@ export default function ModuleReaderPage({
     }
 
     if (!item) {
+        return null;
+    }
+
+    if (locked) {
         return null;
     }
 

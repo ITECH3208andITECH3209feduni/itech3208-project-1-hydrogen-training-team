@@ -7,11 +7,13 @@
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
 import { useModules } from '@/hooks/useModules';
+import { useAuth } from '@/context/AuthContext';
 import { hazardModules } from '@/lib/hazardModules';
 
 export default function HazardModulesPage() {
-	const { modules } = useModules('hazard-modules', hazardModules);
-	
+	const { user, loading } = useAuth();
+	const { modules } = useModules('hazard-modules', hazardModules, user, loading);
+
 	return (
 		<ModuleListingPage
 			items={modules}
