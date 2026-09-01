@@ -7,7 +7,7 @@
 import '../../modules.css';
 import { useParams } from 'next/navigation';
 import ModuleReaderPage from '../../components/ModuleReaderPage';
-import { getGuideById } from '@/lib/guides';
+import { getGuideById, guides } from '@/lib/guides';
 
 export default function GuidePage() {
 	const params = useParams();
@@ -17,6 +17,7 @@ export default function GuidePage() {
 	return (
 		<ModuleReaderPage
 			item={item}
+			allModules={guides}
 			basePath="/modules/guides"
 			// No badgeLabel — these sample items have no badgeNum, so no badge
 			// is shown. Add badgeLabel="Chapter" (etc.) if your items do.
