@@ -21,8 +21,6 @@ interface AdminModuleCardProps {
     animationDelay?: number;
     mode?: "student" | "admin";
     adminProgress?: AdminProgress;
-    onOverride?: (moduleId: string, status: ModuleStatus) => void;
-    overriding?: boolean;
 }
 
 const statusMeta: Record<
@@ -98,8 +96,6 @@ export default function AdminModuleCard({
     item,
     animationDelay = 0,
     adminProgress,
-    onOverride,
-    overriding = false,
 }: AdminModuleCardProps) {
     const progressValue =
         adminProgress?.progress !== null &&
@@ -212,23 +208,6 @@ export default function AdminModuleCard({
                     </span>
                     <span>{progressValue}%</span>
                 </div>
-
-                {onOverride && (
-                    <div className="admin-override-row">
-                        <span className="admin-override-label">Admin override:</span>
-                        {(["todo", "progress", "done"] as ModuleStatus[]).map((s) => (
-                            <button
-                                key={s}
-                                type="button"
-                                className={`admin-override-btn ${displayStatus === s ? "active" : ""}`}
-                                disabled={overriding || displayStatus === s}
-                                onClick={() => onOverride(String(item.id), s)}
-                            >
-                                {statusMeta[s].label.replace("✓ ", "")}
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );

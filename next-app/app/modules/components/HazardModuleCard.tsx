@@ -37,23 +37,26 @@ interface HazardModuleCardProps {
     item: ModuleData;
     basePath: string;
     animationDelay?: number;
-    locked?: boolean;
-    lockedReason?: string;
 }
 
 export default function HazardModuleCard({
     item,
     basePath,
     animationDelay = 0,
-    locked = false,
-    lockedReason = 'Complete the previous module to unlock this one',
 }: HazardModuleCardProps) {
     const meta = statusMeta[item.status];
 
-    const cardBody = (
-        <>
+    return (
+        <Link
+            href={`${basePath}/${item.id}`}
+            className="module-card"
+            style={{
+                animationDelay: `${animationDelay}s`,
+            }}
+            data-slug={item.slug}
+        >
             <div
-                className={`card-top-bar ${locked ? 'bar-todo' : meta.barClass}`}
+                className={`card-top-bar ${meta.barClass}`}
             />
 
             {item.badgeNum !== undefined && (
@@ -70,13 +73,13 @@ export default function HazardModuleCard({
                             background: item.iconBg,
                         }}
                     >
-                        {locked ? '🔒' : item.icon}
+                        {item.icon}
                     </div>
 
                     <span
-                        className={`status-badge ${locked ? 'badge-todo' : meta.badgeClass}`}
+                        className={`status-badge ${meta.badgeClass}`}
                     >
-                        {locked ? 'Locked' : meta.label}
+                        {meta.label}
                     </span>
                 </div>
 
@@ -88,20 +91,18 @@ export default function HazardModuleCard({
                     {item.description}
                 </div>
 
-                {!locked && (
-                    <div className="card-progress-bar">
-                        <div
-                            className="card-progress-fill"
-                            style={{
-                                width: `${item.progress}%`,
-                                background:
-                                    item.status === 'done'
-                                        ? '#00E5A0'
-                                        : 'var(--teal)',
-                            }}
-                        />
-                    </div>
-                )}
+                <div className="card-progress-bar">
+                    <div
+                        className="card-progress-fill"
+                        style={{
+                            width: `${item.progress}%`,
+                            background:
+                                item.status === 'done'
+                                    ? '#00E5A0'
+                                    : 'var(--teal)',
+                        }}
+                    />
+                </div>
 
                 <div className="card-meta">
                     <span>
@@ -109,41 +110,14 @@ export default function HazardModuleCard({
                     </span>
 
                     <span>
-                        {locked ? '' : `${item.progress}%`}
+                        {item.progress}%
                     </span>
                 </div>
             </div>
 
             <div className="card-link">
-                {locked ? '🔒 Locked' : meta.linkText}
+                {meta.linkText}
             </div>
-        </>
-    );
-
-    if (locked) {
-        return (
-            <div
-                className="module-card module-card-locked"
-                style={{ animationDelay: `${animationDelay}s` }}
-                data-slug={item.slug}
-                title={lockedReason}
-                aria-disabled="true"
-            >
-                {cardBody}
-            </div>
-        );
-    }
-
-    return (
-        <Link
-            href={`${basePath}/${item.id}`}
-            className="module-card"
-            style={{
-                animationDelay: `${animationDelay}s`,
-            }}
-            data-slug={item.slug}
-        >
-            {cardBody}
         </Link>
     );
 }

@@ -8,19 +8,16 @@ import '../../modules.css';
 import { useParams } from 'next/navigation';
 import ModuleReaderPage from '../../components/ModuleReaderPage';
 import { useModuleById } from '@/hooks/useModules';
-import { useAuth } from '@/context/AuthContext';
 import { hazardModules } from '@/lib/hazardModules';
 
 export default function HazardModulePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { user, loading } = useAuth();
-	const { item, modules } = useModuleById('hazard-modules', hazardModules, id, user, loading);
+	const { item } = useModuleById('hazard-modules', hazardModules, id);
 
 	return (
 		<ModuleReaderPage
 			item={item}
-			allModules={modules}
 			basePath="/modules/hazard-modules"
 			badgeLabel="⚠ Hazard"
 			backLabel="Hazard Modules"
