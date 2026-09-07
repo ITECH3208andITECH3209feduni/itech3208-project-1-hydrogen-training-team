@@ -38,7 +38,7 @@ export default function SectionBlock({ section }: SectionBlockProps) {
 
 			{/* Optional callout */}
 			{section.callout && (
-				<div className="callout">{section.callout}</div>
+				<div className="callout">💡 {section.callout}</div>
 			)}
 		</div>
 	);

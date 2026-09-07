@@ -5,20 +5,20 @@ import { useRef } from 'react';
 import { EditableHotspot, UploadStatus } from '@/hooks/useHazards';
 import { ModuleSectionOptions } from '@/hooks/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
-import { labelStyle, inputStyle } from '../styles';
+import { labelStyle, inputStyle } from '@/components/editorStyles';
 
 interface HotspotEditorProps {
-	hotspots:			EditableHotspot[];
-	selected:			number | null;
-	uploadStatus:     UploadStatus;
-	moduleOptions:		ModuleSectionOptions[];
-	onSelect:			(index: number) => void;
-	onUpdateInfo:		(index: number, field: keyof HazardInfo, value: string) => void;
-	onUpdatePosition:	(index: number, field: 'top' | 'left', value: string) => void;
-	onUpdateModuleLink:	(index: number, moduleSection: string | null, moduleId: string | null) => void;
-	onAdd:				() => void;
-	onDelete:			(index: number) => void;
-	onUploadImage:    (file: File) => void;
+	hotspots:           EditableHotspot[];
+	selected:           number | null;
+	uploadStatus:       UploadStatus;
+	moduleOptions:      ModuleSectionOptions[];
+	onSelect:           (index: number) => void;
+	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string) => void;
+	onUpdatePosition:   (index: number, field: 'top' | 'left', value: string) => void;
+	onUpdateModuleLink: (index: number, moduleSection: string | null, moduleId: string | null) => void;
+	onAdd:              () => void;
+	onDelete:           (index: number) => void;
+	onUploadImage:      (file: File) => void;
 }
 
 export default function HotspotEditor({

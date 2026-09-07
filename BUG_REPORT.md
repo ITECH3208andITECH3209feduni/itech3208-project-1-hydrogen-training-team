@@ -89,15 +89,6 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 
 ---
 
-## Setup / onboarding
-
-### README's "Seed the database" step fails on a genuinely fresh install
-`README.md`'s Getting Started step 7 seeds the `hazards` table by entering edit mode and clicking Save Changes with the defaults unchanged. But `lib/hazards.ts`'s default hotspots all have a `moduleId`/`moduleSection` set (e.g. `gas` → `hazard-modules`/`1`), and `hazards_module_fk` (`match full`) requires that pair to exist as a real row in `modules`. On a truly fresh Supabase project — tables created per step 3(b), nothing else seeded — `modules` is empty, so this save fails with a foreign-key violation, not the success the step describes.
-This was already latent in the schema before the Linked Module editor existed; the editor's validation work this round is what surfaced it, since it required reasoning carefully through `hazards_module_fk`'s exact behaviour.
-**Fix:** either seed `modules`/`module_sections` with the real `hazard-modules` content (matching `lib/hazardModules.ts`) as an earlier Getting Started step, before step 7, or add a note to step 7 flagging the dependency and pointing to a seed script.
-
----
-
 ## Dashboard placeholder content
 
 `app/dashboard/page.tsx` is entirely static JSX past the auth check — no data fetching at all, so nothing here reflects real user state:
@@ -141,6 +132,16 @@ The config references `eslint-config-next`, but neither it nor `eslint` itself a
 import { Exo_2, Inter } from 'next/font/google';
 ```
 See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) for setup details.
+
+---
+
+## Architecture / structure
+
+### The lab's edit mode lives entirely in `app/lab/page.tsx` + `useHazards.ts` — worth revisiting if a third editable page appears
+The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple sections and (eventually) both listing and reader pages. `useHazards.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHazards.ts` preemptively for a pattern used by only one page today.
+
+### `app/api/` has no subfolder grouping for `hazards`/lab-image/module routes
+Of the module-content routes, only `save-module` (added this round) and the pre-existing `modules/progress` live under `app/api/modules/` — `load-modules` and `load-module-options` are still flat top-level folders under `app/api/`, alongside `load-hazards`, `save-hazards`, `load-image`, and `upload-image`. Moving those remaining ones into `app/api/lab/` and `app/api/modules/` respectively would finish the grouping, at the cost of updating every `fetch('/api/...')` call site for them. Worth doing as one deliberate pass rather than piecemeal, since it's a routing/URL change, not just a file move.
 
 ---
 

@@ -53,7 +53,7 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 
 **Route coverage:**
 - `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`)
-- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`)
+- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`)
 - No guard: `load-hazards`, `load-image`, `load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above). `save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
 
 ---
@@ -70,9 +70,12 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 
 The shared template lives in `app/modules/components/`:
 - `ModuleListingPage.tsx` — filter bar, grid, auth redirect
-- `ModuleReaderPage.tsx` — breadcrumb, hero, sections, key takeaway, prev/next nav, and the progress UI described under "Module Progress Tracking" below
-- `ModuleCard.tsx` — card shown in the listing page, used for every section
-- `SectionBlock.tsx` — renders a single numbered section. Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
+- `ModuleReaderPage.tsx`  — breadcrumb, hero, sections, key takeaway, prev/next nav, and the progress UI described under "Module Progress Tracking" below
+- `ModuleEditor.tsx`      — edit panel for a module's fields and sections, rendered by `ModuleReaderPage` while its edit mode is on
+- `ModuleCard.tsx`        — card shown in the listing page, used for every section
+- `SectionBlock.tsx`      — renders a single numbered section.
+	Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
+	A `callout` is rendered with a 💡 prefix added by this component.
 
 Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/moduleTypes.ts`.
 	Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these section-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
@@ -96,9 +99,24 @@ Module content lives in Supabase, loaded per-section through `hooks/useModules.t
 Each section's data file (e.g. `lib/hazardModules.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
 
-There's currently no in-app edit mode for module content (unlike the lab's hotspot editor) — changing what's in Supabase means editing rows directly via the Supabase dashboard or SQL Editor.
-
 For the `ModuleData` field reference and how to edit live module content, see `EDITING_GUIDE.md`.
+
+### Module Content Editor
+
+Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that module's content, gated on `canManageUsers` — the same permission and the same shared toggle component (`components/EditModeToggle.tsx`) used by `/lab`. `components/SaveBar.tsx` is likewise shared between the two. Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
+
+**State (`hooks/useModuleEditor.ts`):** takes the section name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
+- Toggling edit mode off does **not** discard unsaved changes — mirroring `useHazards`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
+- Navigating to a different module (the prev/next links, or the section listing) re-seeds the draft from the new module and forces edit mode off. This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`. A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving) but only while not currently editing, so a background refresh can't overwrite an in-progress edit.
+- **`resetToDefaults`** replaces the whole draft with `fallback` — reverting to the bundled `lib/` entry, the same semantics as `/lab`'s Reset to Defaults reverting to `lib/hazards.ts` rather than to whatever Supabase last returned. Disabled (`canReset: false`) when no `fallback` was supplied — a section whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
+- While edit mode is on, `ModuleReaderPage` renders the whole reading view (hero, sections, key takeaway, prev/next links) from `draft` instead of `item`, so edits appear live above the editor panel.
+
+**Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields. Sections can be added, deleted, reordered (↑/↓), and each edited for `heading`, `body`, `listType` (none/bulleted/numbered), `items`, and `callout`.
+	A section's `num` is not directly editable — `renumberSections` (in `useModuleEditor.ts`) recomputes it from array position on every add/delete/move, since `num` is what `ModuleReaderPage` renders as `data-section-number`, which `useModuleProgress`'s `IntersectionObserver` reads positionally (see "Module Progress Tracking" below) — an out-of-sequence `num` would throw that off.
+
+**Saving:** `POST /api/modules/save-module` (`requireAdmin`-gated) takes `{ section, module, sections }` and:
+1. Upserts the `modules` row (`onConflict: 'section,id'`) — this also means saving works the first time even if the module previously only existed as `lib/` fallback content, with no Supabase row yet. `sort_order` (the module's position in its section's listing) is deliberately left untouched — reordering modules within a listing is out of scope for this editor.
+2. Deletes and reinserts that module's `module_sections` rows, scoped to `(section, module_id)` — not the whole table. This mirrors `save-hazards`' delete-then-reinsert approach for the same reason: `module_sections` is a variable-length list keyed by an editable field (`num`), addable/removable/reorderable in the editor, with nothing else referencing its rows directly.
 
 ### Adding a new `app/modules/`-style section
 
@@ -109,6 +127,7 @@ For the `ModuleData` field reference and how to edit live module content, see `E
    export const scenarios: ModuleData[] = [ /* ... */ ];
    ```
 2. Seed a matching set of rows in the `modules`/`module_sections` Supabase tables with `section = 'scenarios'`.
+	Either directly via the Supabase dashboard/SQL Editor, or, once step 4 below is done, by visiting each reader page as an admin, turning on Edit Mode, and clicking Save Changes without changing anything (see "Module Content Editor" above and `EDITING_GUIDE.md`).
 3. Create `app/modules/scenarios/page.tsx`, a thin wrapper around `ModuleListingPage`, pulling live data via `useModules`:
    ```tsx
    'use client';
@@ -132,6 +151,7 @@ For the `ModuleData` field reference and how to edit live module content, see `E
    }
    ```
 4. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, using `useModuleById` in place of a static per-section lookup — see `app/modules/hazard-modules/[id]/page.tsx` for the current pattern.
+	Pass `defaults={scenarios}` into `ModuleReaderPage` alongside `item`/`section`/`basePath` — this is what the in-app editor's Reset to Defaults button reverts to; omitting it leaves Reset disabled for this section.
 5. If the section should appear in navigation, add a link in `Navbar.tsx`.
 
 ### Adding a standalone page

@@ -39,7 +39,7 @@ export const hazardModules: ModuleData[] = [
 					'Damaged tubing or loose fittings',
 					'Poor ventilation in the room',
 				],
-				callout: '💡 Any suspected leak should always be treated seriously.',
+				callout: 'Any suspected leak should always be treated seriously.',
 			},
 			{
 				num: '04',
@@ -58,7 +58,7 @@ export const hazardModules: ModuleData[] = [
 					'Leave the area if the leak appears serious',
 					'Inform supervisors or emergency personnel',
 				],
-				callout: '💡 Never attempt to repair a major leak unless properly trained.',
+				callout: 'Never attempt to repair a major leak unless properly trained.',
 			},
 			{
 				num: '06',
@@ -119,7 +119,7 @@ export const hazardModules: ModuleData[] = [
 					'Enclosed spaces with limited airflow',
 					'Gas build-up near ceilings or overhead spaces',
 				],
-				callout: '💡 Poor ventilation can allow hydrogen to accumulate without being noticed.',
+				callout: 'Poor ventilation can allow hydrogen to accumulate without being noticed.',
 			},
 			{
 				num: '04',
@@ -134,7 +134,7 @@ export const hazardModules: ModuleData[] = [
 					'Regularly inspect and maintain ventilation systems',
 				],
 				callout:
-					'💡 Good airflow is one of the most effective ways to reduce hydrogen-related hazards.',
+					'Good airflow is one of the most effective ways to reduce hydrogen-related hazards.',
 			},
 			{
 				num: '05',
@@ -185,7 +185,7 @@ export const hazardModules: ModuleData[] = [
 					'O-rings and seals',
 					'Threaded fittings and connectors',
 				],
-				callout: '💡 These areas should always be checked carefully during inspections.',
+				callout: 'These areas should always be checked carefully during inspections.',
 			},
 			{
 				num: '03',
@@ -201,7 +201,7 @@ export const hazardModules: ModuleData[] = [
 					'Repeated pressure stress on equipment',
 				],
 				callout:
-					'💡 In hydrogen systems, some metals can also weaken over time due to hydrogen embrittlement, which may lead to cracks or sudden failure.',
+					'In hydrogen systems, some metals can also weaken over time due to hydrogen embrittlement, which may lead to cracks or sudden failure.',
 			},
 			{
 				num: '04',
@@ -216,7 +216,7 @@ export const hazardModules: ModuleData[] = [
 					'Detector alarms activating',
 					'Visible wear or corrosion on components',
 				],
-				callout: '💡 Any damaged equipment should be reported immediately and not used until inspected.',
+				callout: 'Any damaged equipment should be reported immediately and not used until inspected.',
 			},
 			{
 				num: '05',
@@ -231,7 +231,7 @@ export const hazardModules: ModuleData[] = [
 					'Ensure regulators and valves are installed correctly',
 					'Perform routine leak checks',
 				],
-				callout: '💡 Proper maintenance is one of the most important parts of hydrogen safety.',
+				callout: 'Proper maintenance is one of the most important parts of hydrogen safety.',
 			},
 		],
 		keyTakeaway:
@@ -270,7 +270,7 @@ export const hazardModules: ModuleData[] = [
 					'Improper storage of gas cylinders',
 				],
 				callout:
-					'💡 These situations can increase the severity of accidents during a hydrogen leak or fire.',
+					'These situations can increase the severity of accidents during a hydrogen leak or fire.',
 			},
 			{
 				num: '03',
@@ -286,7 +286,7 @@ export const hazardModules: ModuleData[] = [
 					'Regularly inspect containers for damage or leaks',
 				],
 				callout:
-					'💡 Storage areas should always remain clean, organised, and easy to access during emergencies.',
+					'Storage areas should always remain clean, organised, and easy to access during emergencies.',
 			},
 			{
 				num: '04',
@@ -301,7 +301,7 @@ export const hazardModules: ModuleData[] = [
 					'Chemicals stored near heat or electrical equipment',
 					'Unsecured gas cylinders',
 				],
-				callout: '💡 Any unsafe storage conditions should be reported immediately.',
+				callout: 'Any unsafe storage conditions should be reported immediately.',
 			},
 			{
 				num: '05',
@@ -352,7 +352,7 @@ export const hazardModules: ModuleData[] = [
 					'Cylinders placed in high-traffic areas',
 					'Storing incompatible gases together',
 				],
-				callout: '💡 Even a small impact to a cylinder valve can cause dangerous gas release.',
+				callout: 'Even a small impact to a cylinder valve can cause dangerous gas release.',
 			},
 			{
 				num: '03',
@@ -367,7 +367,7 @@ export const hazardModules: ModuleData[] = [
 					'Store cylinders away from heat, sparks, and flames',
 					'Regularly inspect cylinders and fittings for damage',
 				],
-				callout: '💡 Storage areas should also remain clean and free from obstacles.',
+				callout: 'Storage areas should also remain clean and free from obstacles.',
 			},
 			{
 				num: '04',
@@ -381,7 +381,7 @@ export const hazardModules: ModuleData[] = [
 					'Cylinders stored near electrical equipment or heat sources',
 					'Visible corrosion or physical damage',
 				],
-				callout: '💡 Any damaged or unstable cylinder should be reported immediately.',
+				callout: 'Any damaged or unstable cylinder should be reported immediately.',
 			},
 			{
 				num: '05',

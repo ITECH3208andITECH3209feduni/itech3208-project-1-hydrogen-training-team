@@ -24,6 +24,7 @@ export default function HazardModulePage() {
 			backLabel="Hazard Modules"
 			heroHint="Read through all sections to complete this module. Then test your knowledge in the Quiz."
 			usingDefaults={usingDefaults}
+			defaults={hazardModules}
 		/>
 	);
 }

@@ -24,6 +24,7 @@ export default function GuidePage() {
 			backLabel="Guides"
 			heroHint="Replace with a short hero hint for this section."
 			usingDefaults={usingDefaults}
+			defaults={guides}
 		/>
 	);
 }

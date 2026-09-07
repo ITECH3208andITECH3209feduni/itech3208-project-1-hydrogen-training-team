@@ -1,22 +1,24 @@
-// app/lab/components/EditModeToggle.tsx
-// Toggle switch shown top-right (under the navbar) for users permitted to edit the lab page.
-// Expands into banner when on.
+// components/EditModeToggle.tsx
+// Edit-mode toggle switch + expanding banner
+// Shared by multiple in-app editors (e.g. lab, modules reader)
 
 interface EditModeToggleProps {
 	editMode: boolean;
 	onToggle: () => void;
+	/** Optional extra class on the outer wrapper, for page-specific width/position (e.g. matching a narrower content column). */
+	className?: string;
 }
 
-export default function EditModeToggle({ editMode, onToggle }: EditModeToggleProps) {
+export default function EditModeToggle({ editMode, onToggle, className = '' }: EditModeToggleProps) {
 	return (
-		<div className="edit-mode-toggle-bar">
+		<div className={`edit-mode-toggle-bar ${className}`.trim()}>
 			<div className={`edit-mode-bar ${editMode ? 'edit-mode-bar--expanded' : ''}`}>
 				<div className="edit-mode-toggle-wrap">
 					<button
 						type="button"
 						role="switch"
 						aria-checked={editMode}
-						aria-label="Toggle lab edit mode"
+						aria-label="Toggle edit mode"
 						className={`edit-mode-toggle ${editMode ? 'edit-mode-toggle--on' : ''}`}
 						onClick={onToggle}
 					>
@@ -28,7 +30,7 @@ export default function EditModeToggle({ editMode, onToggle }: EditModeTogglePro
 				{editMode && (
 					<div className="edit-mode-bar-text">
 						<span className="edit-banner-title">
-							✏️ Edit Mode — drag hotspots to reposition · select one to edit text
+							✏️ Edit Mode — make your changes below · save when done
 						</span>
 						<span className="edit-banner-hint">
 							Use the switch to exit

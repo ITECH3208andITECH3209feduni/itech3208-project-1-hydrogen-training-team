@@ -75,17 +75,15 @@ hydrogen-lab/
 │   ├── lab/
 │   │   ├── page.tsx					# Interactive hydrogen lab (/lab)
 │   │   ├── lab.css						# Lab-specific styles
-│   │   ├── styles.ts					# Shared inline style objects for lab components
 │   │   └── components/
-│   │       ├── EditModeToggle.tsx		# Toggle switch to enter/exit edit mode; expands into the banner text when on. Only rendered for canManageUsers (an admin)
 │   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, lab image and linked module
-│   │       ├── SaveBar.tsx				# Reset and save buttons for hotspots
 │   │       └── HazardPopup.tsx			# Modal popup for hazard info
 │   ├── modules/
 │   │   ├── modules.css					# Shared styles for every section under app/modules/
 │   │   ├── components/
 │   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
-│   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — also wires up live progress tracking
+│   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — progress tracking & in-app editing
+│   │   │   ├── ModuleEditor.tsx		# Edit panel for a module's fields and sections, rendered by ModuleReaderPage
 │   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every section)
 │   │   │   ├── ModuleCard.css			# Styles for ModuleCard, shared with AdminModuleCard (app/admin/users/components/)
 │   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page — body supports embedded HTML
@@ -122,8 +120,10 @@ hydrogen-lab/
 │       ├── load-module-options/
 │       │   └── route.ts				# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
 │       ├── modules/
-│       │   └── progress/
-│       │       └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress` and `useModules`' listing-card progress
+│       │   ├── progress/
+│       │   │   └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress` and `useModules`' listing-card progress
+│       │   └── save-module/
+│       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
 │       ├── admin/
 │       │   └── users/
 │       │       ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
@@ -142,7 +142,10 @@ hydrogen-lab/
 │           └── create/
 │               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
 ├── components/
-│   └── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
+│   ├── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
+│   ├── EditModeToggle.tsx				# Toggle switch to enter/exit edit mode; expands into the banner text when on.
+│   ├── SaveBar.tsx						# Reset and save buttons for an in-app editor;
+│   └── editorStyles.ts					# Shared inline style objects (labels, inputs, buttons) used by in-app editors
 ├── context/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
@@ -152,7 +155,9 @@ hydrogen-lab/
 │   ├── useModules.test.ts				# Unit + integration tests for useModules.ts
 │   ├── useModuleOptions.ts				# Hook — flat Supabase (section, id, title, badgeNum) list, grouped per section
 │   ├── useModuleOptions.test.ts		# Integration tests for useModuleOptions.ts
-│   └── useModuleProgress.ts			# Per-user progress/time tracking for the reader page
+│   ├── useModuleProgress.ts			# Per-user progress/time tracking for the reader page
+│   ├── useModuleEditor.ts				# Edit-mode/draft/save state for a module reader page's in-app editor
+│   └── useModuleEditor.test.ts			# Unit + integration tests for useModuleEditor.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
@@ -263,11 +268,11 @@ Styles are split across several files to keep page-specific rules isolated:
 
 | File                                      | Scope																																	                                             |
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `app/globals.css`                         | Reset, design tokens, nav, `.panel`, animations                                                                    |
+| `app/globals.css`                         | Reset, design tokens, nav, panel/field-layout helpers, animations, edit-mode toggle and save bar                   |
 | `app/intro.css`                           | Landing page only — hero, quick facts, content sections, CTA                                                       |
 | `app/dashboard/dashboard.css`             | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
-| `app/lab/lab.css`                         | Lab page only — hotspots, popup, edit mode, editor panels, save bar                                                |
-| `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav          |
+| `app/lab/lab.css`                         | Lab page only — hotspots, popup, hotspot editor                                                                    |
+| `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav, editor  |
 | `app/modules/components/ModuleCard.css`   | Shared base styles used by both ModuleCard and AdminModuleCard (found in admin folder)                             |
 | `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
 | `app/about/about.css`                     | About page only — header, section cards, info/feature/tech grids, footer                                           |
@@ -493,12 +498,13 @@ using (true)
 with check (true);
 
 grant select on public.hazards to anon;
+grant insert, update, delete on public.hazards to service_role;
 ```
 
-> **Note:** the `grant select` line above is required in addition to the RLS policy.
-	`enable row level security` + a `for select to anon` policy only controls which *rows* `anon` can see once it already has the base table-level privilege — it does not grant that privilege itself.
-	Tables created via the SQL Editor (rather than the dashboard's table UI) don't get this automatically, so without an explicit `grant select`, every query fails with `permission denied for table ...` (Postgres error `42501`) even though the policy above looks correct.
-	This applies per table, so `modules` and `module_sections` below each need their own `grant select` line too — don't skip them.
+> **Note:** the `grant` lines above are required in addition to the RLS policies.
+	`enable row level security` + a policy only controls which *rows* a role can see/touch once it already has the base table-level privilege for that operation — it does not grant that privilege itself.
+	Tables created via the SQL Editor (rather than the dashboard's table UI) don't get this automatically, so without the explicit `grant`, every matching query fails with `permission denied for table ...` (Postgres error `42501`) even though the policy above looks correct — this applies to `service_role`'s write access just as much as `anon`'s read access.
+	This applies per table and per role, so `modules` and `module_sections` below each need their own `grant select`/`grant insert, update, delete` lines too — don't skip them.
 
 Same again for `modules` and `module_sections`:
 
@@ -534,6 +540,8 @@ with check (true);
 
 grant select on public.modules to anon;
 grant select on public.module_sections to anon;
+grant insert, update, delete on public.modules to service_role;
+grant insert, update, delete on public.module_sections to service_role;
 ```
 
 The storage bucket's access rules live on `storage.objects` rather than needing RLS enabled or a `grant select` of their own:
@@ -638,17 +646,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser — this loa
 
 ### 7. Seed the database
 
-On first run the Supabase table is empty, so the app falls back to the defaults in `lib/hazards.ts`. To populate the database:
-1. Log in and navigate to `/lab`
-2. Click the **Edit Mode** toggle switch, (visible only if your account has `canManageUsers` [i.e. you are an admin])
-3. Without changing anything, click **Save Changes**
+On first run the Supabase tables are empty, so the app falls back to the bundled defaults in `lib/hazards.ts` and `lib/hazardModules.ts`.
+
+**Seed `modules`/`module_sections` first:** log in as an admin and visit each hazard module reader page in turn (`/modules/hazard-modules/1` through `/modules/hazard-modules/5`), click the **Edit Mode** toggle, and click **Save Changes** without changing anything
+	The page already shows `lib/hazardModules.ts`'s bundled content since Supabase is still empty, so this writes that content into `modules`/`module_sections` as-is.
+
+**Then seed `hazards`:**
+1. Navigate to `/lab`.
+2. Click the **Edit Mode** toggle switch.
+3. Without changing anything, click **Save Changes**.
 
 The default hotspot data will be written to Supabase and loaded on every subsequent visit.
 
-> **Note:** this step currently only seeds the `hazards` table.
-	The default hotspots each link to a `hazard-modules` id (`hazards_module_fk` requires that pair to exist as a real row in `modules`),
-	so on a genuinely fresh project — nothing seeded yet besides the schema in step 3(b) — this save will fail with a foreign-key violation until `modules`/`module_sections` also have matching `hazard-modules` rows.
-	See `BUG_REPORT.md`.
+> **Note:** the default hotspots each link to a `hazard-modules` id (`hazards_module_fk` requires that pair to exist as a real row in `modules`), so seeding `hazards` before `modules`/`module_sections` exist for `hazard-modules` fails with a foreign-key violation — hence seeding modules first, above.
 
 ### 8. Build for production
 

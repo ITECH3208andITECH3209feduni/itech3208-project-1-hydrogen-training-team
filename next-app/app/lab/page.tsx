@@ -9,9 +9,9 @@ import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import HazardPopup from './components/HazardPopup';
-import EditModeToggle from './components/EditModeToggle';
+import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
-import SaveBar from './components/SaveBar';
+import SaveBar from '@/components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
 import { useModuleOptions } from '@/hooks/useModuleOptions';
 
@@ -73,10 +73,9 @@ export default function LabPage() {
 	return (
 		<main className="main">
 
-			{/* Edit mode toggle */}
-			{/* Top right, under navbar. Only visible to permitted users */}
+			{/* Edit mode toggle — only visible to permitted users */}
 			{permissions.canManageUsers && (
-				<EditModeToggle editMode={editMode} onToggle={toggleEditMode} />
+				<EditModeToggle editMode={editMode} onToggle={toggleEditMode} className="lab-edit-mode-toggle-bar" />
 			)}
 			
 			{/* Header */}
@@ -152,8 +151,8 @@ export default function LabPage() {
 					saveStatus={saveStatus}
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
-					disabled={hasInvalidModuleLink}
-					disabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
+					saveDisabled={hasInvalidModuleLink}
+					saveDisabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
 				/>
 			)}
 			

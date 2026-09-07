@@ -8,8 +8,12 @@ How to change or update the content the app shows — hotspot data, module conte
 
 ## Edit Mode
 
+Both the lab and every module reader page have an in-app edit mode, visible only to users with the `canManageUsers` permission (i.e. admins) — regular users see no trace of it in either place.
+	Both use the same toggle switch and save/reset bar; only what they edit differs.
+
+### Lab (Hotspots & Image)
+
 Hotspot positions and text are stored in Supabase and can be edited directly in the browser via edit mode.
-	Edit mode is only visible to users with the `canManageUsers` permission (i.e. are admins) — regular users see no trace of it.
 
 **To enter edit mode:** navigate to `/lab` and click the switch at the top-left of the page.
 	It expands into a banner confirming edit mode is active while it's on. Click it again to exit.
@@ -30,11 +34,34 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 - `public/lab.jpg` is used as a fallback if no image has been uploaded to Supabase.
 - Changing the lab image is independent of the hotspot save/reset flow — it takes effect immediately on upload and is not affected by Reset to Defaults.
 
+### Module Reader Pages
+
+Module content (title, description, sections, key takeaway, and more — see "Customising Module Content" below for the full field list) can also be edited directly in the browser, in addition to editing Supabase rows by hand.
+
+**To enter edit mode:** open any module reader page (e.g. `/modules/hazard-modules/1`) and click the switch at the top of the page. As on `/lab`, it expands into a banner while active; click it again to exit.
+	Exiting edit mode this way does not discard unsaved changes — they're kept in the editor until you either save or click Reset to Defaults, or navigate to a different module (via ← Previous/Next →, or back to the listing).
+
+**While editing**, everything above the editor panel — the hero, every section, and the key takeaway — previews your unsaved changes live, so you can see how they'll look before saving.
+
+**Module fields:** title, description, icon, icon background colour, slug, badge number, and the previous/next module IDs are all free-text fields in the "Module Details" panel.
+	The module's `id` itself is shown but can't be changed here, since routes are built from it.
+
+**Sections:** the "Sections" panel lists every section on the left; click one to edit its heading, body, list (none/bulleted/numbered, with items you can add/edit/remove), and callout on the right.
+- Click **+** in the section list header to add a new section at the end.
+- Use **↑**/**↓** next to a section to reorder it.
+- Click **✕** to delete a section.
+	A section's position number updates automatically to match its place in the list whenever you add, delete, or reorder — it isn't separately editable.
+
+**Saving and resetting:**
+- Click **Save Changes** to write the module's fields and sections to Supabase — changes persist everywhere immediately, including for a module that only existed as bundled fallback content before.
+- Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/` entry (e.g. `lib/hazardModules.ts`). This button is disabled, with an explanatory tooltip, for any section that doesn't have bundled defaults wired up.
+
 ---
 
 ## Customising Module Content
 
-Live hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'` — edit rows there directly via the Supabase dashboard or SQL Editor to change what's shown.
+Hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'`.
+	It can be changed either through each module's in-app editor (see "Module Reader Pages" under "Edit Mode" above) or by editing rows in the `modules`/`module_sections` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
 
 > **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `hazard-modules` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
 	`guides` is a template section not linked from navigation, so day-to-day editing here is mainly relevant for keeping the dropdown's options in sync with any real section you build from it.
@@ -51,10 +78,13 @@ Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections
 	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/` file (e.g. `lib/hazardModules.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
 - `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects;
 	in Supabase this is the `module_sections` table (one row per section, foreign-keyed to its parent `modules` row, deleted automatically via `on delete cascade` if the module is deleted)
+	- `num` must stay sequential (`'01'`, `'02'`, `'03'`, …) matching each section's position — it drives progress tracking positionally (see `ADDITIONAL_INFO.md`), so an out-of-sequence value throws off a learner's progress percentage.
+		The in-app editor manages this automatically; editing `module_sections` rows directly in Supabase means keeping it in sync by hand.
+	- `callout` text gets a 💡 prefix added automatically by the reader.
 - `keyTakeaway` — displayed at the bottom of the reader
 - `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/hazardModules.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
 
-Changes to `lib/hazardModules.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately, without a deploy.
+Changes to `lib/hazardModules.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
 
 To add a whole new section rather than another hazard module, see "Adding a new `app/modules/`-style section" in `ADDITIONAL_INFO.md`.
 
