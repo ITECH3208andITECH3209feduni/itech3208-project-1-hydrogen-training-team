@@ -1,3 +1,5 @@
+// app/login/register/page.tsx
+
 "use client";
 
 // @ts-ignore: CSS import may not have type declarations in this setup

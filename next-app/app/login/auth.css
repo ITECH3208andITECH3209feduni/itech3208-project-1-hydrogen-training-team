@@ -55,6 +55,14 @@
 	margin: 0 0 20px;
 }
 
+/* ─── Description text ───────────────────────────────────────────────────── */
+.auth-description {
+	font-size: 14px;
+	color: #666;
+	margin-bottom: 20px;
+	line-height: 1.5;
+}
+
 /* ─── Form group ─────────────────────────────────────────────────────────── */
 .auth-group {
 	margin-bottom: 14px;
@@ -98,6 +106,17 @@
 .auth-btn:hover:not(:disabled) { opacity: 0.88; }
 .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ─── Success box ────────────────────────────────────────────────────────── */
+.auth-success {
+	background: #E8F8ED;
+	border: 1px solid #A8D5B5;
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: 13px;
+	color: #256029;
+	margin-top: 14px;
+}
+
 /* ─── Error box ──────────────────────────────────────────────────────────── */
 .auth-error {
 	background: #FCEBEB;
@@ -107,6 +126,13 @@
 	font-size: 13px;
 	color: #791F1F;
 	margin-bottom: 14px;
+}
+
+/* Modifier for feedback boxes (.auth-error / .auth-success) that appear
+   below the form rather than above it — e.g. the forgot-password page. */
+.auth-feedback-below {
+	margin-top: 14px;
+	margin-bottom: 0;
 }
 
 /* ─── Switch link row ────────────────────────────────────────────────────── */
