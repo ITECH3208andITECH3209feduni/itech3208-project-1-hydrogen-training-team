@@ -1,4 +1,4 @@
-// app/admin/users/components/ModuleCard.tsx
+// app/admin/users/components/AdminModuleCard.tsx
 // Card for showing user's progress on a module.
 
 import { ModuleData, ModuleStatus } from "@/lib/moduleTypes";
@@ -146,7 +146,7 @@ export default function AdminModuleCard({
             />
 
             {item.badgeNum !== undefined && (
-                <div className="hazard-badge">
+                <div className="module-badge">
                     {item.badgeNum}
                 </div>
             )}

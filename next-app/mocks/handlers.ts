@@ -74,4 +74,24 @@ export const handlers = [
             ],
         });
     }),
+    http.get('/api/load-module-options', () => {
+        return HttpResponse.json({
+            ok: true,
+            data: [
+                { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+                { section: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
+                { section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
+                { section: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
+            ],
+        });
+    }),
+    http.post('/api/modules/save-module', () => {
+        return HttpResponse.json({ ok: true });
+    }),
+    http.get('/api/modules/progress', () => {
+        return HttpResponse.json({
+            ok: true,
+            progress: [{ module_id: '1', progress: 100, status: 'done' }],
+        });
+    }),
 ];

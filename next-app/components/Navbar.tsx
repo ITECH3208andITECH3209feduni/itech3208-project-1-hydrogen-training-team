@@ -1,7 +1,4 @@
-// components/Navbar.tsx
-// Navigation bar for whole application, includes links to pages and logout button.
-
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -29,63 +26,82 @@ export default function Navbar() {
 
     async function handleLogout() {
         try {
+            sessionStorage.setItem("logoutRedirect", "true");
+
             await logout();
-            router.replace("/login");
+
+            router.replace("/");
         } catch (error) {
+            sessionStorage.removeItem("logoutRedirect");
             console.error("Logout failed", error);
         }
     }
 
     return (
         <nav className="nav">
+
+            {/* Logo */}
             <Link href="/" className="logo">
                 <span>Hydrogen Lab Safety</span>
             </Link>
 
             <div className="nav-links">
+
+                {/* Home */}
                 <Link
-                    href="/dashboard"
+                    href={user ? "/dashboard" : "/"}
                     className={`nav-link ${
-                        pathname === "/dashboard" ? "active" : ""
+                        pathname === "/" ||
+                        pathname === "/dashboard"
+                            ? "active"
+                            : ""
                     }`}
                 >
                     Home
                 </Link>
 
-                <Link
-                    href="/modules/hazard-modules"
-                    className={`nav-link ${
-                        pathname.startsWith("/modules")
-                            ? "active"
-                            : ""
-                    }`}
-                >
-                    Modules
-                </Link>
+                {/* Authenticated users only */}
+                {user && (
+                    <>
+                        {/* Modules */}
+                        <Link
+                            href="/modules/hazard-modules"
+                            className={`nav-link ${
+                                pathname.startsWith("/modules")
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Modules
+                        </Link>
 
-                <Link
-                    href="/lab"
-                    className={`nav-link ${
-                        pathname === "/lab"
-                            ? "active"
-                            : ""
-                    }`}
-                >
-                    Scenarios
-                </Link>
+                        {/* Scenarios */}
+                        <Link
+                            href="/lab"
+                            className={`nav-link ${
+                                pathname === "/lab"
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Scenarios
+                        </Link>
 
-                <Link
-                    href="/quizzes"
-                    className={`nav-link ${
-                        pathname.startsWith("/quizzes")
-                            ? "active"
-                            : ""
-                    }`}
-                >
-                    Quizzes
-                </Link>
+                        {/* Quizzes */}
+                        <Link
+                            href="/quizzes"
+                            className={`nav-link ${
+                                pathname.startsWith("/quizzes")
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Quizzes
+                        </Link>
+                    </>
+                )}
 
-                {/* About page */}
+                {/* About - available to everyone */}
                 <Link
                     href="/about"
                     className={`nav-link ${
@@ -97,8 +113,8 @@ export default function Navbar() {
                     About
                 </Link>
 
-                {/* Administrator only */}
-                {permissions.canManageUsers && (
+                {/* Administration - admin only */}
+                {user && permissions.canManageUsers && (
                     <Link
                         href="/admin/users"
                         className={`nav-link ${
@@ -110,9 +126,22 @@ export default function Navbar() {
                         Administration
                     </Link>
                 )}
+
             </div>
 
             <div className="nav-right">
+
+                {/* Login - logged-out users only */}
+                {!user && (
+                    <Link
+                        href="/login"
+                        className="btn-login"
+                    >
+                        Login
+                    </Link>
+                )}
+
+                {/* Logged-in user controls */}
                 {user && (
                     <>
                         <div
@@ -136,7 +165,9 @@ export default function Navbar() {
                         </button>
                     </>
                 )}
+
             </div>
+
         </nav>
     );
 }

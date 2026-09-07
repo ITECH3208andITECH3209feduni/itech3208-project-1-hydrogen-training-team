@@ -3,28 +3,33 @@
 
 import { useRef } from 'react';
 import { EditableHotspot, UploadStatus } from '@/hooks/useHazards';
+import { ModuleSectionOptions } from '@/hooks/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
-import { labelStyle, inputStyle } from '../styles';
+import { labelStyle, inputStyle } from '@/components/editorStyles';
 
 interface HotspotEditorProps {
-	hotspots:			EditableHotspot[];
-	selected:			number | null;
-	uploadStatus:     UploadStatus;
-	onSelect:			(index: number) => void;
-	onUpdateInfo:		(index: number, field: keyof HazardInfo, value: string) => void;
-	onUpdatePosition:	(index: number, field: 'top' | 'left', value: string) => void;
-	onAdd:				() => void;
-	onDelete:			(index: number) => void;
-	onUploadImage:    (file: File) => void;
+	hotspots:           EditableHotspot[];
+	selected:           number | null;
+	uploadStatus:       UploadStatus;
+	moduleOptions:      ModuleSectionOptions[];
+	onSelect:           (index: number) => void;
+	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string) => void;
+	onUpdatePosition:   (index: number, field: 'top' | 'left', value: string) => void;
+	onUpdateModuleLink: (index: number, moduleSection: string | null, moduleId: string | null) => void;
+	onAdd:              () => void;
+	onDelete:           (index: number) => void;
+	onUploadImage:      (file: File) => void;
 }
 
 export default function HotspotEditor({
 	hotspots,
 	selected,
 	uploadStatus,
+	moduleOptions,
 	onSelect,
 	onUpdateInfo,
 	onUpdatePosition,
+	onUpdateModuleLink,
 	onAdd,
 	onDelete,
 	onUploadImage,
@@ -48,7 +53,7 @@ export default function HotspotEditor({
 		<div className="editor-wrap">
 			
 			{/* ── Image upload ─────────────────────────────────────────────────── */}
-			<div className="panel" style={{ overflow: 'hidden' }}>
+			<div className="panel panel--clip">
 				<div className="panel-header">🖼️ Lab Image</div>
 				<div className="image-upload-panel">
 					<p className="image-upload-description">
@@ -58,7 +63,7 @@ export default function HotspotEditor({
 						ref={fileInputRef}
 						type="file"
 						accept="image/*"
-						style={{ display: 'none' }}
+						className="file-input-hidden"
 						onChange={handleFileChange}
 					/>
 					<button
@@ -75,22 +80,18 @@ export default function HotspotEditor({
 			<div className="hotspot-editor">
 				
 				{/* Hotspot list */}
-				<div className="panel" style={{ overflow: 'hidden' }}>
-					<div className="panel-header" style={{ justifyContent: 'space-between' }}>
+				<div className="panel panel--clip">
+					<div className="panel-header panel-header--spread">
 						<span>🎯 Hotspots</span>
 						{/* Add Hotspot button */}
 						<button onClick={onAdd} title="Add new hotspot" className="hotspot-add-btn">+</button>
 					</div>
-					<div style={{ padding: '10px' }}>
+					<div className="hotspot-list-body">
 						{hotspots.map((hs, index) => (
-							<div
-								key={hs.type}
-								style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}
-							>
+							<div key={hs.type} className="hotspot-list-row">
 								<button
 									onClick={() => onSelect(index)}
-									className={`hotspot-list-item ${selected === index ? 'hotspot-list-item--active' : ''}`}
-									style={{ marginBottom: 0, flex: 1 }}
+									className={`hotspot-list-item hotspot-list-item--row ${selected === index ? 'hotspot-list-item--active' : ''}`}
 								>
 									{hs.info.title.split(' ')[0]} {hs.type.charAt(0).toUpperCase() + hs.type.slice(1)}
 									<div className="hotspot-list-item-position">
@@ -103,7 +104,7 @@ export default function HotspotEditor({
 						))}
 						
 						{hotspots.length === 0 && (
-							<p style={{ color: 'var(--muted)', fontSize: '0.82rem', padding: '8px 4px' }}>
+							<p className="hotspot-empty-hint">
 								No hotspots. Click + to add one.
 							</p>
 						)}
@@ -111,35 +112,36 @@ export default function HotspotEditor({
 				</div>
 				
 				{/* Hotspot editor */}
-				<div className="panel" style={{ overflow: 'hidden' }}>
+				<div className="panel panel--clip">
 					<div className="panel-header">
 						✏️ {selected !== null ? `Editing: ${hotspots[selected].type}` : 'Select a hotspot'}
 					</div>
-					<div style={{ padding: '20px' }}>
+					<div className="hotspot-editor-body">
 						{selected === null ? (
-							<p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
+							<p className="hotspot-editor-placeholder">
 								Click a hotspot on the image or pick one from the list to edit its title and description.
 							</p>
 						) : (
-							<div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+							<div className="hotspot-field-stack">
 							
 								{/* Type key (read-only) */}
 								<div>
 									<label style={labelStyle}>Type key</label>
 									<input
-										style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
+										style={inputStyle}
+										className="hotspot-input--readonly"
 										value={hotspots[selected].type}
 										readOnly
 									/>
-									<p style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '4px' }}>
+									<p className="field-hint">
 										Auto-generated identifier — cannot be changed after creation.
 									</p>
 								</div>
 				  
 								{/* Position fields */}
-								<div style={{ display: 'flex', gap: '12px' }}>
+								<div className="field-row">
 									{(['top', 'left'] as const).map((field) => (
-										<div key={field} style={{ flex: 1 }}>
+										<div key={field} className="field-row-item">
 											<label style={labelStyle}>{field.charAt(0).toUpperCase() + field.slice(1)} (%)</label>
 											<input
 												style={inputStyle}
@@ -165,13 +167,65 @@ export default function HotspotEditor({
 								<div>
 									<label style={labelStyle}>Description</label>
 									<textarea
-										style={{ ...inputStyle, minHeight: '100px', resize: 'vertical', lineHeight: '1.5' }}
+										style={inputStyle}
+										className="hotspot-textarea"
 										value={hotspots[selected].info.text}
 										onChange={(e) => onUpdateInfo(selected, 'text', e.target.value)}
 									/>
 								</div>
 								
-								<p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+								{/* Linked module */}
+								<div>
+									<label style={labelStyle}>Linked Module</label>
+									<div className="field-row">
+										<select
+											className="linked-module-select"
+											style={inputStyle}
+											value={hotspots[selected].info.moduleSection ?? ''}
+											onChange={(e) =>
+												onUpdateModuleLink(selected, e.target.value || null, null)
+											}
+										>
+											<option value="">None</option>
+											{moduleOptions.map((section) => (
+												<option key={section.value} value={section.value}>
+													{section.value}
+												</option>
+											))}
+										</select>
+										
+										{hotspots[selected].info.moduleSection && (
+											<select
+												className="linked-module-select"
+												style={inputStyle}
+												value={hotspots[selected].info.moduleId ?? ''}
+												onChange={(e) =>
+													onUpdateModuleLink(
+														selected,
+														hotspots[selected].info.moduleSection,
+														e.target.value || null
+													)
+												}
+											>
+												<option value="">Select a module…</option>
+												{moduleOptions
+													.find((section) => section.value === hotspots[selected].info.moduleSection)
+													?.options.map((mod) => (
+														<option key={mod.id} value={mod.id}>
+															{mod.badgeNum != null ? `${mod.badgeNum}. ${mod.title}` : mod.title}
+														</option>
+													))}
+											</select>
+										)}
+									</div>
+									<p className="field-hint">
+										{hotspots[selected].info.moduleSection && !hotspots[selected].info.moduleId
+											? '⚠️ Select a module, or set this back to "None" — saving is disabled until then.'
+											: 'Powers the "Learn More" button in this hazard\u2019s popup. Set to "None" to hide it.'}
+									</p>
+								</div>
+
+								<p className="drag-hint">
 									💡 Drag the hotspot on the image to reposition — values above update automatically.
 								</p>
 							</div>

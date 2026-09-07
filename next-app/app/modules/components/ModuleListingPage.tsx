@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
-import HazardModuleCard from './HazardModuleCard';
+import ModuleCard from './ModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;
 
@@ -24,6 +24,7 @@ interface ModuleListingPageProps {
 	heading: string;
 	subheading: string;
 	emptyMessage?: string;	// Shown in the empty state when a filter matches nothing.
+	usingDefaults?: boolean;
 }
 
 export default function ModuleListingPage({
@@ -32,6 +33,7 @@ export default function ModuleListingPage({
 	heading,
 	subheading,
 	emptyMessage = 'Nothing matches this filter.',
+	usingDefaults = false,
 }: ModuleListingPageProps) {
 	const { user, loading } = useAuth();
 	const router = useRouter();
@@ -55,6 +57,18 @@ export default function ModuleListingPage({
 				<p>{subheading}</p>
 			</div>
 
+			{/* Fallback content warning */}
+			{usingDefaults && (
+				<div className="fallback-warning">
+					⚠️ You are viewing fallback
+					content because live content
+					could not be loaded. Progress
+					shown below may not accurately
+					reflect the current version of
+					these modules.
+				</div>
+			)}
+			
 			{/* Filter bar */}
 			<div className="filter-bar">
 				{(Object.keys(FILTER_LABELS) as FilterValue[]).map((f) => (
@@ -71,7 +85,7 @@ export default function ModuleListingPage({
 			{/* Module grid */}
 			<div className="modules-grid">
 				{visible.map((item, i) => (
-					<HazardModuleCard
+					<ModuleCard
 						key={item.id}
 						item={item}
 						basePath={basePath}

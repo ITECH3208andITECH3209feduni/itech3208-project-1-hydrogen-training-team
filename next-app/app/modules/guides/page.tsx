@@ -6,15 +6,19 @@
 
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
+import { useModules } from '@/hooks/useModules';
 import { guides } from '@/lib/guides';
 
 export default function GuidesPage() {
+	const { modules, usingDefaults } = useModules('guides', guides);
+
 	return (
 		<ModuleListingPage
-			items={guides}
+			items={modules}
 			basePath="/modules/guides"
 			heading="Guides"
 			subheading="Replace with a short subheading for this section."
+			usingDefaults={usingDefaults}
 		/>
 	);
 }

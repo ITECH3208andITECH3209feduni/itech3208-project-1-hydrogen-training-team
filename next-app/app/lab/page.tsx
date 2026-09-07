@@ -1,6 +1,5 @@
 // app/lab/page.tsx  –  Interactive Hydrogen Lab
-// Secret key sequence to enter edit mode: H → Z → E → D → I → T
-// (type each character in the sequence, in order, within 2 seconds of each other)
+// Edit mode entered/exited via toggle switch (only visible to admins)
 
 'use client';
 
@@ -10,14 +9,15 @@ import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import HazardPopup from './components/HazardPopup';
-import EditBanner from './components/EditBanner';
+import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
-import SaveBar from './components/SaveBar';
+import SaveBar from '@/components/SaveBar';
 import { useHazards } from '@/hooks/useHazards';
+import { useModuleOptions } from '@/hooks/useModuleOptions';
 
 export default function LabPage() {
 	// Authentication
-	const { user, loading } = useAuth();
+	const { user, loading, permissions } = useAuth();
 	const router = useRouter();
 
 	// Page constants
@@ -28,12 +28,15 @@ export default function LabPage() {
 		hotspots,
 		loadStatus,
 		editMode,
+		toggleEditMode,
 		selected,
 		setSelected,
 		saveStatus,
 		handleDragStart,
 		updateInfo,
 		updatePosition,
+		updateModuleLink,
+		hasInvalidModuleLink,
 		addHotspot,
 		deleteHotspot,
 		imageUrl,
@@ -44,11 +47,20 @@ export default function LabPage() {
 		liveHazardData,
 	} = useHazards(containerRef);
 
+	const moduleOptions = useModuleOptions();
+
 	useEffect(() => {
 		if (!loading && !user) {
 			router.replace("/login");
 		}
 	}, [user, loading, router]);
+
+	// Safety Net - Exit edit mode if lose permission mid-session (e.g. role change)
+	useEffect(() => {
+		if (editMode && !permissions.canManageUsers) {
+			toggleEditMode();
+		}
+	}, [editMode, permissions.canManageUsers, toggleEditMode]);
 
 	if (loading) {
 		return <div>Loading...</div>;
@@ -61,9 +73,13 @@ export default function LabPage() {
 	return (
 		<main className="main">
 
-			{editMode && <EditBanner />}
+			{/* Edit mode toggle — only visible to permitted users */}
+			{permissions.canManageUsers && (
+				<EditModeToggle editMode={editMode} onToggle={toggleEditMode} className="lab-edit-mode-toggle-bar" />
+			)}
 			
-			{/* Header - Title and subtitle (latter changes based on loadStatus and editMode */}
+			{/* Header */}
+			{/* Title and subtitle (latter changes based on loadStatus and editMode */}
 			<h1 className="lab-title">Interactive Hydrogen Lab</h1>
 			<p className="lab-subtitle">
 				{editMode ? 'Drag hotspots · select to edit · save when done'
@@ -117,9 +133,11 @@ export default function LabPage() {
 					hotspots={hotspots}
 					selected={selected}
 					uploadStatus={uploadStatus}
+					moduleOptions={moduleOptions}
 					onSelect={setSelected}
 					onUpdateInfo={updateInfo}
 					onUpdatePosition={updatePosition}
+					onUpdateModuleLink={updateModuleLink}
 					onAdd={addHotspot}
 					onDelete={deleteHotspot}
 					onUploadImage={uploadImage}
@@ -133,6 +151,8 @@ export default function LabPage() {
 					saveStatus={saveStatus}
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
+					saveDisabled={hasInvalidModuleLink}
+					saveDisabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
 				/>
 			)}
 			

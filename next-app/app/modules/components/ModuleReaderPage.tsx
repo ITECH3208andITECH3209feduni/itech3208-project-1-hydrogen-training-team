@@ -1,5 +1,6 @@
 // app/modules/components/ModuleReaderPage.tsx
-// Wrapper for module pages with learner progress tracking.
+// Wrapper for module pages, with learner progress tracking & in-app editing
+// Edit mode entered/exited via toggle switch (only visible to admins)
 
 "use client";
 
@@ -7,26 +8,36 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { ModuleData } from "@/lib/moduleTypes";
+import { ModuleData, getModuleById } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import { useModuleProgress } from "../hooks/useModuleProgress";
+import EditModeToggle from "@/components/EditModeToggle";
+import ModuleEditor from "./ModuleEditor";
+import SaveBar from "@/components/SaveBar";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
+import { useModuleEditor } from "@/hooks/useModuleEditor";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
+    section: string;
     basePath: string;
     badgeLabel?: string;
     heroHint: string;
     backLabel?: string;
+    usingDefaults?: boolean;
+    defaults?: ModuleData[];   // Used for reverting to default in edit mode
 }
 
 export default function ModuleReaderPage({
     item,
+    section,
     basePath,
     badgeLabel,
     heroHint,
     backLabel = "Back",
+    usingDefaults = false,
+    defaults,
 }: ModuleReaderPageProps) {
-    const { user, loading } = useAuth();
+    const { user, loading, permissions } = useAuth();
     const router = useRouter();
 
     const {
@@ -37,10 +48,33 @@ export default function ModuleReaderPage({
         restartModule,
     } = useModuleProgress({
         moduleId: item?.id ?? "",
+        section,
         sectionCount: item?.sections.length ?? 0,
         user,
         loading,
     });
+
+    const fallbackItem = item ? getModuleById(defaults ?? [], item.id) : undefined;
+
+    const {
+        editMode,
+        toggleEditMode,
+        draft,
+        selectedSection,
+        setSelectedSection,
+        saveStatus,
+        updateField,
+        updateSection,
+        addSection,
+        deleteSection,
+        moveSection,
+        updateSectionItem,
+        addSectionItem,
+        deleteSectionItem,
+        saveToSupabase,
+        resetToDefaults,
+        canReset,
+    } = useModuleEditor(section, item, fallbackItem);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -54,6 +88,13 @@ export default function ModuleReaderPage({
         }
     }, [loading, user, item, router, basePath]);
 
+    // Safety Net - Exit edit mode if lose permission mid-session (e.g. role change)
+    useEffect(() => {
+        if (editMode && !permissions.canManageUsers) {
+            toggleEditMode();
+        }
+    }, [editMode, permissions.canManageUsers, toggleEditMode]);
+
     if (loading) {
         return <div>Loading…</div>;
     }
@@ -66,18 +107,24 @@ export default function ModuleReaderPage({
         return null;
     }
 
+    // While editing, edits show live above the editor panel
+    // Otherwise it shows the live/loaded item as before
+    const displayed = editMode && draft ? draft : item;
+
     const hasBadge =
-        item.badgeNum !== undefined &&
+        displayed.badgeNum !== undefined &&
         !!badgeLabel;
 
     return (
         <main
-            className="main"
-            style={{
-                maxWidth: "820px",
-            }}
-            data-slug={item.slug}
+            className="main module-reader-main"
+            data-slug={displayed.slug}
         >
+            {/* Edit mode toggle — only visible to permitted users */}
+            {permissions.canManageUsers && (
+                <EditModeToggle editMode={editMode} onToggle={toggleEditMode} />
+            )}
+
             {/* Breadcrumb */}
             <div className="back-crumb">
                 <Link href={basePath}>
@@ -87,156 +134,96 @@ export default function ModuleReaderPage({
                 {" / "}
 
                 {hasBadge
-                    ? `${badgeLabel} ${item.badgeNum} – `
+                    ? `${badgeLabel} ${displayed.badgeNum} – `
                     : ""}
 
-                {item.title}
+                {displayed.title}
             </div>
 
             {/* Hero */}
             <div className="module-hero">
                 <div
                     className="module-icon-big"
-                    style={{
-                        background: item.iconBg,
-                    }}
+                    style={{ background: displayed.iconBg, }}
                 >
-                    {item.icon}
+                    {displayed.icon}
                 </div>
 
                 <div className="module-hero-text">
                     {hasBadge && (
                         <div className="hazard-label">
-                            {badgeLabel} {item.badgeNum}
+                            {badgeLabel} {displayed.badgeNum}
                         </div>
                     )}
 
-                    <h1>{item.title}</h1>
+                    <h1>{displayed.title}</h1>
                     <p>{heroHint}</p>
                 </div>
             </div>
 
+            {/* Fallback content warning */}
+            {usingDefaults && !editMode && (
+                <div className="fallback-warning">
+                    ⚠️ You are viewing fallback content because live content could not be loaded. 
+                    Your progress on this module may not accurately reflect the current version.
+                </div>
+            )}
+
             {/* Saved progress */}
-            {progressLoaded &&
-                currentProgress > 0 && (
-                    <div
-                        style={{
-                            marginBottom: "20px",
-                            padding: "12px 16px",
-                            borderRadius: "10px",
-                            background:
-                                "rgba(0, 180, 216, 0.08)",
-                            border:
-                                "1px solid rgba(0, 180, 216, 0.25)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent:
-                                    "space-between",
-                                marginBottom: "7px",
-                                fontSize: "0.85rem",
-                            }}
-                        >
-                            <span>Progress</span>
-
-                            <strong>
-                                {currentProgress}%
-                            </strong>
-                        </div>
-
-                        <div
-                            style={{
-                                height: "8px",
-                                borderRadius: "999px",
-                                background:
-                                    "rgba(255,255,255,0.08)",
-                                overflow: "hidden",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: `${currentProgress}%`,
-                                    height: "100%",
-                                    background:
-                                        "var(--teal)",
-                                    transition:
-                                        "width 0.3s ease",
-                                }}
-                            />
-                        </div>
+            {progressLoaded && currentProgress > 0 && (
+                <div className="module-progress-card">
+                    <div className="module-progress-card-header">
+                        <span>Progress</span>
+                        <strong>{currentProgress}%</strong>
                     </div>
-                )}
+
+                    <div className="module-progress-track">
+                        <div
+                            className="module-progress-fill"
+                            style={{ width: `${currentProgress}%`, }}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Manual resume */}
-            {progressLoaded &&
-                currentProgress > 0 &&
-                currentProgress < 100 && (
-                    <button
-                        type="button"
-                        onClick={
-                            continueFromSavedProgress
-                        }
-                        style={{
-                            marginBottom: "20px",
-                            padding: "8px 14px",
-                            borderRadius: "8px",
-                            border:
-                                "1px solid rgba(255,255,255,0.18)",
-                            background:
-                                "rgba(255,255,255,0.06)",
-                            color: "inherit",
-                            cursor: "pointer",
-                        }}
-                    >
-                        Continue from saved progress
-                    </button>
-                )}
+            {progressLoaded && currentProgress > 0 && currentProgress < 100 && (
+                <button
+                    type="button"
+                    onClick={
+                        continueFromSavedProgress
+                    }
+                    className="module-secondary-btn module-resume-btn"
+                >
+                    Continue from saved progress
+                </button>
+            )}
 
             {/* Sections */}
-            {item.sections.map((section) => (
+            {displayed.sections.map((section) => (
                 <div
                     key={section.num}
                     data-module-section
                     data-section-number={section.num}
                 >
-                    <SectionBlock
-                        section={section}
-                    />
+                    <SectionBlock section={section}/>
                 </div>
             ))}
 
             {/* Key Takeaway */}
             <div className="takeaway-box">
                 <h3>🔑 Key Takeaway</h3>
-                <p>{item.keyTakeaway}</p>
+                <p>{displayed.keyTakeaway}</p>
             </div>
 
             {/* Completion / restart */}
             {currentProgress >= 100 && (
-                <div
-                    style={{
-                        marginTop: "24px",
-                        marginBottom: "24px",
-                        padding: "16px",
-                        borderRadius: "10px",
-                        background:
-                            "rgba(0, 229, 160, 0.08)",
-                        border:
-                            "1px solid rgba(0, 229, 160, 0.25)",
-                    }}
-                >
+                <div className="module-completion-card">
                     <strong>
                         Module completed
                     </strong>
 
-                    <div
-                        style={{
-                            marginTop: "4px",
-                            fontSize: "0.85rem",
-                        }}
-                    >
+                    <div className="module-completion-subtext">
                         You can review this
                         module at any time.
                     </div>
@@ -245,19 +232,7 @@ export default function ModuleReaderPage({
                         type="button"
                         onClick={restartModule}
                         disabled={restarting}
-                        style={{
-                            marginTop: "12px",
-                            padding: "8px 14px",
-                            borderRadius: "8px",
-                            border:
-                                "1px solid rgba(255,255,255,0.18)",
-                            background:
-                                "rgba(255,255,255,0.06)",
-                            color: "inherit",
-                            cursor: restarting
-                                ? "not-allowed"
-                                : "pointer",
-                        }}
+                        className="module-secondary-btn module-restart-btn"
                     >
                         {restarting
                             ? "Restarting..."
@@ -268,9 +243,9 @@ export default function ModuleReaderPage({
 
             {/* Prev / Next navigation */}
             <div className="module-nav">
-                {item.prevId ? (
+                {displayed.prevId ? (
                     <Link
-                        href={`${basePath}/${item.prevId}`}
+                        href={`${basePath}/${displayed.prevId}`}
                         className="nav-btn"
                     >
                         ← Previous
@@ -279,9 +254,9 @@ export default function ModuleReaderPage({
                     <span />
                 )}
 
-                {item.nextId ? (
+                {displayed.nextId ? (
                     <Link
-                        href={`${basePath}/${item.nextId}`}
+                        href={`${basePath}/${displayed.nextId}`}
                         className="nav-btn teal"
                     >
                         Next →
@@ -295,6 +270,34 @@ export default function ModuleReaderPage({
                     </Link>
                 )}
             </div>
+
+            {/* Edit panel — only visible in edit mode */}
+            {editMode && draft && (
+                <ModuleEditor
+                    draft={draft}
+                    selectedSection={selectedSection}
+                    onSelectSection={setSelectedSection}
+                    onUpdateField={updateField}
+                    onUpdateSection={updateSection}
+                    onAddSection={addSection}
+                    onDeleteSection={deleteSection}
+                    onMoveSection={moveSection}
+                    onUpdateSectionItem={updateSectionItem}
+                    onAddSectionItem={addSectionItem}
+                    onDeleteSectionItem={deleteSectionItem}
+                />
+            )}
+
+            {/* Save / reset bar — only visible in edit mode */}
+            {editMode && (
+                <SaveBar
+                    saveStatus={saveStatus}
+                    onReset={resetToDefaults}
+                    onSave={saveToSupabase}
+                    resetDisabled={!canReset}
+                    resetDisabledReason="No bundled default exists for this module to reset to."
+                />
+            )}
         </main>
     );
 }

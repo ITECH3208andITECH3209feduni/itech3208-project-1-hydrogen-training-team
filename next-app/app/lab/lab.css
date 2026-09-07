@@ -160,27 +160,11 @@
 }
 .popup-module-link:hover { opacity: 0.85; }
 
-/* ─── Edit mode ─────────────────────────────────────────────────── */
-.edit-banner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 16px;
-	background: rgba(250,204,21,0.08);
-	border: 1px solid rgba(250,204,21,0.35);
-	border-radius: 10px;
-	padding: 10px 20px;
-	margin-bottom: 18px;
-}
-.edit-banner-title {
-	color: #facc15;
-	font-size: 0.88rem;
-	font-weight: 600;
-}
-.edit-banner-hint {
-	color: rgba(250,204,21,0.55);
-	font-size: 0.78rem;
+/* ─── Edit mode toggle — width override ────────────────────────────────────── */
+.edit-mode-toggle-bar.lab-edit-mode-toggle-bar {
+	width: 70%;
+	max-width: 900px;
+	margin: 16px auto 0;
 }
 
 /* ─── Editor wrapper ─────────────────────────────────────── */
@@ -308,19 +292,75 @@
 	align-items: start;
 }
 
-/* ─── Save bar ───────────────────────────────────────────────────── */
-.save-bar {
+/* ─── Hidden native file input ───────────────────────────────────── */
+.file-input-hidden {
+	display: none;
+}
+
+/* ─── Hotspot list body ──────────────────────────────────────────── */
+.hotspot-list-body {
+	padding: 10px;
+}
+.hotspot-list-row {
 	display: flex;
-	justify-content: center;
-	gap: 12px;
-	margin-bottom: 40px;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 4px;
+}
+.hotspot-list-item--row {
+	margin-bottom: 0;
+	flex: 1;
+}
+.hotspot-empty-hint {
+	color: var(--muted);
+	font-size: 0.82rem;
+	padding: 8px 4px;
+}
+
+/* ─── Hotspot field editor ───────────────────────────────────────── */
+.hotspot-editor-body {
+	padding: 20px;
+}
+.hotspot-editor-placeholder {
+	color: var(--muted);
+	font-size: 0.88rem;
+}
+.hotspot-field-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.hotspot-input--readonly {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.hotspot-textarea {
+	min-height: 100px;
+	resize: vertical;
+	line-height: 1.5;
+}
+.drag-hint {
+	font-size: 0.78rem;
+	color: var(--muted);
+}
+
+/* ─── Linked module ──────────────────────────────────────────────── */
+.linked-module-select {
+	flex: 1;
+}
+
+/* Explicit rule for dropdown selection (prevents inheritance issue that makes dropdowns unreadable) */
+.linked-module-select option {
+	color: #1a1a1a;
+	background: #ffffff;
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-	.hotspot            { width: 28px; height: 28px; }
-	.lab-image-container { width: 95%; }
-	.hotspot-editor     { width: 95%; grid-template-columns: 1fr; }
-	.editor-wrap        { width: 95%; }
-	.image-upload-panel { flex-direction: column; align-items: flex-start; }
+	.hotspot                                       { width: 28px; height: 28px; }
+	.lab-image-container                           { width: 95%; }
+	.hotspot-editor                                { width: 95%; grid-template-columns: 1fr; }
+	.edit-mode-toggle-bar.lab-edit-mode-toggle-bar { width: 95%; }
+	.editor-wrap                                   { width: 95%; }
+	.image-upload-panel                            { flex-direction: column; align-items: flex-start; }
 }

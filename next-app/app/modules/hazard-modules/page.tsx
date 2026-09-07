@@ -10,7 +10,7 @@ import { useModules } from '@/hooks/useModules';
 import { hazardModules } from '@/lib/hazardModules';
 
 export default function HazardModulesPage() {
-	const { modules } = useModules('hazard-modules', hazardModules);
+	const { modules, usingDefaults } = useModules('hazard-modules', hazardModules);
 	
 	return (
 		<ModuleListingPage
@@ -18,6 +18,7 @@ export default function HazardModulesPage() {
 			basePath="/modules/hazard-modules"
 			heading="Hydrogen Safety Modules"
 			subheading="5 modules · Each linked to a real lab hazard · Learn, identify, respond"
+			usingDefaults={usingDefaults}
 		/>
 	);
 }
