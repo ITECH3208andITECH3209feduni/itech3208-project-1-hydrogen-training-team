@@ -4,9 +4,7 @@
     padding: 30px 0 60px;
 }
 
-.admin-module-header {
-    margin-bottom: 28px;
-}
+.admin-module-header { margin-bottom: 28px; }
 
 .admin-module-header h1 {
     margin: 8px 0;
@@ -33,9 +31,7 @@
     padding: 28px;
 }
 
-.admin-module-panel .form-group {
-    margin-bottom: 24px;
-}
+.admin-module-panel .form-group { margin-bottom: 24px; }
 
 .admin-module-panel label {
     display: block;
@@ -94,14 +90,9 @@
     font-weight: 700;
 }
 
-.video-status strong,
-.video-status small {
-    display: block;
-}
+.video-status strong, .video-status small { display: block; }
 
-.video-status strong {
-    color: var(--white);
-}
+.video-status strong { color: var(--white); }
 
 .video-status small {
     margin-top: 3px;
@@ -125,9 +116,7 @@
     color: var(--muted);
 }
 
-.no-video strong {
-    color: var(--white);
-}
+.no-video strong { color: var(--white); }
 
 .video-type-tabs {
     display: flex;
@@ -157,9 +146,7 @@
     border-radius: 10px;
 }
 
-.video-editor .form-group {
-    margin-bottom: 18px;
-}
+.video-editor .form-group { margin-bottom: 18px; }
 
 .admin-module-panel input[type="file"] {
     width: 100%;
@@ -200,9 +187,7 @@
     box-shadow: 0 5px 16px rgba(0,180,216,.25);
 }
 
-.remove-video-btn:hover:not(:disabled) {
-    background: rgba(255,80,80,.24);
-}
+.remove-video-btn:hover:not(:disabled) { background: rgba(255,80,80,.24); }
 
 .save-video-btn:disabled,
 .remove-video-btn:disabled {
@@ -237,15 +222,7 @@
 }
 
 @media (max-width: 700px) {
-    .admin-module-page {
-        padding: 20px 0 40px;
-    }
-
-    .admin-module-panel {
-        padding: 18px;
-    }
-
-    .video-type-tabs {
-        flex-direction: column;
-    }
+    .admin-module-page  { padding: 20px 0 40px; }
+    .admin-module-panel { padding: 18px; }
+    .video-type-tabs    { flex-direction: column; }
 }

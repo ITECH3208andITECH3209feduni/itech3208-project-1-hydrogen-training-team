@@ -76,9 +76,7 @@ export default function EditUserModal({
     }
 
     alert("User updated successfully.");
-
     onSaved(data.profile);
-
     onClose();
   } catch (err) {
     console.error(err);

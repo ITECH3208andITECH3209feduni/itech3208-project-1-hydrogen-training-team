@@ -27,29 +27,15 @@ interface ModuleVideo {
 export default function AdminModulesPage() {
     const { loading, profile, isAdmin } = useAuth();
     const router = useRouter();
-
     const [modules, setModules] = useState<ModuleOption[]>([]);
     const [selectedId, setSelectedId] = useState("");
-
-    const [currentVideo, setCurrentVideo] =
-        useState<ModuleVideo | null>(null);
-
+    const [currentVideo, setCurrentVideo] = useState<ModuleVideo | null>(null);
     const [youtubeUrl, setYoutubeUrl] = useState("");
-
-    const [videoMode, setVideoMode] =
-        useState<"youtube" | "mp4">("youtube");
-
-    const [selectedFile, setSelectedFile] =
-        useState<File | null>(null);
-
-    const [loadingModules, setLoadingModules] =
-        useState(true);
-
-    const [loadingVideo, setLoadingVideo] =
-        useState(false);
-
+    const [videoMode, setVideoMode] = useState<"youtube" | "mp4">("youtube");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [loadingModules, setLoadingModules] = useState(true);
+    const [loadingVideo, setLoadingVideo] = useState(false);
     const [saving, setSaving] = useState(false);
-
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
@@ -80,20 +66,14 @@ export default function AdminModulesPage() {
             setLoadingModules(true);
             setError("");
 
-            const response = await fetch(
-                "/api/load-module-options",
-                {
-                    cache: "no-store",
-                }
-            );
+            const response = await fetch("/api/load-module-options", {
+                cache: "no-store",
+            });
 
             const data = await response.json();
 
             if (!response.ok || !data.ok) {
-                throw new Error(
-                    data.error ||
-                        "Failed to load modules."
-                );
+                throw new Error(data.error || "Failed to load modules.");
             }
 
             /*
@@ -104,19 +84,11 @@ export default function AdminModulesPage() {
              * Safety Modules only, so we filter the response
              * locally without changing the shared API.
              */
-            const loadedModules =
-                (data.data ?? []).filter(
-                    (module: ModuleOption) =>
-                        module.section ===
-                        VIDEO_SECTION
-                );
-
+            const loadedModules = (data.data ?? []).filter((module: ModuleOption) => module.section === VIDEO_SECTION);
             setModules(loadedModules);
 
             if (loadedModules.length > 0) {
-                setSelectedId(
-                    String(loadedModules[0].id)
-                );
+                setSelectedId(String(loadedModules[0].id));
             } else {
                 setSelectedId("");
                 setCurrentVideo(null);

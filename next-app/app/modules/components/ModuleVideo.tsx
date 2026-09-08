@@ -17,32 +17,20 @@ function getYouTubeEmbedUrl(
     try {
         const parsed = new URL(url);
 
-        if (
-            parsed.hostname === "www.youtube.com" ||
-            parsed.hostname === "youtube.com"
-        ) {
-            const videoId =
-                parsed.searchParams.get("v");
+        if (parsed.hostname === "www.youtube.com" || parsed.hostname === "youtube.com") {
+            const videoId = parsed.searchParams.get("v");
 
             if (videoId) {
                 return `https://www.youtube.com/embed/${videoId}`;
             }
 
-            if (
-                parsed.pathname.startsWith(
-                    "/embed/"
-                )
-            ) {
+            if (parsed.pathname.startsWith("/embed/")) {
                 return url;
             }
         }
 
-        if (
-            parsed.hostname === "youtu.be" ||
-            parsed.hostname === "www.youtu.be"
-        ) {
-            const videoId =
-                parsed.pathname.slice(1);
+        if (parsed.hostname === "youtu.be" || parsed.hostname === "www.youtu.be") {
+            const videoId = parsed.pathname.slice(1);
 
             if (videoId) {
                 return `https://www.youtube.com/embed/${videoId}`;
@@ -59,48 +47,31 @@ export default function ModuleVideo({
     videoUrl,
     videoType,
 }: ModuleVideoProps) {
-    const [isOpen, setIsOpen] =
-        useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
-    const embedUrl =
-        videoUrl && videoType === "youtube"
-            ? getYouTubeEmbedUrl(videoUrl)
-            : null;
+    const embedUrl = videoUrl && videoType === "youtube"
+        ? getYouTubeEmbedUrl(videoUrl)
+        : null;
 
-    const isMp4 =
-        !!videoUrl &&
-        videoType === "mp4";
-
-    const hasVideo =
-        !!embedUrl || isMp4;
+    const isMp4 = !!videoUrl && videoType === "mp4";
+    const hasVideo = !!embedUrl || isMp4;
 
     useEffect(() => {
         if (!isOpen) return;
 
-        const handleEscape = (
-            event: KeyboardEvent
-        ) => {
+        const handleEscape = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 setIsOpen(false);
             }
         };
 
-        document.addEventListener(
-            "keydown",
-            handleEscape
-        );
+        document.addEventListener("keydown", handleEscape);
 
-        document.body.style.overflow =
-            "hidden";
+        document.body.style.overflow = "hidden";
 
         return () => {
-            document.removeEventListener(
-                "keydown",
-                handleEscape
-            );
-
-            document.body.style.overflow =
-                "";
+            document.removeEventListener("keydown", handleEscape);
+            document.body.style.overflow = "";
         };
     }, [isOpen]);
 
@@ -133,14 +104,10 @@ export default function ModuleVideo({
                             : "Module video coming soon"
                     }
                 >
-                    <span className="module-video-play">
-                        ▶
-                    </span>
+                    <span className="module-video-play">▶</span>
 
                     <span className="module-video-launcher-text">
-                        <strong>
-                            Module Video
-                        </strong>
+                        <strong>Module Video</strong>
 
                         <span>
                             {hasVideo
@@ -150,9 +117,7 @@ export default function ModuleVideo({
                     </span>
 
                     {hasVideo && (
-                        <span className="module-video-launch-arrow">
-                            →
-                        </span>
+                        <span className="module-video-launch-arrow">→</span>
                     )}
                 </button>
             </section>
@@ -163,34 +128,23 @@ export default function ModuleVideo({
                     role="dialog"
                     aria-modal="true"
                     aria-label="Module Video"
-                    onMouseDown={(
-                        event
-                    ) => {
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
                             setIsOpen(false);
                         }
                     }}
                 >
                     <div className="module-video-modal-frame">
-
                         <div className="module-video-modal-header">
                             <div className="module-video-modal-title">
                                 <span>🎥</span>
-
-                                <h2>
-                                    Module Video
-                                </h2>
+                                <h2>Module Video</h2>
                             </div>
 
                             <button
                                 type="button"
                                 className="module-video-close"
-                                onClick={() =>
-                                    setIsOpen(false)
-                                }
+                                onClick={() => setIsOpen(false)}
                                 aria-label="Close video"
                             >
                                 ×
@@ -198,42 +152,34 @@ export default function ModuleVideo({
                         </div>
 
                         <div className="module-video-player">
+                            {videoType === "youtube" && embedUrl && (
+                                <iframe
+                                    src={embedUrl}
+                                    title="Module training video"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                />
+                            )}
 
-                            {videoType ===
-                                "youtube" &&
-                                embedUrl && (
-                                    <iframe
-                                        src={
-                                            embedUrl
-                                        }
-                                        title="Module training video"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                        allowFullScreen
-                                    />
-                                )}
-
-                            {videoType ===
-                                "mp4" &&
-                                videoUrl && (
-                                    <video
-                                        src={videoUrl}
-                                        controls
-                                        playsInline
-                                        preload="metadata"
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            display:
-                                                "block",
-                                            background:
-                                                "#000",
-                                        }}
-                                    >
-                                        Your browser does not
-                                        support MP4 video.
-                                    </video>
-                                )}
-
+                            {videoType === "mp4" && videoUrl && (
+                                <video
+                                    src={videoUrl}
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        display:
+                                            "block",
+                                        background:
+                                            "#000",
+                                    }}
+                                >
+                                    Your browser does not
+                                    support MP4 video.
+                                </video>
+                            )}
                         </div>
                     </div>
                 </div>

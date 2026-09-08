@@ -109,7 +109,6 @@
 }
 
 /* ─── Dashboard lower panels ───────────────────────────────────────────── */
-
 .dashboard-lower-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -117,7 +116,6 @@
 }
 
 /* ─── Shared panel ─────────────────────────────────────────────────────── */
-
 .dashboard-panel {
         background: var(--card-bg);
         border: var(--border-rule);
@@ -172,7 +170,6 @@
 }
 
 /* ─── Training Topics ──────────────────────────────────────────────────── */
-
 .topic-list {
         display: flex;
         flex-direction: column;
@@ -262,7 +259,6 @@
 }
 
 /* ─── Certificate panel ───────────────────────────────────────────────── */
-
 .certificate-panel {
         display: flex;
         flex-direction: column;
@@ -337,53 +333,7 @@
         box-shadow: 0 6px 28px rgba(0,180,216,0.5);
 }
 
-/* ─── Responsive ───────────────────────────────────────────────────────── */
-
-@media (max-width: 900px) {
-
-        .stat-cards {
-                grid-template-columns: 1fr;
-        }
-
-        .dashboard-lower-grid {
-                grid-template-columns: 1fr;
-        }
-}
-
-@media (max-width: 600px) {
-
-        .dashboard-panel .panel-header {
-                padding: 0 16px;
-        }
-
-        .panel-link {
-                display: none;
-        }
-
-        .topic-list {
-                padding: 10px;
-        }
-
-        .topic-item {
-                min-height: 48px;
-                padding: 0 11px;
-        }
-
-        .topic-title {
-                font-size: 0.84rem;
-        }
-
-        .topic-divider {
-                margin-right: 11px;
-        }
-
-        .certificate-content {
-                min-height: 280px;
-                padding: 24px 18px;
-        }
-}
 /* ─── Feedback ───────────────────────────────────────────── */
-
 .feedback-panel {
         display: flex;
         align-items: center;
@@ -464,7 +414,29 @@
         box-shadow: 0 6px 24px rgba(0,180,216,0.38);
 }
 
+/* ─── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+        .stat-cards { grid-template-columns: 1fr; }
+        .dashboard-lower-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 600px) {
+        .dashboard-panel .panel-header { padding: 0 16px; }
+        .panel-link { display: none; }
+        .topic-list { padding: 10px; }
+
+        .topic-item {
+                min-height: 48px;
+                padding: 0 11px;
+        }
+
+        .topic-title { font-size: 0.84rem; }
+        .topic-divider { margin-right: 11px; }
+
+        .certificate-content {
+                min-height: 280px;
+                padding: 24px 18px;
+        }
 
         .feedback-panel {
                 align-items: flex-start;
@@ -473,9 +445,7 @@
                 padding: 18px;
         }
 
-        .feedback-info {
-                flex: 1;
-        }
+        .feedback-info { flex: 1; }
 
         .feedback-button {
                 width: 100%;

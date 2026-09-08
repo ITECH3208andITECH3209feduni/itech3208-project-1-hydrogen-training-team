@@ -22,13 +22,8 @@ interface LeaderboardResponse {
 
 export default function LeaderboardPage() {
     const { user, loading } = useAuth();
-
-    const [leaderboard, setLeaderboard] =
-        useState<LeaderboardEntry[]>([]);
-
-    const [loadingBoard, setLoadingBoard] =
-        useState(true);
-
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [loadingBoard, setLoadingBoard] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -43,38 +38,26 @@ export default function LeaderboardPage() {
             try {
                 setLoadingBoard(true);
                 setError("");
+                const token = await user!.getIdToken();
 
-                const token =
-                    await user!.getIdToken();
-
-                const response = await fetch(
-                    "/api/quizzes/leaderboard",
-                    {
-                        method: "GET",
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`,
-                        },
-                        cache: "no-store",
-                    }
+                const response = await fetch("/api/quizzes/leaderboard", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    cache: "no-store",
+                }
                 );
 
-                const result: LeaderboardResponse =
-                    await response.json();
+                const result: LeaderboardResponse = await response.json();
 
-                if (
-                    !response.ok ||
-                    !result.ok
-                ) {
+                if (!response.ok || !result.ok) {
                     throw new Error(
-                        result.error ||
-                            "Failed to load leaderboard."
+                        result.error || "Failed to load leaderboard."
                     );
                 }
 
-                setLeaderboard(
-                    result.leaderboard || []
-                );
+                setLeaderboard(result.leaderboard || []);
             } catch (err) {
                 console.error(
                     "Leaderboard loading error:",
@@ -98,9 +81,7 @@ export default function LeaderboardPage() {
         return (
             <main className="main">
                 <div className="leaderboard-page">
-                    <div className="leaderboard-loading">
-                        Loading leaderboard...
-                    </div>
+                    <div className="leaderboard-loading">Loading leaderboard...</div>
                 </div>
             </main>
         );
@@ -111,14 +92,8 @@ export default function LeaderboardPage() {
             <main className="main">
                 <div className="leaderboard-page">
                     <div className="leaderboard-empty">
-                        <h1>
-                            🏆 Student Leaderboard
-                        </h1>
-
-                        <p>
-                            Please log in to view
-                            the leaderboard.
-                        </p>
+                        <h1>🏆 Student Leaderboard</h1>
+                        <p>Please log in to view the leaderboard.</p>
 
                         <Link
                             href="/login"
@@ -135,24 +110,10 @@ export default function LeaderboardPage() {
     return (
         <main className="main">
             <div className="leaderboard-page">
-
                 <div className="leaderboard-header">
-
-                    <span className="leaderboard-badge">
-                        🏆 Student Scores
-                    </span>
-
-                    <h1>
-                        Hydrogen Safety
-                        Leaderboard
-                    </h1>
-
-                    <p>
-                        See how students are
-                        performing in the
-                        Hydrogen Hazards quiz.
-                    </p>
-
+                    <span className="leaderboard-badge">🏆 Student Scores</span>
+                    <h1> Hydrogen Safety Leaderboard</h1>
+                    <p>See how students are performing in the Hydrogen Hazards quiz.</p>
                 </div>
 
                 {error && (
@@ -161,170 +122,87 @@ export default function LeaderboardPage() {
                     </div>
                 )}
 
-                {!error &&
-                    leaderboard.length ===
-                        0 && (
-                        <div className="leaderboard-empty">
+                {!error && leaderboard.length === 0 && (
+                    <div className="leaderboard-empty">
+                        <div className="empty-icon">🏆</div>
+                        <h2>No scores yet</h2>
+                        <p>Be the first student to share your quiz score on the leaderboard.</p>
 
-                            <div className="empty-icon">
-                                🏆
-                            </div>
-
-                            <h2>
-                                No scores yet
-                            </h2>
-
-                            <p>
-                                Be the first student
-                                to share your quiz
-                                score on the
-                                leaderboard.
-                            </p>
-
-                            <Link
-                                href="/quizzes/hazards"
-                                className="leaderboard-button"
-                            >
-                                Take the Quiz →
-                            </Link>
-
-                        </div>
-                    )}
+                        <Link
+                            href="/quizzes/hazards"
+                            className="leaderboard-button"
+                        >
+                            Take the Quiz →
+                        </Link>
+                    </div>
+                )}
 
                 {leaderboard.length > 0 && (
                     <>
-
                         <div className="leaderboard-podium">
-
-                            {leaderboard
-                                .slice(0, 3)
-                                .map((student) => (
-                                    <div
-                                        key={`${student.rank}-${student.display_name}`}
-                                        className={`podium-card podium-${student.rank}`}
-                                    >
-
-                                        <div className="podium-rank">
-                                            {student.rank ===
-                                            1
-                                                ? "🥇"
-                                                : student.rank ===
-                                                  2
-                                                ? "🥈"
-                                                : "🥉"}
-                                        </div>
-
-                                        <div className="podium-name">
-                                            {
-                                                student.display_name
-                                            }
-                                        </div>
-
-                                        <div className="podium-score">
-                                            {
-                                                student.score
-                                            }%
-                                        </div>
-
-                                        <div className="podium-attempts">
-                                            {student.attempts}{" "}
-                                            {student.attempts ===
-                                            1
-                                                ? "attempt"
-                                                : "attempts"}
-                                        </div>
-
+                            {leaderboard.slice(0, 3).map((student) => (
+                                <div
+                                    key={`${student.rank}-${student.display_name}`}
+                                    className={`podium-card podium-${student.rank}`}
+                                >
+                                    <div className="podium-rank">
+                                        {student.rank === 1
+                                            ? "🥇"
+                                            : student.rank === 2
+                                            ? "🥈"
+                                            : "🥉"}
                                     </div>
-                                ))}
 
+                                    <div className="podium-name">{ student.display_name }</div>
+                                    <div className="podium-score">{ student.score }%</div>
+
+                                    <div className="podium-attempts">
+                                        {student.attempts}{" "}
+                                        {student.attempts === 1
+                                            ? "attempt"
+                                            : "attempts"}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        {leaderboard.length >
-                            3 && (
+                        {leaderboard.length > 3 && (
                             <div className="leaderboard-list">
-
                                 <div className="leaderboard-list-header">
-                                    <span>
-                                        Rank
-                                    </span>
-
-                                    <span>
-                                        Student
-                                    </span>
-
-                                    <span>
-                                        Score
-                                    </span>
-
-                                    <span>
-                                        Attempts
-                                    </span>
+                                    <span>Rank</span>
+                                    <span>Student</span>
+                                    <span>Score</span>
+                                    <span>Attempts</span>
                                 </div>
-
-                                {leaderboard
-                                    .slice(3)
-                                    .map(
-                                        (
-                                            student
-                                        ) => (
-                                            <div
-                                                key={`${student.rank}-${student.display_name}`}
-                                                className="leaderboard-row"
-                                            >
-
-                                                <span className="rank-number">
-                                                    #
-                                                    {
-                                                        student.rank
-                                                    }
-                                                </span>
-
-                                                <span className="student-name">
-                                                    {
-                                                        student.display_name
-                                                    }
-                                                </span>
-
-                                                <span className="student-score">
-                                                    {
-                                                        student.score
-                                                    }%
-                                                </span>
-
-                                                <span className="student-attempts">
-                                                    {
-                                                        student.attempts
-                                                    }
-                                                </span>
-
-                                            </div>
-                                        )
-                                    )}
-
+                                {leaderboard.slice(3).map((student) => (
+                                    <div
+                                        key={`${student.rank}-${student.display_name}`}
+                                        className="leaderboard-row"
+                                    >
+                                        <span className="rank-number">#{ student.rank }</span>
+                                        <span className="student-name">{ student.display_name }</span>
+                                        <span className="student-score">{ student.score }%</span>
+                                        <span className="student-attempts">{ student.attempts }</span>
+                                    </div>
+                                ))}
                             </div>
                         )}
-
                     </>
                 )}
-
                 <div className="leaderboard-footer">
-
                     <Link
                         href="/quizzes"
                         className="leaderboard-secondary-button"
                     >
                         ← Back to Quizzes
                     </Link>
-
                     <Link
                         href="/quizzes/hazards"
                         className="leaderboard-button"
                     >
                         Take Quiz →
                     </Link>
-
                 </div>
-
             </div>
         </main>
     );

@@ -10,12 +10,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, getModuleById } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import EditModeToggle from "@/components/EditModeToggle";
+import ModuleVideo from "./ModuleVideo";
 import ModuleEditor from "./ModuleEditor";
+import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { useModuleEditor } from "@/hooks/useModuleEditor";
-import ModuleVideo from "./ModuleVideo";
+
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
@@ -211,11 +212,11 @@ export default function ModuleReaderPage({
                 </div>
             ))}
 
-	    {/* Module Video */}
-	    <ModuleVideo 
-        videoUrl={item.videoUrl} 
-        videoType={item.videoType}
-        />
+            {/* Module Video */}
+            <ModuleVideo 
+                videoUrl={item.videoUrl} 
+                videoType={item.videoType}
+            />
 
             {/* Key Takeaway */}
             <div className="takeaway-box">

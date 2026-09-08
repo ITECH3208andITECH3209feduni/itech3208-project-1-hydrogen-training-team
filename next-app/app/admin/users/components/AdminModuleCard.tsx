@@ -23,29 +23,24 @@ interface AdminModuleCardProps {
     adminProgress?: AdminProgress;
 }
 
-const statusMeta: Record<
-    ModuleStatus,
-    {
-        label: string;
-        barClass: string;
-        badgeClass: string;
-        linkText: string;
-    }
-> = {
+const statusMeta: Record<ModuleStatus, {
+    label: string;
+    barClass: string;
+    badgeClass: string;
+    linkText: string;
+}> = {
     done: {
         label: "✓ Completed",
         barClass: "bar-done",
         badgeClass: "badge-done",
         linkText: "View Module →",
     },
-
     progress: {
         label: "In Progress",
         barClass: "bar-progress",
         badgeClass: "badge-progress",
         linkText: "Continue →",
     },
-
     todo: {
         label: "Not Started",
         barClass: "bar-todo",
@@ -54,9 +49,7 @@ const statusMeta: Record<
     },
 };
 
-function formatDate(
-    date: string | null | undefined
-): string {
+function formatDate(date: string | null | undefined): string {
     if (!date) {
         return "-";
     }
@@ -74,14 +67,8 @@ function formatDate(
     });
 }
 
-function formatTimeSpent(
-    value: number | string | null | undefined
-): string {
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
+function formatTimeSpent(value: number | string | null | undefined): string {
+    if (value === null || value === undefined || value === "") {
         return "-";
     }
 
@@ -92,92 +79,55 @@ function formatTimeSpent(
     return `${value} mins`;
 }
 
-export default function AdminModuleCard({
-    item,
-    animationDelay = 0,
-    adminProgress,
-}: AdminModuleCardProps) {
-    const progressValue =
-        adminProgress?.progress !== null &&
-        adminProgress?.progress !== undefined
-            ? Math.max(
-                  0,
-                  Math.min(
-                      100,
-                      Number(adminProgress.progress)
-                  )
-              )
-            : 0;
+export default function AdminModuleCard({ item, animationDelay = 0, adminProgress, }: AdminModuleCardProps) {
+    const progressValue = adminProgress?.progress !== null && adminProgress?.progress !== undefined
+        ? Math.max(0, Math.min(100, Number(adminProgress.progress)))
+        : 0;
 
     let displayStatus: ModuleStatus = "todo";
 
-    if (
-        adminProgress?.status === "done" ||
-        progressValue >= 100
-    ) {
+    if (adminProgress?.status === "done" || progressValue >= 100) {
         displayStatus = "done";
-    } else if (
-        adminProgress?.status === "progress" ||
-        progressValue > 0
-    ) {
+    } else if (adminProgress?.status === "progress" || progressValue > 0) {
         displayStatus = "progress";
     }
 
     const meta = statusMeta[displayStatus];
 
-    const completedDate =
-        displayStatus === "done"
-            ? formatDate(adminProgress?.completed_at)
-            : "-";
+    const completedDate = displayStatus === "done"
+        ? formatDate(adminProgress?.completed_at)
+        : "-";
 
-    const timeSpent = formatTimeSpent(
-        adminProgress?.time_spent
-    );
+    const timeSpent = formatTimeSpent(adminProgress?.time_spent);
 
     return (
         <div
             className="module-card"
-            style={{
-                animationDelay: `${animationDelay}s`,
-            }}
+            style={{ animationDelay: `${animationDelay}s`, }}
         >
-            <div
-                className={`card-top-bar ${meta.barClass}`}
-            />
+            <div className={`card-top-bar ${meta.barClass}`}/>
 
             {item.badgeNum !== undefined && (
-                <div className="module-badge">
-                    {item.badgeNum}
-                </div>
+                <div className="module-badge">{item.badgeNum}</div>
             )}
 
             <div className="card-body">
                 <div className="card-head">
                     <div
                         className="card-icon"
-                        style={{
-                            background: item.iconBg,
-                        }}
+                        style={{ background: item.iconBg, }}
                     >
                         {item.icon}
                     </div>
-                    <span
-                        className={`status-badge ${meta.badgeClass}`}
-                    >
-                        {meta.label}
-                    </span>
+                    <span className={`status-badge ${meta.badgeClass}`}>{meta.label}</span>
                 </div>
 
-                <div className="card-title">
-                    {item.title}
-                </div>
+                <div className="card-title">{item.title}</div>
 
                 <div className="admin-module-info">
                     <p>
                         <strong>Status</strong>
-                        <span>
-                            {meta.label.replace("✓ ", "")}
-                        </span>
+                        <span>{meta.label.replace("✓ ", "")}</span>
                     </p>
                     <p>
                         <strong>Completed</strong>
@@ -194,18 +144,15 @@ export default function AdminModuleCard({
                         className="card-progress-fill"
                         style={{
                             width: `${progressValue}%`,
-                            background:
-                                displayStatus === "done"
-                                    ? "#00E5A0"
-                                    : "var(--teal)",
+                            background: displayStatus === "done"
+                                ? "#00E5A0"
+                                : "var(--teal)",
                         }}
                     />
                 </div>
 
                 <div className="card-meta">
-                    <span>
-                        {item.sections.length} sections
-                    </span>
+                    <span>{item.sections.length} sections</span>
                     <span>{progressValue}%</span>
                 </div>
             </div>
