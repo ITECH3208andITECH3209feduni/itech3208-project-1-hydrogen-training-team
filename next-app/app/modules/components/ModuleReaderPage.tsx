@@ -15,6 +15,7 @@ import ModuleEditor from "./ModuleEditor";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { useModuleEditor } from "@/hooks/useModuleEditor";
+import ModuleVideo from "./ModuleVideo";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
@@ -209,6 +210,12 @@ export default function ModuleReaderPage({
                     <SectionBlock section={section}/>
                 </div>
             ))}
+
+	    {/* Module Video */}
+	    <ModuleVideo 
+        videoUrl={item.videoUrl} 
+        videoType={item.videoType}
+        />
 
             {/* Key Takeaway */}
             <div className="takeaway-box">

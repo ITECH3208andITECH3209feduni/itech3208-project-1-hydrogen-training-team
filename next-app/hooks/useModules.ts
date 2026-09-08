@@ -1,4 +1,4 @@
-// hooks/useModules.ts
+﻿// hooks/useModules.ts
 // Loads module content from Supabase for a given section, merged over the defaults.
 
 import { useState, useEffect } from 'react';
@@ -7,7 +7,7 @@ import { ModuleData, ModuleSection, getModuleById } from '@/lib/moduleTypes';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
-// ─── Shapes returned by /api/load-modules ──────────────────────────────────
+// â”€â”€â”€ Shapes returned by /api/load-modules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export interface SupabaseSectionRow {
 	num: string;
 	heading: string;
@@ -28,10 +28,12 @@ export interface SupabaseModuleRow {
 	key_takeaway: string;
 	prev_id: string | null;
 	next_id: string | null;
+	video_url: string | null;
+	video_type: string | null;
 	module_sections: SupabaseSectionRow[];
 }
 
-// ─── Mapping helpers ────────────────────────────────────────────────────────
+// â”€â”€â”€ Mapping helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function mapSection(row: SupabaseSectionRow): ModuleSection {
 	return {
 		num: row.num,
@@ -44,7 +46,7 @@ export function mapSection(row: SupabaseSectionRow): ModuleSection {
 }
 
 // Combines a Supabase row with the matching local default (if any).
-// status/progress always default — Supabase doesn't carry them.
+// status/progress always default â€” Supabase doesn't carry them.
 export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleData {
 	return {
 		id: row.id,
@@ -58,12 +60,18 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 		keyTakeaway: row.key_takeaway,
 		prevId: row.prev_id ?? undefined,
 		nextId: row.next_id ?? undefined,
+		videoUrl: row.video_url ?? fallback?.videoUrl ?? null,
+		videoType:
+    		row.video_type === "youtube" ||
+   			row.video_type === "mp4"
+        		? row.video_type
+        		: null,
 		status: fallback?.status ?? 'todo',
 		progress: fallback?.progress ?? 0,
 	};
 }
 
-// ─── Hook ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // section: Identifies set of modules to load.
 // defaults: Static version of modules kept in application.
 export function useModules(section: string, defaults: ModuleData[]) {
@@ -198,3 +206,5 @@ export function useModuleById(section: string, defaults: ModuleData[], id: strin
 	const item = id ? getModuleById(modules, id) : undefined;
 	return { item, loadStatus, usingDefaults };
 }
+
+

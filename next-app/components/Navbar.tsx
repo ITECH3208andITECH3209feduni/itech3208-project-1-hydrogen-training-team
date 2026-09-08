@@ -116,7 +116,7 @@ export default function Navbar() {
                 {/* Administration - admin only */}
                 {user && permissions.canManageUsers && (
                     <Link
-                        href="/admin/users"
+                        href="/admin"
                         className={`nav-link ${
                             pathname.startsWith("/admin")
                                 ? "active"
@@ -171,3 +171,4 @@ export default function Navbar() {
         </nav>
     );
 }
+

@@ -8,6 +8,9 @@ import { hazardModules } from "@/lib/hazardModules";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const QUIZ_ID = "hydrogen-hazards";
+const QUIZ_PASS_SCORE = 70;
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ uid: string }> }
@@ -125,6 +128,16 @@ export async function GET(
             ? Math.round(quizScores.reduce((total, score) => total + score, 0) / quizScores.length)
             : null;
 
+        // Match the certificate page eligibility rule.
+        const quizRecord = quizProgress?.find(
+            (item) => item.quiz_id === QUIZ_ID
+        );
+
+        const quizPassed =
+            !!quizRecord &&
+            Number(quizRecord.score) >= QUIZ_PASS_SCORE;
+
+
         // ---------------------------------------------------------
         // Return everything needed by admin dashboard
         // ---------------------------------------------------------
@@ -138,6 +151,7 @@ export async function GET(
                 completedModules,
                 overallProgress,
                 quizAverage,
+                quizPassed,
             },
         });
     } catch (error) {

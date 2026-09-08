@@ -14,6 +14,7 @@ export const hazardModules: ModuleData[] = [
 		title: 'Gas Leak Detection',
 		description:
 			'Understand how hydrogen leaks occur, why they are dangerous, and how to detect and respond to them safely.',
+		videoUrl: 'https://www.youtube.com/watch?v=m-vS2y5nERk',
 		status: 'todo',
 		progress: 0,
 		sections: [

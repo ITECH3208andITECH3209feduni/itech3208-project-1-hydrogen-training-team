@@ -1,10 +1,10 @@
-﻿// app/quizzes/hazards
+// app/quizzes/hazards
 
 'use client';
 
 import '../quizzes.css';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -89,7 +89,7 @@ export default function HazardsQuizPage() {
     const [saving, setSaving] = useState(false);
 
     const [leaderboardVisible, setLeaderboardVisible] =
-        useState(false);
+        useState<boolean | null>(null);
 
     const [leaderboardSaving, setLeaderboardSaving] =
         useState(false);
@@ -97,6 +97,58 @@ export default function HazardsQuizPage() {
     const [leaderboardSaved, setLeaderboardSaved] =
         useState(false);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadLeaderboardPreference() {
+            if (loading) return;
+
+            if (!user) {
+                setLeaderboardVisible(null);
+                return;
+            }
+
+            try {
+                const token = await user.getIdToken();
+
+                const response = await fetch(
+                    '/api/quizzes/progress',
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        cache: 'no-store',
+                    }
+                );
+
+                const result = await response.json();
+
+                if (
+                    !cancelled &&
+                    response.ok &&
+                    result.ok &&
+                    result.progress &&
+                    typeof result.progress.leaderboard_visible === 'boolean'
+                ) {
+                    setLeaderboardVisible(
+                        result.progress.leaderboard_visible
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    'LEADERBOARD: failed to load saved preference',
+                    error
+                );
+            }
+        }
+
+        loadLeaderboardPreference();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user, loading]);
     const correctCount = answers.filter(
         (answer, index) =>
             answer === quiz[index].correctIndex
@@ -410,7 +462,7 @@ export default function HazardsQuizPage() {
 
                                 <button
                                     type="button"
-                                    className="quiz-leaderboard-btn quiz-leaderboard-show"
+                                    className={`quiz-leaderboard-btn quiz-leaderboard-show ${leaderboardVisible === true ? 'active' : ''}`}
                                     disabled={
                                         leaderboardSaving
                                     }
@@ -428,7 +480,7 @@ export default function HazardsQuizPage() {
 
                                 <button
                                     type="button"
-                                    className="quiz-leaderboard-btn quiz-leaderboard-private"
+                                    className={`quiz-leaderboard-btn quiz-leaderboard-private ${leaderboardVisible === false ? 'active' : ''}`}
                                     disabled={
                                         leaderboardSaving
                                     }
