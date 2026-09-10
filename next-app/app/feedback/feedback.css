@@ -6,9 +6,7 @@
     padding: 40px 0 60px;
 }
 
-.feedback-heading {
-    margin-bottom: 24px;
-}
+.feedback-heading { margin-bottom: 24px; }
 
 .feedback-back {
     display: inline-block;
@@ -19,9 +17,7 @@
     text-decoration: none;
 }
 
-.feedback-back:hover {
-    color: var(--white);
-}
+.feedback-back:hover { color: var(--white); }
 
 .feedback-heading h1 {
     margin: 0 0 6px;
@@ -44,13 +40,8 @@
     overflow: hidden;
 }
 
-.feedback-card form {
-    padding: 30px;
-}
-
-.feedback-field {
-    margin-bottom: 26px;
-}
+.feedback-card form { padding: 30px; }
+.feedback-field { margin-bottom: 26px; }
 
 .feedback-field label {
     display: block;
@@ -118,19 +109,14 @@
     resize: vertical;
 }
 
-.feedback-field select:focus,
-.feedback-field textarea:focus {
-    border-color: var(--teal);
-}
+.feedback-field select:focus, .feedback-field textarea:focus { border-color: var(--teal); }
 
 .feedback-field select option {
     background: #111820;
     color: white;
 }
 
-.feedback-field textarea::placeholder {
-    color: var(--muted);
-}
+.feedback-field textarea::placeholder { color: var(--muted); }
 
 .feedback-actions {
     display: flex;
@@ -223,24 +209,14 @@
 }
 
 @media (max-width: 600px) {
-
     .feedback-page {
         width: min(100% - 24px, 900px);
         padding-top: 24px;
     }
 
-    .feedback-card form {
-        padding: 22px;
-    }
-
-    .feedback-actions {
-        flex-direction: column-reverse;
-    }
-
-    .feedback-button,
-    .feedback-cancel {
-        width: 100%;
-    }
+    .feedback-card form { padding: 22px; }
+    .feedback-actions { flex-direction: column-reverse; }
+    .feedback-button, .feedback-cancel { width: 100%; }
 }
 .feedback-error {
     margin-bottom: 22px;

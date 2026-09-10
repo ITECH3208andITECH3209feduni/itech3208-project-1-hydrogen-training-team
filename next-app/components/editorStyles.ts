@@ -1,5 +1,6 @@
-// app/lab/styles.ts
-// Shared inline style objects for lab page components
+// components/editorStyles.ts
+// Shared inline style tokens for in-app editor UI
+// Shared by multiple in-app editors (e.g. lab, modules reader)
 
 import React from 'react';
 

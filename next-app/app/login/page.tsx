@@ -1,4 +1,6 @@
-﻿"use client";
+﻿// app/login/page.tsx
+
+"use client";
 
 // @ts-ignore: CSS module type declaration not found
 import "./auth.css";

@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import "../../admin.css";
 import { hazardModules } from "@/lib/hazardModules";
-import ModuleCard from "@/app/admin/users/components/AdminModuleCard";
+import AdminModuleCard from "@/app/admin/users/components/AdminModuleCard";
 import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
@@ -110,7 +110,6 @@ export default function UserProgressPage() {
                 setData(result);
             } catch (err) {
                 console.error("ADMIN PROGRESS LOAD ERROR:", err);
-
                 setError(err instanceof Error ? err.message : "Failed to load user progress.");
             } finally {
                 setLoading(false);
@@ -120,40 +119,25 @@ export default function UserProgressPage() {
         loadProgress();
     }, [user, authLoading, uid]);
 
-    /*
-     * ---------------------------------------------------------
-     * Loading
-     * ---------------------------------------------------------
-     */
-
+    // Loading
     if (authLoading || loading) {
         return (
             <main className="main">
                 <div className="page-header">
                     <h1>Training Progress</h1>
-                    <p>
-                        Loading user progress...
-                    </p>
+                    <p>Loading user progress...</p>
                 </div>
             </main>
         );
     }
 
-    /*
-     * ---------------------------------------------------------
-     * Error
-     * ---------------------------------------------------------
-     */
-
+    // Error
     if (error) {
         return (
             <main className="main">
                 <div className="page-header">
                     <h1>Training Progress</h1>
-
-                    <p className="quiz-error">
-                        {error}
-                    </p>
+                    <p className="quiz-error">{error}</p>
                 </div>
 
                 <Link
@@ -165,22 +149,14 @@ export default function UserProgressPage() {
             </main>
         );
     }
-
-    /*
-     * ---------------------------------------------------------
-     * No profile
-     * ---------------------------------------------------------
-     */
-
+    
+    // No profile
     if (!data?.profile) {
         return (
             <main className="main">
                 <div className="page-header">
                     <h1>Training Progress</h1>
-
-                    <p>
-                        User profile could not be found.
-                    </p>
+                    <p>User profile could not be found.</p>
                 </div>
 
                 <Link
@@ -193,163 +169,85 @@ export default function UserProgressPage() {
         );
     }
 
-    /*
-     * ---------------------------------------------------------
-     * Data
-     * ---------------------------------------------------------
-     */
-
+    // Data
     const profile = data.profile;
+    const moduleProgress = data.moduleProgress ?? [];
+    const quizProgress = data.quizProgress ?? [];
 
-    const moduleProgress =
-        data.moduleProgress ?? [];
+    const summary = data.summary ?? {
+        totalModules: hazardModules.length,
+        completedModules: 0,
+        overallProgress: 0,
+        quizAverage: null,
+    };
 
-    const quizProgress =
-        data.quizProgress ?? [];
+    // Match database progress with module definitions
+    const modulesWithProgress = hazardModules.map((module) => {
+        const savedProgress = moduleProgress.find((item) =>
+            String(item.module_id) === String(module.id)
+        );
 
-    const summary =
-        data.summary ?? {
-            totalModules: hazardModules.length,
-            completedModules: 0,
-            overallProgress: 0,
-            quizAverage: null,
-        };
-
-    /*
-     * ---------------------------------------------------------
-     * Match database progress with module definitions
-     * ---------------------------------------------------------
-     */
-
-    const modulesWithProgress =
-        hazardModules.map((module) => {
-            const savedProgress =
-                moduleProgress.find(
-                    (item) =>
-                        String(item.module_id) ===
-                        String(module.id)
-                );
-
-            if (!savedProgress) {
-                return {
-                    ...module,
-                    status: "todo" as const,
-                    progress: 0,
-                    adminProgress: undefined,
-                };
-            }
-
-            let status:
-                | "done"
-                | "progress"
-                | "todo";
-
-            const savedPercentage =
-                Number(
-                    savedProgress.progress ?? 0
-                );
-
-            if (savedProgress.status === "done" || savedPercentage >= 100) {
-                status = "done";
-            } else if (savedPercentage > 0 || savedProgress.status === "progress") {
-                status = "progress";
-            } else {
-                status = "todo";
-            }
-
+        if (!savedProgress) {
             return {
                 ...module,
-
-                status,
-
-                progress: Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        savedPercentage
-                    )
-                ),
-
-                adminProgress:
-                    savedProgress,
+                status: "todo" as const,
+                progress: 0,
+                adminProgress: undefined,
             };
-        });
+        }
 
-    /*
-     * ---------------------------------------------------------
-     * Certificate
-     * ---------------------------------------------------------
-     */
+        let status: | "done" | "progress" | "todo";
 
-    const allModulesCompleted =
-        summary.completedModules >=
-        summary.totalModules;
+        const savedPercentage = Number(savedProgress.progress ?? 0);
 
-    const certificateStatus =
-        allModulesCompleted
-            ? "Eligible"
-            : "Pending";
+        if (savedProgress.status === "done" || savedPercentage >= 100) {
+            status = "done";
+        } else if (savedPercentage > 0 || savedProgress.status === "progress") {
+            status = "progress";
+        } else {
+            status = "todo";
+        }
 
-    /*
-     * ---------------------------------------------------------
-     * User information
-     * ---------------------------------------------------------
-     */
+        return {
+            ...module,
+            status,
+            progress: Math.max(0, Math.min(100, savedPercentage)),
+            adminProgress: savedProgress,
+        };
+    });
 
-    const displayName =
-        profile.display_name ||
-        profile.name ||
-        profile.email ||
-        "Unknown User";
+    // Certificate
+    const allModulesCompleted = summary.completedModules >= summary.totalModules;
 
-    const role =
-        profile.role || "User";
+    const certificateStatus = allModulesCompleted
+        ? "Eligible"
+        : "Pending";
 
-    const organisation =
-        profile.organisation ||
-        "Not provided";
+    // User information
+    const displayName = profile.display_name || profile.name || profile.email || "Unknown User";
+    const role = profile.role || "User";
+    const organisation = profile.organisation || "Not provided";
 
-    /*
-     * ---------------------------------------------------------
-     * Final quiz
-     *
-     * There is ONE final assessment for the training.
-     * ---------------------------------------------------------
-     */
+    // Final quiz
+    const finalQuiz = quizProgress.length > 0
+        ? quizProgress[0]
+        : null;
 
-    const finalQuiz =
-        quizProgress.length > 0
-            ? quizProgress[0]
-            : null;
-
-    /*
-     * ---------------------------------------------------------
-     * Page
-     * ---------------------------------------------------------
-     */
-
+    // Page
     return (
         <main className="main">
-
             {/* Header */}
             <div className="page-header">
-                <h1>
-                    Training Progress
-                </h1>
+                <h1>Training Progress</h1>
                 <p>
                     Viewing training record for user:
-                    <strong>
-                        {" "}
-                        {uid}
-                    </strong>
+                    <strong>{" "}{uid}</strong>
                 </p>
             </div>
 
             {/* User Information */}
             <div className="panel">
-                <div className="panel-header">
-                    User Information
-                </div>
+                <div className="panel-header">User Information</div>
                 <div className="panel-body">
                     <p>
                         <strong>Name:</strong>{" "}{displayName}
@@ -360,7 +258,6 @@ export default function UserProgressPage() {
                     <p>
                         <strong>Role:</strong>{" "}{role}
                     </p>
-
                     <p>
                         <strong>Organisation:</strong>{" "}{organisation}
                     </p>
@@ -371,33 +268,21 @@ export default function UserProgressPage() {
 
             {/* Overall Progress */}
             <div className="panel">
-                <div className="panel-header">
-                    Overall Progress
-                </div>
+                <div className="panel-header">Overall Progress</div>
                 <div className="panel-body">
                     <div className="progress-row">
                         <div className="progress-track">
                             <div
                                 className="progress-fill"
-                                style={{
-                                    width:
-                                        `${summary.overallProgress}%`,
-                                }}
+                                style={{ width: `${summary.overallProgress}%`, }}
                             />
                         </div>
 
-                        <div className="progress-pct">
-                            {summary.overallProgress}%
-                        </div>
+                        <div className="progress-pct">{summary.overallProgress}%</div>
                     </div>
 
                     <br />
-
-                    <strong>
-                        {summary.completedModules} of{" "}
-                        {summary.totalModules} Modules
-                        Completed
-                    </strong>
+                    <strong>{summary.completedModules} of{" "}{summary.totalModules} Modules Completed</strong>
                 </div>
             </div>
 
@@ -405,9 +290,7 @@ export default function UserProgressPage() {
 
             {/* Training Modules */}
             <div className="page-header">
-                <h2>
-                    Hydrogen Safety Modules
-                </h2>
+                <h2>Hydrogen Safety Modules</h2>
                 <p>
                     Administrator View
                     (Read Only)
@@ -415,87 +298,56 @@ export default function UserProgressPage() {
             </div>
 
             <div className="modules-grid">
-                {modulesWithProgress.map(
-                    (module, index) => (
-                        <ModuleCard
-                            key={module.id}
-                            item={module}
-                            animationDelay={
-                                index * 0.07
-                            }
-                            mode="admin"
-                            adminProgress={
-                                module.adminProgress
-                            }
-                        />
-                    )
-                )}
+                {modulesWithProgress.map((module, index) => (
+                    <AdminModuleCard
+                        key={module.id}
+                        item={module}
+                        animationDelay={index * 0.07}
+                        mode="admin"
+                        adminProgress={module.adminProgress}
+                    />
+                ))}
             </div>
 
             <br />
 
             {/* Final Assessment */}
             <div className="panel">
-                <div className="panel-header">
-                    Final Assessment
-                </div>
+                <div className="panel-header">Final Assessment</div>
                 <div className="panel-body">
                     {finalQuiz ? (
                         <>
                             <p>
-                                <strong>
-                                    Quiz Score:
-                                </strong>{" "}
-                                {finalQuiz.score !==
-                                    null &&
-                                finalQuiz.score !==
-                                    undefined
+                                <strong>Quiz Score:</strong>{" "}
+                                {finalQuiz.score !== null && finalQuiz.score !== undefined
                                     ? `${finalQuiz.score}%`
-                                    : "-"}
+                                    : "-"
+                                }
                             </p>
-
                             <p>
-                                <strong>
-                                    Attempts:
-                                </strong>{" "}
-                                {finalQuiz.attempts ??
-                                    "-"}
+                                <strong>Attempts:</strong>{" "}
+                                {finalQuiz.attempts ?? "-"}
                             </p>
-
                             <p>
-                                <strong>
-                                    Result:
-                                </strong>{" "}
+                                <strong>Result:</strong>{" "}
                                 {finalQuiz.passed
                                     ? "Passed"
                                     : "Failed"}
                             </p>
-
                             <p>
-                                <strong>
-                                    Last Attempted:
-                                </strong>{" "}
-
+                                <strong>Last Attempted:</strong>{" "}
                                 {finalQuiz.last_attempted_at
-                                    ? new Date(
-                                          finalQuiz.last_attempted_at
-                                      ).toLocaleDateString(
-                                          "en-AU",
-                                          {
-                                              day: "numeric",
-                                              month: "short",
-                                              year: "numeric",
-                                          }
-                                      )
+                                    ? new Date(finalQuiz.last_attempted_at).toLocaleDateString("en-AU", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                    })
                                     : "-"}
                             </p>
                         </>
                     ) : (
                         <p>
-                            <strong>
-                                Final Assessment:
-                            </strong>{" "}
-                            Not attempted
+                            <strong>Final Assessment:</strong>{" "}Not attempted
                         </p>
                     )}
                 </div>
@@ -505,16 +357,11 @@ export default function UserProgressPage() {
 
             {/* Certificate */}
             <div className="panel">
-                <div className="panel-header">
-                    Certificate
-                </div>
+                <div className="panel-header">Certificate</div>
 
                 <div className="panel-body">
                     <p>
-                        <strong>
-                            Status:
-                        </strong>{" "}
-                        {certificateStatus}
+                        <strong>Status:</strong>{" "}{certificateStatus}
                     </p>
                 </div>
             </div>

@@ -85,4 +85,13 @@ export const handlers = [
             ],
         });
     }),
+    http.post('/api/modules/save-module', () => {
+        return HttpResponse.json({ ok: true });
+    }),
+    http.get('/api/modules/progress', () => {
+        return HttpResponse.json({
+            ok: true,
+            progress: [{ module_id: '1', progress: 100, status: 'done' }],
+        });
+    }),
 ];

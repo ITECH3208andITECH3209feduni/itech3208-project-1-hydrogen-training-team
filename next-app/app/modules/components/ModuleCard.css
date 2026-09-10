@@ -1,4 +1,4 @@
-/* Module card — shared base styles used by both HazardModuleCard (student)
+/* Module card — shared base styles used by both ModuleCard (student)
    and AdminModuleCard (admin). Admin-only styles live in admin.css. */
 .module-card {
 	background: var(--card-bg);
@@ -116,8 +116,8 @@
 	background: rgba(0,180,216,0.08);
 }
 
-/* Hazard number badge (top-left of card) */
-.hazard-badge {
+/* Module number badge (top-left of card) */
+.module-badge {
 	position: absolute;
 	top: 14px;
 	left: 14px;

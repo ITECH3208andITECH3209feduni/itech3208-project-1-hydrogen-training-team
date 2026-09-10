@@ -160,87 +160,11 @@
 }
 .popup-module-link:hover { opacity: 0.85; }
 
-/* ─── Edit mode bar (toggle + banner) ────────────────────────────────────── */
-.edit-mode-toggle-bar {
-	display: flex;
-	justify-content: flex-start;
+/* ─── Edit mode toggle — width override ────────────────────────────────────── */
+.edit-mode-toggle-bar.lab-edit-mode-toggle-bar {
 	width: 70%;
 	max-width: 900px;
 	margin: 16px auto 0;
-}
-.edit-mode-bar {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 16px;
-	border-radius: 10px;
-	padding: 4px;
-	transition: all 0.25s ease;
-}
-.edit-mode-bar--expanded {
-	width: 100%;
-	background: rgba(250,204,21,0.08);
-	border: 1px solid rgba(250,204,21,0.35);
-	padding: 10px 20px;
-}
-.edit-mode-bar-text {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 16px;
-}
-
-.edit-mode-toggle-wrap {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	flex-shrink: 0;
-}
-.edit-mode-toggle-label {
-	font-size: 0.78rem;
-	color: var(--muted);
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-.edit-mode-toggle {
-	position: relative;
-	width: 42px;
-	height: 22px;
-	border-radius: 999px;
-	border: 1px solid var(--border);
-	background: rgba(255,255,255,0.08);
-	cursor: pointer;
-	padding: 0;
-	transition: background 0.2s, border-color 0.2s;
-}
-.edit-mode-toggle--on {
-	background: rgba(250,204,21,0.3);
-	border-color: #facc15;
-}
-.edit-mode-toggle-knob {
-	position: absolute;
-	top: 2px;
-	left: 2px;
-	width: 16px;
-	height: 16px;
-	border-radius: 50%;
-	background: white;
-	transition: transform 0.2s;
-}
-.edit-mode-toggle--on .edit-mode-toggle-knob {
-	transform: translateX(20px);
-	background: #facc15;
-}
-
-.edit-banner-title {
-	color: #facc15;
-	font-size: 0.88rem;
-	font-weight: 600;
-}
-.edit-banner-hint {
-	color: rgba(250,204,21,0.55);
-	font-size: 0.78rem;
 }
 
 /* ─── Editor wrapper ─────────────────────────────────────── */
@@ -368,14 +292,6 @@
 	align-items: start;
 }
 
-/* ─── Panel modifiers ────────────────────────────────────────────── */
-.panel--clip {
-	overflow: hidden;
-}
-.panel-header--spread {
-	justify-content: space-between;
-}
-
 /* ─── Hidden native file input ───────────────────────────────────── */
 .file-input-hidden {
 	display: none;
@@ -423,18 +339,6 @@
 	resize: vertical;
 	line-height: 1.5;
 }
-.field-hint {
-	font-size: 0.72rem;
-	color: var(--muted);
-	margin-top: 4px;
-}
-.field-row {
-	display: flex;
-	gap: 12px;
-}
-.field-row-item {
-	flex: 1;
-}
 .drag-hint {
 	font-size: 0.78rem;
 	color: var(--muted);
@@ -444,37 +348,19 @@
 .linked-module-select {
 	flex: 1;
 }
-/* Native <option> popups are rendered by the browser/OS and ignore the <select>'s own
-   background — color inherits from .linked-module-select's own (light) text color, but
-   background-color doesn't inherit, so options fall back to the browser default (white)
-   and end up unreadable unless given their own explicit rule here. */
+
+/* Explicit rule for dropdown selection (prevents inheritance issue that makes dropdowns unreadable) */
 .linked-module-select option {
 	color: #1a1a1a;
 	background: #ffffff;
 }
 
-/* ─── Save bar ───────────────────────────────────────────────────── */
-.save-bar {
-	display: flex;
-	justify-content: center;
-	gap: 12px;
-	margin-bottom: 40px;
-}
-
-.save-bar-warning {
-	text-align: center;
-	color: #ef4444;
-	font-size: 0.8rem;
-	margin: 0 0 10px;
-}
-
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-	.hotspot            { width: 28px; height: 28px; }
-	.lab-image-container { width: 95%; }
-	.hotspot-editor     { width: 95%; grid-template-columns: 1fr; }
-	.edit-mode-toggle-bar { width: 95%; }
-	.edit-mode-bar--expanded { flex-direction: column; align-items: flex-start; gap: 10px; }
-	.editor-wrap        { width: 95%; }
-	.image-upload-panel { flex-direction: column; align-items: flex-start; }
+	.hotspot                                       { width: 28px; height: 28px; }
+	.lab-image-container                           { width: 95%; }
+	.hotspot-editor                                { width: 95%; grid-template-columns: 1fr; }
+	.edit-mode-toggle-bar.lab-edit-mode-toggle-bar { width: 95%; }
+	.editor-wrap                                   { width: 95%; }
+	.image-upload-panel                            { flex-direction: column; align-items: flex-start; }
 }

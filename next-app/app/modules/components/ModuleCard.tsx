@@ -1,4 +1,7 @@
-﻿'use client';
+﻿// app/modules/components/ModuleCard.tsx
+// Card used on module listing page for every section in app/modules/
+
+'use client';
 
 import Link from 'next/link';
 import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
@@ -33,17 +36,17 @@ const statusMeta: Record<
     },
 };
 
-interface HazardModuleCardProps {
+interface ModuleCardProps {
     item: ModuleData;
     basePath: string;
     animationDelay?: number;
 }
 
-export default function HazardModuleCard({
+export default function ModuleCard({
     item,
     basePath,
     animationDelay = 0,
-}: HazardModuleCardProps) {
+}: ModuleCardProps) {
     const meta = statusMeta[item.status];
 
     return (
@@ -60,7 +63,7 @@ export default function HazardModuleCard({
             />
 
             {item.badgeNum !== undefined && (
-                <div className="hazard-badge">
+                <div className="module-badge">
                     {item.badgeNum}
                 </div>
             )}

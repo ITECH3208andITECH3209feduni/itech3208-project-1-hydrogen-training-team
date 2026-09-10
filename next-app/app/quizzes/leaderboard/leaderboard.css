@@ -83,10 +83,7 @@
     );
 
     border-radius: 50%;
-
-    box-shadow:
-        0 3px 8px rgba(255, 215, 0, 0.35);
-
+    box-shadow: 0 3px 8px rgba(255, 215, 0, 0.35);
     z-index: 1;
 }
 
@@ -109,10 +106,7 @@
     );
 
     border-radius: 50%;
-
-    box-shadow:
-        0 3px 8px rgba(220, 220, 220, 0.3);
-
+    box-shadow: 0 3px 8px rgba(220, 220, 220, 0.3);
     z-index: 1;
 }
 
@@ -135,22 +129,18 @@
     );
 
     border-radius: 50%;
-
-    box-shadow:
-        0 3px 8px rgba(205, 127, 50, 0.3);
-
+    box-shadow: 0 3px 8px rgba(205, 127, 50, 0.3);
     z-index: 1;
 }
 
 /* Make the podium bodies more solid */
 .podium-1 {
-    background:
-        linear-gradient(
-            to bottom,
-            #252525 0%,
-            #111111 70%,
-            #080808 100%
-        );
+    background: linear-gradient(
+        to bottom,
+        #252525 0%,
+        #111111 70%,
+        #080808 100%
+    );
 
     box-shadow:
         inset 0 -12px 0 rgba(255, 215, 0, 0.22),
@@ -158,13 +148,12 @@
 }
 
 .podium-2 {
-    background:
-        linear-gradient(
-            to bottom,
-            #252525 0%,
-            #111111 70%,
-            #080808 100%
-        );
+    background: linear-gradient(
+        to bottom,
+        #252525 0%,
+        #111111 70%,
+        #080808 100%
+    );
 
     box-shadow:
         inset 0 -12px 0 rgba(192, 192, 192, 0.18),
@@ -172,13 +161,12 @@
 }
 
 .podium-3 {
-    background:
-        linear-gradient(
-            to bottom,
-            #252525 0%,
-            #111111 70%,
-            #080808 100%
-        );
+    background: linear-gradient(
+        to bottom,
+        #252525 0%,
+        #111111 70%,
+        #080808 100%
+    );
 
     box-shadow:
         inset 0 -12px 0 rgba(205, 127, 50, 0.20),
@@ -434,31 +422,15 @@
         order: initial;
     }
 
-    .podium-1 {
-        order: 1;
-    }
+    .podium-1 { order: 1; }
+    .podium-2 { order: 2; }
+    .podium-3 { order: 3; }
 
-    .podium-2 {
-        order: 2;
-    }
+    .leaderboard-list-header, .leaderboard-row { grid-template-columns: 60px 1fr 80px; }
 
-    .podium-3 {
-        order: 3;
-    }
+    .leaderboard-list-header span:last-child, .student-attempts { display: none; }
 
-    .leaderboard-list-header,
-    .leaderboard-row {
-        grid-template-columns: 60px 1fr 80px;
-    }
-
-    .leaderboard-list-header span:last-child,
-    .student-attempts {
-        display: none;
-    }
-
-    .leaderboard-footer {
-        flex-direction: column;
-    }
+    .leaderboard-footer { flex-direction: column; }
 
     .leaderboard-button,
     .leaderboard-secondary-button {
@@ -472,17 +444,14 @@
    FINAL PODIUM DESIGN
    Compact award-style podium
    ========================================================= */
-
 .leaderboard-podium {
     display: grid;
     grid-template-columns: 165px 195px 150px;
     align-items: end;
     justify-content: center;
     gap: 0;
-
     width: fit-content;
     max-width: 100%;
-
     margin: 34px auto 35px;
     min-height: 150px;
 }
@@ -490,30 +459,24 @@
 /* ---------------------------------------------------------
    Base podium card
    --------------------------------------------------------- */
-
 .podium-card {
     position: relative;
     overflow: visible;
-
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
 
-    background:
-        linear-gradient(
-            90deg,
-            #101010 0%,
-            #242424 48%,
-            #101010 100%
-        );
+    background: linear-gradient(
+        90deg,
+        #101010 0%,
+        #242424 48%,
+        #101010 100%
+    );
 
     border: 1px solid rgba(255, 255, 255, 0.14);
-
     border-radius: 4px 4px 2px 2px;
-
     text-align: center;
-
     padding: 46px 12px 18px;
 
     box-shadow:
@@ -525,13 +488,10 @@
 /* ---------------------------------------------------------
    Podium heights and positions
    --------------------------------------------------------- */
-
 /* SECOND — LEFT */
 .podium-2 {
     order: 1;
-
     min-height: 190px;
-
     border-color: rgba(192, 192, 192, 0.45);
 
     box-shadow:
@@ -545,9 +505,7 @@
 /* FIRST — CENTRE */
 .podium-1 {
     order: 2;
-
     min-height: 270px;
-
     border-color: rgba(255, 215, 0, 0.55);
 
     box-shadow:
@@ -561,9 +519,7 @@
 /* THIRD — RIGHT */
 .podium-3 {
     order: 3;
-
     min-height: 150px;
-
     border-color: rgba(205, 127, 50, 0.48);
 
     box-shadow:
@@ -577,79 +533,65 @@
 /* ---------------------------------------------------------
    Small coloured podium tops
    --------------------------------------------------------- */
-
 .podium-1::before,
 .podium-2::before,
 .podium-3::before {
     content: "";
-
     display: block !important;
-
     position: absolute;
-
     left: -1px;
     right: -1px;
     top: -7px;
-
     height: 15px;
-
     border-radius: 50%;
-
     z-index: 1;
 }
 
 /* GOLD */
 .podium-1::before {
-    background:
-        linear-gradient(
-            90deg,
-            #b88900 0%,
-            #ffd700 40%,
-            #fff2a6 50%,
-            #ffd700 60%,
-            #b88900 100%
-        );
+    background: linear-gradient(
+        90deg,
+        #b88900 0%,
+        #ffd700 40%,
+        #fff2a6 50%,
+        #ffd700 60%,
+        #b88900 100%
+    );
 
-    box-shadow:
-        0 2px 5px rgba(255, 215, 0, 0.25);
+    box-shadow: 0 2px 5px rgba(255, 215, 0, 0.25);
 }
 
 /* SILVER */
 .podium-2::before {
-    background:
-        linear-gradient(
-            90deg,
-            #8f8f8f 0%,
-            #d5d5d5 40%,
-            #ffffff 50%,
-            #d5d5d5 60%,
-            #8f8f8f 100%
-        );
+    background: linear-gradient(
+        90deg,
+        #8f8f8f 0%,
+        #d5d5d5 40%,
+        #ffffff 50%,
+        #d5d5d5 60%,
+        #8f8f8f 100%
+    );
 
-    box-shadow:
-        0 2px 5px rgba(220, 220, 220, 0.20);
+    box-shadow: 0 2px 5px rgba(220, 220, 220, 0.20);
 }
 
 /* BRONZE */
 .podium-3::before {
-    background:
-        linear-gradient(
-            90deg,
-            #7c431c 0%,
-            #cd7f32 40%,
-            #e8aa70 50%,
-            #cd7f32 60%,
-            #7c431c 100%
-        );
+    background: linear-gradient(
+        90deg,
+        #7c431c 0%,
+        #cd7f32 40%,
+        #e8aa70 50%,
+        #cd7f32 60%,
+        #7c431c 100%
+    );
 
-    box-shadow:
-        0 2px 5px rgba(205, 127, 50, 0.20);
+    box-shadow: 0 2px 5px rgba(205, 127, 50, 0.20);
 }
 
 /* ---------------------------------------------------------
    Keep podium content above the top surface
    --------------------------------------------------------- */
-
 .podium-rank,
 .podium-name,
 .podium-score,
@@ -661,51 +603,35 @@
 /* ---------------------------------------------------------
    Medals
    --------------------------------------------------------- */
-
 .podium-rank {
     font-size: 1.8rem;
     line-height: 1;
-
     margin-bottom: 8px;
 }
-
-.podium-1 .podium-rank {
-    font-size: 2.2rem;
-}
+.podium-1 .podium-rank { font-size: 2.2rem; }
 
 /* ---------------------------------------------------------
    Student names
    --------------------------------------------------------- */
-
 .podium-name {
     color: var(--white);
-
     font-family: "Exo 2", sans-serif;
-
     font-size: 0.95rem;
     font-weight: 700;
-
     line-height: 1.2;
-
     margin-bottom: 5px;
-
     max-width: 100%;
-
     overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------
    Scores
    --------------------------------------------------------- */
-
 .podium-score {
     color: var(--teal);
-
     font-family: "Exo 2", sans-serif;
-
     font-size: 1.8rem;
     font-weight: 700;
-
     line-height: 1.1;
 }
 
@@ -717,68 +643,45 @@
 /* ---------------------------------------------------------
    Attempts
    --------------------------------------------------------- */
-
 .podium-attempts {
     color: var(--muted);
-
     font-size: 0.75rem;
-
     margin-top: 5px;
 }
 
 /* ---------------------------------------------------------
    Subtle hover
    --------------------------------------------------------- */
-
 .podium-card:hover {
     transform: translateY(-2px);
-
-    box-shadow:
-        0 8px 16px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
 }
 
 
 /* =========================================================
    MOBILE PODIUM
    ========================================================= */
-
 @media (max-width: 700px) {
-
     .leaderboard-podium {
         display: grid;
-
         grid-template-columns: 1fr;
-
         gap: 12px;
-
         width: auto;
-
         min-height: auto;
-
         margin: 25px 12px 30px;
     }
-
     .podium-card,
     .podium-1,
     .podium-2,
     .podium-3 {
         order: initial;
-
         min-height: 150px;
-
         padding-top: 42px;
     }
-
     .podium-1 {
         order: 1;
         min-height: 270px;
     }
-
-    .podium-2 {
-        order: 2;
-    }
-
-    .podium-3 {
-        order: 3;
-    }
+    .podium-2 { order: 2; }
+    .podium-3 { order: 3; }
 }

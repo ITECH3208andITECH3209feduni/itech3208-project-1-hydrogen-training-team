@@ -10,6 +10,19 @@
 	margin-bottom: 28px;
 	animation: fadeUp 0.5s ease both;
 }
+.cert-page-header h1 {
+	font-family: 'Exo 2', sans-serif;
+	font-size: 2rem;
+	font-weight: 700;
+	color: var(--white);
+}
+.cert-page-header p {
+	font-size: 0.9rem;
+	color: var(--muted);
+	line-height: 1.7;
+	max-width: 520px;
+	margin: 12px auto 0;
+}
 .cert-badge {
 	display: inline-block;
 	padding: 6px 18px;
@@ -19,13 +32,6 @@
 	font-size: 0.82rem;
 	color: var(--teal);
 	margin-bottom: 16px;
-}
-.cert-page-header p {
-	font-size: 0.9rem;
-	color: var(--muted);
-	line-height: 1.7;
-	max-width: 520px;
-	margin: 12px auto 0;
 }
 
 .cert-name-input {

@@ -64,10 +64,7 @@ export default function QuizzesPage() {
                                 >
                                         <div
                                                 className="quiz-card-icon"
-                                                style={{
-                                                        background:
-                                                                'rgba(0, 180, 216, 0.12)',
-                                                }}
+                                                style={{ background: 'rgba(0, 180, 216, 0.12)', }}
                                         >
                                                 🏆
                                         </div>
@@ -76,7 +73,6 @@ export default function QuizzesPage() {
                                                 <div className="quiz-card-title">
                                                         Student Leaderboard
                                                 </div>
-
                                                 <div className="quiz-card-desc">
                                                         View quiz scores shared by students who
                                                         have chosen to appear on the leaderboard.
@@ -87,7 +83,6 @@ export default function QuizzesPage() {
                                                 View Leaderboard →
                                         </div>
                                 </Link>
-
                         </div>
                 </main>
         );
