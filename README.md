@@ -106,6 +106,9 @@ hydrogen-lab/
 │   ├── certificate/
 │   │   ├── certificate.css				# Styles for the certificate page
 │   │   └── page.tsx					# Certificate page — client-side canvas certificate, gated by localStorage
+│   ├── feedback/
+│   │   ├── feedback.css				# Feedback-page-specific styles
+│   │   └── page.tsx					# Feedback form (/feedback) — rating, category, message
 │   └── api/
 │       ├── load-hazards/
 │       │   └── route.ts				# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
@@ -125,13 +128,19 @@ hydrogen-lab/
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
 │       ├── admin/
-│       │   └── users/
-│       │       ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
-│       │       └── [uid]/
-│       │           ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
-│       │           └── progress/
-│       │               └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
+│       │   ├── users/
+│       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
+│       │   │   └── [uid]/
+│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
+│       │   │       └── progress/
+│       │   │           └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
+│       │   └── feedback/
+│       │       └── route.ts			# GET — all feedback submissions, newest first (`requireAdmin`-gated)
+│       ├── feedback/
+│       │   └── route.ts				# POST — submit feedback (`requireUser`-gated)
 │       ├── quizzes/
+│       │   ├── load-quiz/
+│       │   │   └── route.ts			# GET — loads a quiz's metadata + question bank from Supabase for a given quiz_id (public read)
 │       │   ├── progress/
 │       │   │   └── route.ts			# GET/POST/PATCH — per-user quiz result + leaderboard opt-in (`requireUser`-gated)
 │       │   └── leaderboard/
@@ -157,7 +166,9 @@ hydrogen-lab/
 │   ├── useModuleOptions.test.ts		# Integration tests for useModuleOptions.ts
 │   ├── useModuleProgress.ts			# Per-user progress/time tracking for the reader page
 │   ├── useModuleEditor.ts				# Edit-mode/draft/save state for a module reader page's in-app editor
-│   └── useModuleEditor.test.ts			# Unit + integration tests for useModuleEditor.ts
+│   ├── useModuleEditor.test.ts			# Unit + integration tests for useModuleEditor.ts
+│   ├── useQuiz.ts						# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts's QUIZ_DEFAULTS
+│   └── useQuiz.test.ts					# Unit + integration tests for useQuiz.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
@@ -166,7 +177,7 @@ hydrogen-lab/
 │   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
 │   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
 │   ├── guides.ts						# Example second section's data — not linked in nav
-│   ├── questionhazards.ts				# Hydrogen Hazards quiz: `questionhazards` question bank, `QUIZ_TITLE`, `QUIZ_SLUG`, `PASS_THRESHOLD`, `QuizQuestion` type
+│   ├── questionhazards.ts				# Hydrogen Hazards quiz: `questionhazards` question bank, `QUIZ_TITLE`, `QUIZ_SLUG`, `PASS_THRESHOLD`, `QuizQuestion` type, and `QUIZ_DEFAULTS`
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
 │   ├── firebase.ts						# Firebase client SDK init (auth + Firestore) — browser-side
 │   ├── firebaseAdmin.ts				# Firebase Admin SDK init — server-side, used to verify ID tokens
@@ -207,6 +218,7 @@ hydrogen-lab/
 | `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — randomised questions/options, scored, saved                          |
 | `/quizzes/leaderboard`           | `app/quizzes/leaderboard/page.tsx`         | Student leaderboard — top scorers who opted in, requires login                              |
 | `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
+| `/feedback`                      | `app/feedback/page.tsx`                    | Feedback form — star rating, category, free-text message                                    |
 | `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
 | `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
 
@@ -215,6 +227,7 @@ There is no page at the bare `/modules` route — `app/modules/` is a code-organ
 
 All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and `/about` redirect unauthenticated users to `/login`.
 	`/admin/users` is a further exception: it checks `isAdmin` specifically and redirects anyone who fails that check to `/dashboard` rather than `/login`.
+	`/feedback` renders for anyone regardless of auth state; only submitting blocks with an inline error if no user is signed in — see `BUG_REPORT.md`.
 	See `ADDITIONAL_INFO.md` for the redirect implementation pattern and per-page exceptions in more detail.
 
 ---
@@ -237,6 +250,7 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | `/dashboard`                   | "Scenarios/Simulation" card  | `/lab`                         |
 | `/dashboard`                   | "Quizzes" card               | `/quizzes`                     |
 | `/dashboard`                   | Download Certificate →       | `/certificate`                 |
+| `/dashboard`                   | Give Feedback →              | `/feedback`                    |
 | `/modules/hazard-modules`      | 'Module' card                | `/modules/hazard-modules/[id]` |
 | `/modules/hazard-modules/[id]` | ← Hazard Modules             | `/modules/hazard-modules`      |
 | `/modules/hazard-modules/[id]` | ← Previous                   | `/modules/hazard-modules/[id]` |
@@ -249,6 +263,9 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | `/quizzes/leaderboard`         | Take Quiz →                  | `/quizzes/hazards`             |
 | `/quizzes/leaderboard`         | Login → (logged out)         | `/login`                       |
 | `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
+| `/feedback`                    | ← Back to Dashboard          | `/dashboard`                   |
+| `/feedback`                    | Cancel                       | `/dashboard`                   |
+| `/feedback`                    | Return to Dashboard →        | `/dashboard`                   |
 | `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
 | `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
 | `/login`                       | Sign in                      | `/dashboard`                   |
@@ -280,6 +297,7 @@ Styles are split across several files to keep page-specific rules isolated:
 | `app/quizzes/quizzes.css`                 | Quizzes hub and attempt pages — quiz cards, question/option list, result banner, leaderboard opt-in banner         |
 | `app/quizzes/leaderboard/leaderboard.css` | Leaderboard page only — badge, podium (top 3), ranked list, empty/error states                                     |
 | `app/certificate/certificate.css`         | Certificate page only — name input, canvas, action buttons, blocked state                                          |
+| `app/feedback/feedback.css`               | Feedback page only — card, star rating, category select, textarea, success state, action buttons                   |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The rest are imported directly by the pages/components that need them.
 
@@ -348,8 +366,8 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hazards`, `modules`, `module_sections`, `profiles`, `user_module_progress`, and `user_quiz_progress` tables (in dependency order, with the `hazards`→`modules` foreign key added once `modules` exists), the `lab-images` storage bucket, and all the Row Level Security policies and grants those tables and the bucket need (public `anon` read + `service_role` write for `hazards`/`modules`/`module_sections`/the bucket;
-	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`).
+	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), the `lab-images` storage bucket, and all the Row Level Security policies and grants those tables and the bucket need (public `anon` read + `service_role` write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket;
+	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`).
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
@@ -435,6 +453,10 @@ On first run the Supabase tables are empty, so the app falls back to the bundled
 The default hotspot data will be written to Supabase and loaded on every subsequent visit.
 
 > **Note:** the default hotspots each link to a `hazard-modules` id (`hazards_module_fk` requires that pair to exist as a real row in `modules`), so seeding `hazards` before `modules`/`module_sections` exist for `hazard-modules` fails with a foreign-key violation — hence seeding modules first, above.
+
+**`quizzes`/`quiz_questions` have no in-app editor** (see `EDITING_GUIDE.md`), so there's no equivalent "save without changing anything" step for them. Leaving both tables empty is fine — `useQuiz` falls back wholesale to `lib/questionhazards.ts`'s `QUIZ_DEFAULTS`, which is what a fresh install shows on `/quizzes` and `/quizzes/hazards` until rows are added directly via the Supabase dashboard or SQL Editor.
+
+**`feedback` needs no seeding** — it starts empty and fills in as users submit the form at `/feedback`.
 
 ### 8. Build for production
 

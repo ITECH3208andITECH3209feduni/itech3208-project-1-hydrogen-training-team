@@ -7,7 +7,7 @@ import { ModuleData, ModuleSection, getModuleById } from '@/lib/moduleTypes';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
-// â”€â”€â”€ Shapes returned by /api/load-modules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Shapes returned by /api/load-modules ───────────────────────────────────────────────────────────────────
 export interface SupabaseSectionRow {
 	num: string;
 	heading: string;
@@ -33,7 +33,7 @@ export interface SupabaseModuleRow {
 	module_sections: SupabaseSectionRow[];
 }
 
-// â”€â”€â”€ Mapping helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Mapping helpers ────────────────────────────────────────────────────────────────────────────────────────
 export function mapSection(row: SupabaseSectionRow): ModuleSection {
 	return {
 		num: row.num,
@@ -71,7 +71,7 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 	};
 }
 
-// â”€â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Hook ────────────────────────────────────────────────────────────────────────────────────────────────────
 // section: Identifies set of modules to load.
 // defaults: Static version of modules kept in application.
 export function useModules(section: string, defaults: ModuleData[]) {

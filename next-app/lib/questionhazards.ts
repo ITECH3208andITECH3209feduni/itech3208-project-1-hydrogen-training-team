@@ -11,6 +11,7 @@ export interface QuizQuestion {
 
 export const QUIZ_TITLE = 'Hydrogen Hazards Quiz';
 export const QUIZ_SLUG = 'hazards';
+export const QUIZ_DESCRIPTION = 'Flammability, storage, buoyancy, and detection';
 export const PASS_THRESHOLD = 70; // percent required to pass
 
 export const questionhazards: QuizQuestion[] = [
@@ -106,5 +107,12 @@ export const questionhazards: QuizQuestion[] = [
 			'Hydrogen fuel cells combine H₂ with oxygen to produce electricity, with water as the only by-product — a key reason hydrogen is considered a clean energy carrier.',
 	},
 ];
+
+export const QUIZ_DEFAULTS = {
+	title: QUIZ_TITLE,
+	description: QUIZ_DESCRIPTION,
+	passThreshold: PASS_THRESHOLD,
+	questions: questionhazards,
+};
 
 export default questionhazards;

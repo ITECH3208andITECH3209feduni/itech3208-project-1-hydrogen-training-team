@@ -94,4 +94,31 @@ export const handlers = [
             progress: [{ module_id: '1', progress: 100, status: 'done' }],
         });
     }),
+    http.get('/api/quizzes/load-quiz', () => {
+        return HttpResponse.json({
+            ok: true,
+            data: {
+                quiz_id: 'hazards',
+                title: 'Loaded Quiz Title',
+                description: 'Loaded quiz description.',
+                pass_threshold: 70,
+                quiz_questions: [
+                    {
+                        id: 1,
+                        question: 'Loaded question one?',
+                        options: ['Opt A', 'Opt B', 'Opt C'],
+                        correct_index: 1,
+                        explanation: 'Loaded explanation one.',
+                    },
+                    {
+                        id: 2,
+                        question: 'Loaded question two?',
+                        options: ['Opt X', 'Opt Y'],
+                        correct_index: 0,
+                        explanation: 'Loaded explanation two.',
+                    },
+                ],
+            }
+        });
+    }),
 ];

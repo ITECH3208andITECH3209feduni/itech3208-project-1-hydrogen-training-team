@@ -52,9 +52,14 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 `lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
 
 **Route coverage:**
-- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`)
-- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`)
+- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/feedback` (`POST`)
+- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`), `/api/admin/feedback` (`GET`)
 - No guard: `load-hazards`, `load-image`, `load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above). `save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
+
+**`export const dynamic = 'force-dynamic'` on `GET` routes:** any `GET` handler that calls `requireUser`/`requireAdmin` (or otherwise reads `request.headers`) needs this export declared above the handler.
+	Next.js attempts to statically render `GET` route handlers at build time by default; it can't know at build time what a request's `Authorization` header will contain, so without this export `npm run build` fails with a "Dynamic server usage" error the first time it reaches such a route.
+	`POST`/`PATCH`/`DELETE` handlers are exempt — Next treats them as dynamic automatically, since there's no meaningful "build-time version" of a request with a body.
+	Every `GET` route listed under `requireUser`/`requireAdmin` above declares this export.
 
 ---
 
@@ -197,6 +202,20 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/u
 
 ## Quizzes & Certificate
 
+### Quiz content
+
+Quiz content lives in Supabase, loaded per-quiz through `hooks/useQuiz.ts`:
+- **`useQuiz(quizId, defaults)`** — fetches `GET /api/quizzes/load-quiz?quiz_id=...`, which joins the `quizzes` table (`title`, `description`, `pass_threshold`) with its `quiz_questions` rows (FK'd on `quiz_id`, `on delete cascade`), and returns `{ quizData, loadStatus, usingDefaults }` where `quizData` is `{ title, description, passThreshold, questions }`.
+- Unlike `useModules`, there's no per-field merge: a successful, non-empty load (a `quizzes` row that also has at least one `quiz_questions` row) is used **entirely** as-is.
+	Anything else — no matching `quizzes` row, a `quizzes` row with zero questions, a Supabase error, or a network failure — falls back to `defaults` **entirely**, never a mix of live and fallback fields within the same quiz.
+	`usingDefaults` is `true` in exactly those fallback cases, `false` on a verified live load with at least one question.
+- `defaults` is `QUIZ_DEFAULTS` from `lib/questionhazards.ts` — `{ title: QUIZ_TITLE, description: QUIZ_DESCRIPTION, passThreshold: PASS_THRESHOLD, questions: questionhazards }` — a module-scope constant, since a fresh object literal on every render would fail the `useEffect` dependency check inside `useQuiz` and re-fire the fetch in a loop.
+- `mapQuestionRow`/`mapQuizRow` (exported from `useQuiz.ts`) do the field-name translation between Supabase's snake_case row shape (`correct_index`, `pass_threshold`, …) and the app's camelCase `QuizQuestion`/`QuizData` shape.
+- `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx` both call `useQuiz('hazards', QUIZ_DEFAULTS)` and show a small notice (`.quiz-defaults-notice`/`.quiz-card-notice` in `quizzes.css`) whenever `usingDefaults` is `true`.
+- There is no in-app editor for quiz content, unlike the lab and module reader pages — see `EDITING_GUIDE.md` for how to change live quiz content today.
+- `quiz_id` for this quiz is `'hazards'`, matching `QUIZ_SLUG` — deliberately, since `user_quiz_progress`/the leaderboard routes use an independently-hardcoded, differently-spelled `quiz_id` (`"hydrogen-hazards"`); see `BUG_REPORT.md`.
+	`quizzes`/`quiz_questions` are not affected by that mismatch, since both are keyed by `QUIZ_SLUG` directly.
+
 ### Quizzes hub (`/quizzes`)
 
 A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
@@ -237,6 +256,22 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 
 **The certificate itself** is drawn client-side onto an HTML `<canvas>` (`drawCertificate()` in `app/certificate/page.tsx`) — title, "Certificate of Achievement", the learner's Firebase `displayName` or `email`, `QUIZ_TITLE`, score, and a formatted date — and downloaded as a PNG via `canvas.toDataURL('image/png')`.
 	There's no server-generated file and no PDF; "printable certificate" (per the About page's copy) means printing this downloaded PNG yourself, not an in-app print/PDF flow.
+
+---
+
+## Feedback
+
+`/feedback` (`app/feedback/page.tsx`, styled by `feedback.css`) is a form for submitting a 1–5 star rating, a category (one of a fixed six-item list — `Training Modules`, `Scenarios / Simulations`, `Quizzes`, `Website / Navigation`, `Technical Issue`, `Other`, duplicated as `VALID_CATEGORIES` in the route below), and a free-text message (up to 5000 characters).
+	All three fields are required before the Submit button enables.
+
+**Submitting** — `POST /api/feedback` (`requireUser`-gated) validates the rating (integer 1–5), category (must be one of `VALID_CATEGORIES`), and message (non-empty, ≤5000 characters after trimming), looks up the caller's `email` from their `profiles` row, then inserts `{ user_id, email, rating, category, message }` into the `feedback` table.
+	A successful submission swaps the form for a thank-you panel linking back to `/dashboard`.
+
+**Reading submissions** — `GET /api/admin/feedback` (`requireAdmin`-gated) returns every row from `feedback`, ordered by `created_at` descending.
+	No admin-facing page currently calls this route — see `BUG_REPORT.md`.
+
+Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` doesn't redirect unauthenticated visitors to `/login` — it renders for anyone, and only blocks at submit time (an inline error, not a redirect) if there's no signed-in user.
+	See "Auth redirect pattern" above and `BUG_REPORT.md`.
 
 ---
 

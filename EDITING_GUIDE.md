@@ -90,6 +90,38 @@ To add a whole new section rather than another hazard module, see "Adding a new 
 
 ---
 
+## Customising Quiz Content
+
+Quiz content lives in Supabase, in the `quizzes` table (one row per quiz — `title`, `description`, `pass_threshold`) and the `quiz_questions` table (one row per question, foreign-keyed to `quizzes` via `quiz_id`, deleted automatically via `on delete cascade` if the quiz row is deleted).
+
+There's no in-app editor for quiz content yet — unlike the lab and module reader pages, there's no edit-mode switch on `/quizzes` or `/quizzes/hazards`.
+	Changing live quiz content today means editing rows directly via the Supabase dashboard or SQL Editor.
+
+**`quizzes` columns:**
+- `quiz_id` — text, primary key (e.g. `'hazards'`, matching `QUIZ_SLUG` in `lib/questionhazards.ts` and the URL segment at `/quizzes/hazards`).
+- `title` — shown as the page heading on the attempt page and the card title on the hub.
+- `description` — shown on the hub card, alongside the live question count.
+- `pass_threshold` — the percentage score required to pass, shown in the attempt page's instructions and result messaging.
+- `sort_order` — position among quizzes; not currently used for anything, since the hub only shows one quiz today.
+
+A `quiz_id` must exist as a row in `quizzes` before any `quiz_questions` row can reference it — the foreign key rejects an insert otherwise.
+
+**`quiz_questions` columns:**
+- `quiz_id` — which quiz this question belongs to; part of the composite primary key with `id`.
+- `id` — numeric question id, unique within the quiz.
+- `question` — the question text.
+- `options` — a JSON array of answer strings, in the order they should appear before shuffling.
+- `correct_index` — the zero-based index into `options` of the correct answer.
+- `explanation` — shown after submitting, for questions answered incorrectly.
+- `sort_order` — the question's position; the app loads questions ordered by this column, then shuffles them client-side for each attempt.
+
+**Fallback behaviour:** `lib/questionhazards.ts` exports `QUIZ_DEFAULTS` — `{ title, description, passThreshold, questions }`, sourced from that same file's `QUIZ_TITLE`, `QUIZ_DESCRIPTION`, `PASS_THRESHOLD`, and `questionhazards` array.
+	This is shown before the Supabase fetch resolves, and used as a whole-quiz fallback whenever the `'hazards'` row in `quizzes` doesn't exist, has zero `quiz_questions` rows, or the fetch fails outright.
+	A live quiz with a title and threshold but no questions yet falls back entirely — title, description, threshold, and questions all come from `QUIZ_DEFAULTS` together, never mixed with whatever partial live data exists.
+	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase takes effect immediately. See `ADDITIONAL_INFO.md` for how `hooks/useQuiz.ts` implements this fallback.
+
+---
+
 ## Customising Default Hotspot Data
 
 The file `lib/hazards.ts` defines the default hotspot positions and text used as a fallback when Supabase is unavailable or the table is empty.

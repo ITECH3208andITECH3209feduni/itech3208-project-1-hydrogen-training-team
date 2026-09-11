@@ -17,6 +17,10 @@ But it was evaluated in a context where the write endpoint it feeds into, `POST 
 ### `/admin/users/[uid]/progress` client-side gate is weaker than its parent page
 `/admin/users` checks `isAdmin` before rendering. `/admin/users/[uid]/progress` only checks that a user is logged in (`useAuth()`'s `user`), not `isAdmin`. In practice this is a shell-only gap — the API route behind it, `GET /api/admin/users/{uid}/progress`, does enforce `requireAdmin`, so a non-admin who navigates here directly gets a static shell and every data fetch comes back `403`. Still worth tightening for consistency, since relying on "the API happens to reject it" is a thinner guarantee than gating the page itself.
 
+### `/feedback` doesn't redirect unauthenticated visitors, unlike every other protected page
+Every other page gated on login (`/dashboard`, `/lab`, the module and quiz pages, etc.) calls `useAuth()` and redirects to `/login` via a `useEffect` when there's no user (see `ADDITIONAL_INFO.md`, "Auth redirect pattern"). `app/feedback/page.tsx` calls `useAuth()` too, but never redirects — the form renders fully for a logged-out visitor, and the only auth check happens inside `handleSubmit`, which sets an inline "You must be logged in to submit feedback." error rather than routing anywhere. A logged-out visitor can fill out the whole form before discovering they can't submit it.
+**Fix:** add the same `useEffect`-based redirect used by every other protected page, or, if the form is meant to be publicly viewable, document that as an intentional exception rather than an oversight.
+
 ### Status-code mapping is inconsistent between the two auth helpers
 Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"Missing authorization token"`, `"User profile not found"`) to `403`; anything else becomes `500`. Routes using `requireUser` (`/api/modules/progress`, `/api/quizzes/progress`, `/api/quizzes/leaderboard`) return a blanket `401` for anything thrown in the `try` block — including non-auth errors, such as a malformed JSON body (`/api/modules/progress` and `/api/quizzes/progress` call `request.json()` with no validation of their own). A malformed request currently looks identical to an auth failure on these routes.
 
@@ -34,7 +38,7 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 **Fix:** correct `UserProfile['user_type']` in `AuthContext.tsx` to the real 6-value set, update the modal's options to match, and add server-side validation in the PATCH route.
 
 ### Quiz ID naming mismatch
-`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug.
+`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug. The `quizzes`/`quiz_questions` tables (loaded via `useQuiz`/`GET /api/quizzes/load-quiz`, see `ADDITIONAL_INFO.md`) are not affected — both are keyed by `QUIZ_SLUG` (`"hazards"`) directly, so this mismatch is isolated to `user_quiz_progress` and the two routes below.
 
 ### Quiz ID is hardcoded independently in two places
 `const QUIZ_ID = "hydrogen-hazards"` is declared separately in both `app/api/quizzes/progress/route.ts` and `app/api/quizzes/leaderboard/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the two `QUIZ_ID` copies staying in sync — if one is ever changed without the other (e.g. when a second quiz is added and this gets refactored), the leaderboard would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning an empty leaderboard rather than an error.
@@ -108,6 +112,10 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 
 ### `next.config.ts` coexists with `next.config.js`
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.
+
+### `GET /api/admin/feedback` has no admin-facing page reading it
+The route (`requireAdmin`-gated) returns every row from the `feedback` table ordered by `created_at` descending, but no page under `app/admin/` currently calls it — feedback submitted via `/feedback` reaches the database with no way to view it in the app.
+**Fix:** add an admin feedback-listing page, or, if reviewing submissions directly in the Supabase dashboard is the intended workflow, note that here so this isn't mistaken for an unfinished feature.
 
 ### `leaderboard_visible` is returned by the admin per-user progress route but never displayed
 `GET /api/admin/users/{uid}/progress` selects `*` on `user_quiz_progress`, so `leaderboard_visible` comes through in the response, but no admin UI currently reads or shows it.
