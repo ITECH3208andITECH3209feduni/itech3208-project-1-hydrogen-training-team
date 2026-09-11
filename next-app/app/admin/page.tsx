@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import "../quizzes/quizzes.css";
 
 export default function AdminPage() {
     const { loading, profile, isAdmin } = useAuth();
@@ -21,120 +22,71 @@ export default function AdminPage() {
 
     return (
         <main className="main">
-            <div
-                style={{
-                    maxWidth: "860px",
-                    margin: "0 auto",
-                    padding: "40px 20px",
-                }}
-            >
-                <h1>Administration</h1>
-
-                <p
-                    style={{
-                        marginTop: "8px",
-                        color: "var(--muted)",
-                    }}
-                >
-                    Manage users, training modules and learner feedback.
+            <div className="page-header">
+                <h1>Admin Tools</h1>
+                <p>
+                    Manage user access, learner progress and feedback.
                 </p>
+            </div>
 
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                            "repeat(2, minmax(0, 1fr))",
-                        gap: "24px",
-                        marginTop: "35px",
-                    }}
+            <div className="quizzes-grid">
+                <Link
+                    href="/admin/users"
+                    className="quiz-card"
                 >
-                    <Link
-                        href="/admin/users"
+                    <div
+                        className="quiz-card-icon"
                         style={{
-                            padding: "28px",
-                            minHeight: "225px",
-                            borderRadius: "14px",
-                            border:
-                                "1px solid rgba(255,255,255,.12)",
-                            background:
-                                "rgba(255,255,255,.04)",
-                            color: "inherit",
-                            textDecoration: "none",
+                            background: "rgba(0, 180, 216, 0.12)",
                         }}
                     >
-                        <h2>Admin Users</h2>
+                        👥
+                    </div>
 
-                        <p
-                            style={{
-                                marginTop: "10px",
-                                color: "var(--muted)",
-                            }}
-                        >
-                            Manage users, roles and
-                            learner progress.
-                        </p>
-                    </Link>
+                    <div className="quiz-card-body">
+                        <div className="quiz-card-title">
+                            User Management
+                        </div>
 
-                    <Link
-                        href="/admin/modules"
+                        <div className="quiz-card-desc">
+                            Manage users, roles and learner progress.
+                        </div>
+                    </div>
+
+                    <div className="quiz-card-link">
+                        Manage Users →
+                    </div>
+                </Link>
+
+                <Link
+                    href="/admin/feedback"
+                    className="quiz-card"
+                >
+                    <div
+                        className="quiz-card-icon"
                         style={{
-                            padding: "28px",
-                            minHeight: "225px",
-                            borderRadius: "14px",
-                            border:
-                                "1px solid rgba(255,255,255,.12)",
-                            background:
-                                "rgba(255,255,255,.04)",
-                            color: "inherit",
-                            textDecoration: "none",
+                            background: "rgba(0, 180, 216, 0.12)",
                         }}
                     >
-                        <h2>Admin Modules</h2>
+                        💬
+                    </div>
 
-                        <p
-                            style={{
-                                marginTop: "10px",
-                                color: "var(--muted)",
-                            }}
-                        >
-                            Manage training videos
-                            for Hydrogen Safety
-                            Modules.
-                        </p>
-                    </Link>
+                    <div className="quiz-card-body">
+                        <div className="quiz-card-title">
+                            Learner Feedback
+                        </div>
 
-                    <Link
-                        href="/admin/feedback"
-                        style={{
-                            gridColumn: "1 / -1",
-                            padding: "28px",
-                            minHeight: "180px",
-                            borderRadius: "14px",
-                            border:
-                                "1px solid rgba(255,255,255,.12)",
-                            background:
-                                "rgba(255,255,255,.04)",
-                            color: "inherit",
-                            textDecoration: "none",
-                        }}
-                    >
-                        <h2>Feedback</h2>
+                        <div className="quiz-card-desc">
+                            Review learner ratings, comments and feedback
+                            from the training experience.
+                        </div>
+                    </div>
 
-                        <p
-                            style={{
-                                marginTop: "10px",
-                                color: "var(--muted)",
-                            }}
-                        >
-                            Review learner feedback,
-                            ratings and comments from
-                            the training experience.
-                        </p>
-                    </Link>
-                </div>
+                    <div className="quiz-card-link">
+                        View Feedback →
+                    </div>
+                </Link>
             </div>
         </main>
     );
 }
-
-

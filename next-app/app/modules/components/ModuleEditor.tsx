@@ -3,6 +3,7 @@
 
 import { ModuleData, ModuleSection } from '@/lib/moduleTypes';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
+type VideoType = 'youtube' | 'mp4';
 
 interface ModuleEditorProps {
 	draft: ModuleData;
@@ -16,6 +17,19 @@ interface ModuleEditorProps {
 	onUpdateSectionItem: (sectionIndex: number, itemIndex: number, value: string) => void;
 	onAddSectionItem: (sectionIndex: number) => void;
 	onDeleteSectionItem: (sectionIndex: number, itemIndex: number) => void;
+
+	// Optional module video controls
+	videoType?: VideoType;
+	youtubeUrl?: string;
+	selectedVideoFile?: File | null;
+	videoSaving?: boolean;
+
+	onChangeVideoType?: (type: VideoType) => void;
+	onChangeYoutubeUrl?: (url: string) => void;
+	onSelectVideoFile?: (file: File | null) => void;
+	onSaveYoutubeVideo?: () => void;
+	onUploadMp4Video?: () => void;
+	onRemoveVideo?: () => void;
 }
 
 export default function ModuleEditor({
@@ -30,6 +44,17 @@ export default function ModuleEditor({
 	onUpdateSectionItem,
 	onAddSectionItem,
 	onDeleteSectionItem,
+	
+	videoType = 'youtube',
+	youtubeUrl = '',
+	selectedVideoFile = null,
+	videoSaving = false,
+	onChangeVideoType,
+	onChangeYoutubeUrl,
+	onSelectVideoFile,
+	onSaveYoutubeVideo,
+	onUploadMp4Video,
+	onRemoveVideo,
 }: ModuleEditorProps) {
 	const section = selectedSection !== null ? draft.sections[selectedSection] : null;
 
@@ -134,6 +159,167 @@ export default function ModuleEditor({
 					</div>
 				</div>
 			</div>
+			        {/* Module Video */}
+        	<div className="panel panel--clip">
+                <div className="panel-header">
+                        🎬 Module Video
+                </div>
+
+                	<div className="module-editor-body">
+                        	<div className="module-field-stack">
+
+                                	{draft.videoUrl && draft.videoType && (
+                                        	<div>
+                                               	 <label style={labelStyle}>
+                                                        Current Video
+                                               	 </label>
+
+                                                	<p className="field-hint">
+                                                        	Type: {draft.videoType === 'youtube'
+                                                                ? 'YouTube'
+                                                                : 'MP4'}
+                                                	</p>
+
+                                                	<p
+                                                        	className="field-hint"
+                                                        	style={{
+                                                            	    wordBreak: 'break-all',
+                                                       	 }}
+                                                	>
+                                                        {draft.videoUrl}
+                                                	</p>
+
+                                                	{onRemoveVideo && (
+                                                       	 	<button
+                                                                	type="button"
+                                                               		onClick={onRemoveVideo}
+                                                                	disabled={videoSaving}
+                                                               	 className="module-delete-btn"
+                                                        	>
+                                                                	Remove Video
+                                                        	</button>
+                                               	 )}
+                                     	</div>
+                                )}
+
+                                <div>
+                                        <label style={labelStyle}>
+                                                Video Type
+                                        </label>
+
+                                        <select
+                                                style={inputStyle}
+                                                className="module-select"
+                                                value={videoType}
+                                                onChange={(e) =>
+                                                        onChangeVideoType?.(
+                                                                e.target.value as VideoType
+                                                        )
+                                                }
+                                                disabled={videoSaving}
+                                        >
+                                                <option value="youtube">
+                                                        YouTube
+                                                </option>
+
+                                                <option value="mp4">
+                                                        Upload MP4
+                                                </option>
+                                        </select>
+                                </div>
+
+                                {videoType === 'youtube' && (
+                                        <div>
+                                                <label style={labelStyle}>
+                                                        YouTube URL
+                                                </label>
+
+                                                <input
+                                                        type="url"
+                                                        style={inputStyle}
+                                                        value={youtubeUrl}
+                                                        onChange={(e) =>
+                                                                onChangeYoutubeUrl?.(
+                                                                        e.target.value
+                                                                )
+                                                        }
+                                                        placeholder="https://www.youtube.com/watch?v=..."
+                                                        disabled={videoSaving}
+                                                />
+
+                                                <p className="field-hint">
+                                                        Paste the YouTube link for this module.
+                                                </p>
+
+                                                {onSaveYoutubeVideo && (
+                                                        <button
+                                                                type="button"
+                                                                onClick={onSaveYoutubeVideo}
+                                                                disabled={
+                                                                        videoSaving ||
+                                                                        !youtubeUrl.trim()
+                                                                }
+                                                                className="module-add-item-btn"
+                                                        >
+                                                                {videoSaving
+                                                                        ? 'Saving...'
+                                                                        : 'Save YouTube Video'}
+                                                        </button>
+                                                )}
+                                        </div>
+                                )}
+
+                                {videoType === 'mp4' && (
+                                        <div>
+                                                <label style={labelStyle}>
+                                                        MP4 Video File
+                                                </label>
+
+                                                <input
+                                                        type="file"
+                                                        accept="video/mp4,.mp4"
+                                                        onChange={(e) =>
+                                                                onSelectVideoFile?.(
+                                                                        e.target.files?.[0] ?? null
+                                                                )
+                                                        }
+                                                        disabled={videoSaving}
+                                                />
+
+                                                {selectedVideoFile && (
+                                                        <p className="field-hint">
+                                                                Selected: {selectedVideoFile.name}
+                                                        </p>
+                                                )}
+
+                                                {onUploadMp4Video && (
+                                                        <button
+                                                                type="button"
+                                                                onClick={onUploadMp4Video}
+                                                                disabled={
+                                                                        videoSaving ||
+                                                                        !selectedVideoFile
+                                                                }
+                                                                className="module-add-item-btn"
+                                                        >
+                                                                {videoSaving
+                                                                        ? 'Uploading...'
+                                                                        : 'Upload MP4 Video'}
+                                                        </button>
+                                                )}
+                                        </div>
+                                )}
+
+                                {!draft.videoUrl && (
+                                        <p className="field-hint">
+                                                No video is currently attached to this module.
+                                                Learners will not see a video once we update
+                                                the module video component in the next step.
+                                        </p>
+                                )}
+                    	</div>
+               		</div>
+        	</div>
 
 			{/* ── Sections ──────────────────────────────────────────────────────── */}
 			<div className="module-section-editor">
