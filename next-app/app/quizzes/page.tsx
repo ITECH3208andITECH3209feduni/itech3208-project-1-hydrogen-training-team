@@ -33,26 +33,28 @@ export default function QuizzesPage() {
 
                         <div className="quizzes-grid">
                                 {/* Hydrogen Hazards Quiz */}
-				<div className="quiz-card">
-					{permissions?.canManageUsers && (
-						<Link href={`/quizzes/${QUIZ_SLUG}/edit`} className="quiz-card-edit" title="Edit quiz content">
-							✏️ Edit
-						</Link>
-					)}
+				<div className="quiz-card-wrap">
+                                        <Link href={`/quizzes/${QUIZ_SLUG}`} className="quiz-card">
+                                                <div className="quiz-card-icon">⚠️</div>
 
-					<div className="quiz-card-icon">⚠️</div>
+                                                <div className="quiz-card-body">
+                                                        <div className="quiz-card-title">{quizData.title}</div>
+                                                        <div className="quiz-card-desc">
+                                                                {quizData.description} — {quizData.questions.length} questions.
+                                                        </div>
 
-					<div className="quiz-card-body">
-						<div className="quiz-card-title">{quizData.title}</div>
-						<div className="quiz-card-desc">
-							{quizData.description} — {quizData.questions.length} questions.
-						</div>
+                                                        {usingDefaults && <div className="quiz-card-notice">Showing default questions</div>}
+                                                </div>
 
-						{usingDefaults && <div className="quiz-card-notice">Showing default questions</div>}
-					</div>
+                                                <div className="quiz-card-link">Start Quiz →</div>
+                                        </Link>
 
-					<Link href={`/quizzes/${QUIZ_SLUG}`} className="quiz-card-link">Start Quiz →</Link>
-				</div>
+                                        {permissions?.canManageUsers && (
+                                                <Link href={`/quizzes/${QUIZ_SLUG}/edit`} className="quiz-card-edit-tab">
+                                                        ✏️ Edit
+                                                </Link>
+                                        )}
+                                </div>
 
                                 {/* Student Leaderboard */}
                                 <Link

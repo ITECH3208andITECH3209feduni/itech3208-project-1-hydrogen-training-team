@@ -39,6 +39,46 @@ export default function QuizEditorPage() {
 		}
 	}, [loading, profile, isAdmin, router]);
 
+	useEffect(() => {
+		const handler = (e: BeforeUnloadEvent) => {
+			if (editor.hasUnsavedChanges) {
+				e.preventDefault();
+			}
+		};
+		window.addEventListener('beforeunload', handler);
+		return () => window.removeEventListener('beforeunload', handler);
+	}, [editor.hasUnsavedChanges]);
+
+	useEffect(() => {
+	if (!editor.hasUnsavedChanges) return;
+
+	const handleClick = (e: MouseEvent) => {
+		const target = e.target as HTMLElement;
+		const anchor = target.closest('a[href]') as HTMLAnchorElement | null;
+		if (!anchor) return;
+
+		const url = new URL(anchor.href, window.location.href);
+		const isSamePage = url.pathname === window.location.pathname;
+		const isExternal = url.origin !== window.location.origin;
+		const isModifiedClick = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+
+		// Ignore same-page anchors, external links, and modified clicks (e.g. cmd-click to open a
+		// new tab) — none of those actually navigate this tab away from the editor.
+		if (isSamePage || isExternal || isModifiedClick) return;
+
+		const confirmed = window.confirm('You have unsaved changes. Leave without saving?');
+		if (!confirmed) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
+		// If confirmed, do nothing — let the click continue through to Next's own Link handler
+		// exactly as it normally would.
+	};
+
+	document.addEventListener('click', handleClick, true);
+	return () => document.removeEventListener('click', handleClick, true);
+}, [editor.hasUnsavedChanges]);
+
 	if (loading) return <div>Loading…</div>;
 	if (!profile || !isAdmin) return null;
 	if (!editor.draft) return <div>Loading…</div>;
@@ -195,7 +235,9 @@ export default function QuizEditorPage() {
 				}
 			/>
 
-			<Link href="/quizzes" className="quiz-editor-back">← Back to Quizzes</Link>
+			<Link href="/quizzes" className="quiz-editor-back">
+				← Back to Quizzes
+			</Link>
 		</main>
 	);
 }

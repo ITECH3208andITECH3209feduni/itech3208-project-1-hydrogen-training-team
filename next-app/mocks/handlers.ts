@@ -121,4 +121,7 @@ export const handlers = [
             }
         });
     }),
+    http.post('/api/quizzes/save-quiz', () => {
+        return HttpResponse.json({ ok: true });
+    }),
 ];

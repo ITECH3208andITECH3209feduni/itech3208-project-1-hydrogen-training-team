@@ -42,19 +42,22 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 
 	// Tracks whether user has touched the draft (stops background refetches of live data overwriting in-progress edits)
 	const hasEditedRef = useRef(false);
+	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+	// Switching quizId resets the draft and any edit-in-progress flag.
+	useEffect(() => {
+		hasEditedRef.current = false;
+		setHasUnsavedChanges(false);
+		setSelectedQuestion(null);
+	}, [quizId]);
 
 	useEffect(() => {
 		if (!hasEditedRef.current) setDraft(item);
 	}, [item]);
 
-	// Switching quizId resets the draft and any edit-in-progress flag.
-	useEffect(() => {
-		hasEditedRef.current = false;
-		setSelectedQuestion(null);
-	}, [quizId]);
-
 	const markEdited = () => {
 		hasEditedRef.current = true;
+		setHasUnsavedChanges(true);
 	};
 
 	// ── Top-level field editing ──────────────────────────────────────────────
@@ -162,6 +165,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 		setDraft(fallback);
 		setSelectedQuestion(null);
 		hasEditedRef.current = true;
+		setHasUnsavedChanges(true);
 	}, [fallback]);
 
 	// ── Validation ────────────────────────────────────────────────────────────
@@ -197,6 +201,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 			if (!res.ok || !json.ok) throw new Error(json.error ?? 'API error');
 			setSaveStatus('saved');
 			hasEditedRef.current = false;
+			setHasUnsavedChanges(false);
 			setTimeout(() => setSaveStatus('idle'), 2500);
 		} catch (err) {
 			console.error('save-quiz error:', err);
@@ -210,6 +215,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 		selectedQuestion,
 		setSelectedQuestion,
 		saveStatus,
+		hasUnsavedChanges,
 		updateField,
 		updateQuestion,
 		addQuestion,
