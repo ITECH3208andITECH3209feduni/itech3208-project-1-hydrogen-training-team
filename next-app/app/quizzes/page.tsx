@@ -12,7 +12,7 @@ import { useQuiz } from '@/hooks/useQuiz';
 import { QUIZ_SLUG, QUIZ_DEFAULTS } from '@/lib/questionhazards';
 
 export default function QuizzesPage() {
-        const { user, loading } = useAuth();
+        const { user, loading, permissions } = useAuth();
         const router = useRouter();
 
         const { quizData, usingDefaults } = useQuiz(QUIZ_SLUG, QUIZ_DEFAULTS);
@@ -33,23 +33,26 @@ export default function QuizzesPage() {
 
                         <div className="quizzes-grid">
                                 {/* Hydrogen Hazards Quiz */}
-                                <Link
-                                        href={`/quizzes/${QUIZ_SLUG}`}
-                                        className="quiz-card"
-                                >
-                                        <div className="quiz-card-icon">⚠️</div>
+				<div className="quiz-card">
+					{permissions?.canManageUsers && (
+						<Link href={`/quizzes/${QUIZ_SLUG}/edit`} className="quiz-card-edit" title="Edit quiz content">
+							✏️ Edit
+						</Link>
+					)}
 
-                                        <div className="quiz-card-body">
-                                                <div className="quiz-card-title">{quizData.title}</div>
-                                                <div className="quiz-card-desc">{quizData.description} —{' '}{quizData.questions.length} questions.</div>
+					<div className="quiz-card-icon">⚠️</div>
 
-                                                {usingDefaults && (
-                                                        <div className="quiz-card-notice">Showing default questions</div>
-                                                )}
-                                        </div>
+					<div className="quiz-card-body">
+						<div className="quiz-card-title">{quizData.title}</div>
+						<div className="quiz-card-desc">
+							{quizData.description} — {quizData.questions.length} questions.
+						</div>
 
-                                        <div className="quiz-card-link">Start Quiz →</div>
-                                </Link>
+						{usingDefaults && <div className="quiz-card-notice">Showing default questions</div>}
+					</div>
+
+					<Link href={`/quizzes/${QUIZ_SLUG}`} className="quiz-card-link">Start Quiz →</Link>
+				</div>
 
                                 {/* Student Leaderboard */}
                                 <Link
