@@ -171,7 +171,10 @@ values ('lab-images', 'lab-images', true);
 -- per table and per role.
 -- ---------------------------------------------------------------------
 
--- hazards: public read, service-role write.
+-- hazards: public read, service-role read/write.
+-- service_role needs `select` granted here (and on modules/module_sections and /quizzes/quiz_questions
+-- below), not just insert/update/delete: PostgREST constructs its response after every write via a
+-- read-back that requires select privilege on the table, regardless of which DML statement is used.
 alter table public.hazards enable row level security;
 
 create policy "Allow public read"
@@ -188,9 +191,10 @@ using (true)
 with check (true);
 
 grant select on public.hazards to anon;
+grant select on public.hazards to service_role;
 grant insert, update, delete on public.hazards to service_role;
 
--- modules / module_sections: public read, service-role write.
+-- modules / module_sections: public read, service-role read/write.
 alter table public.modules enable row level security;
 alter table public.module_sections enable row level security;
 
@@ -222,14 +226,12 @@ with check (true);
 
 grant select on public.modules to anon;
 grant select on public.module_sections to anon;
+grant select on public.modules to service_role;
+grant select on public.module_sections to service_role;
 grant insert, update, delete on public.modules to service_role;
 grant insert, update, delete on public.module_sections to service_role;
 
 -- quizzes / quiz_questions: public read, service-role read/write.
--- service_role needs `select` here in addition to insert/update/delete: PostgREST constructs its
--- response (matched-row data, row counts) via a read-back after every write, which requires select
--- privilege on the table regardless of whether the underlying operation is an upsert, insert, update,
--- or delete.
 alter table public.quizzes enable row level security;
 alter table public.quiz_questions enable row level security;
 

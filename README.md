@@ -378,8 +378,10 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), the `lab-images` storage bucket, and all the Row Level Security policies and grants those tables and the bucket need public `anon` read + `service_role` write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`quizzes` and `quiz_questions` also grant `service_role` `select`, needed by their save route's upsert/delete-and-reinsert operations);
-	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`).
+	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), the `lab-images` storage bucket.
+	It also creates all the Row Level Security policies and grants those tables and the bucket need.
+	(public `anon` read + `service_role` read/write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
+	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
