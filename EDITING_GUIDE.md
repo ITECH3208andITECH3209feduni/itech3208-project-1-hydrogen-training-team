@@ -94,17 +94,31 @@ To add a whole new section rather than another hazard module, see "Adding a new 
 
 Quiz content lives in Supabase, in the `quizzes` table (one row per quiz — `title`, `description`, `pass_threshold`) and the `quiz_questions` table (one row per question, foreign-keyed to `quizzes` via `quiz_id`, deleted automatically via `on delete cascade` if the quiz row is deleted).
 
-There's no in-app editor for quiz content yet — unlike the lab and module reader pages, there's no edit-mode switch on `/quizzes` or `/quizzes/hazards`.
-	Changing live quiz content today means editing rows directly via the Supabase dashboard or SQL Editor.
+It can be changed either through the in-app quiz editor (see below) or by editing rows in the `quizzes`/`quiz_questions` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
 
-**`quizzes` columns:**
-- `quiz_id` — text, primary key (e.g. `'hazards'`, matching `QUIZ_SLUG` in `lib/questionhazards.ts` and the URL segment at `/quizzes/hazards`).
-- `title` — shown as the page heading on the attempt page and the card title on the hub.
-- `description` — shown on the hub card, alongside the live question count.
-- `pass_threshold` — the percentage score required to pass, shown in the attempt page's instructions and result messaging.
-- `sort_order` — position among quizzes; not currently used for anything, since the hub only shows one quiz today.
+### Quiz Editor
 
-A `quiz_id` must exist as a row in `quizzes` before any `quiz_questions` row can reference it — the foreign key rejects an insert otherwise.
+**To enter the editor:** from `/quizzes`, admins (users with the `canManageUsers` permission) see a small ✏️ Edit tab attached to the bottom edge of a quiz's card — click it to open `/quizzes/[quizId]/edit`. Non-admins don't see this tab at all.
+	Unlike the lab and module reader pages, the quiz editor is a separate page rather than an in-place edit mode — there's no toggle switch, since navigating to the page is itself the edit mode.
+
+**Editing:**
+- Title, Description, and Pass Threshold are free-text/number fields at the top of the page.
+- The Questions panel lists every question on the left; click one to edit its question text, options, and explanation on the right.
+- Click **+** in the question list header to add a new question — it's numbered using the first id not already in use (so deleting question 2 and adding a new one reuses id 2 rather than continuing to 4).
+- Use **↑**/**↓** next to a question to reorder it, **✕** to delete it.
+- Each question needs at least 2 options. Click the radio button next to an option to mark it correct;
+	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option;
+	deleting an earlier option shifts the correct answer's position down to match);
+	click **+ Add option** to add one.
+- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected.
+
+**Saving and resetting:**
+- Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.
+- Click **Reset to Defaults** to revert every field and question back to the quiz's bundled `lib/questionhazards.ts` entry.
+	Only the Hazards quiz currently has bundled defaults wired up; a quiz without them shows this button disabled with an explanatory tooltip, the same as a module section with no bundled defaults.
+
+**Leaving with unsaved changes:** the editor warns before losing an edit in progress — on closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet.
+	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
 
 **`quiz_questions` columns:**
 - `quiz_id` — which quiz this question belongs to; part of the composite primary key with `id`.
@@ -118,7 +132,8 @@ A `quiz_id` must exist as a row in `quizzes` before any `quiz_questions` row can
 **Fallback behaviour:** `lib/questionhazards.ts` exports `QUIZ_DEFAULTS` — `{ title, description, passThreshold, questions }`, sourced from that same file's `QUIZ_TITLE`, `QUIZ_DESCRIPTION`, `PASS_THRESHOLD`, and `questionhazards` array.
 	This is shown before the Supabase fetch resolves, and used as a whole-quiz fallback whenever the `'hazards'` row in `quizzes` doesn't exist, has zero `quiz_questions` rows, or the fetch fails outright.
 	A live quiz with a title and threshold but no questions yet falls back entirely — title, description, threshold, and questions all come from `QUIZ_DEFAULTS` together, never mixed with whatever partial live data exists.
-	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase takes effect immediately. See `ADDITIONAL_INFO.md` for how `hooks/useQuiz.ts` implements this fallback.
+	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase, or through the in-app editor above, takes effect immediately.
+	See `ADDITIONAL_INFO.md` for how `hooks/useQuiz.ts` implements this fallback, and for how the editor itself works.
 
 ---
 

@@ -225,7 +225,11 @@ grant select on public.module_sections to anon;
 grant insert, update, delete on public.modules to service_role;
 grant insert, update, delete on public.module_sections to service_role;
 
--- quizzes / quiz_questions: public read, service-role write.
+-- quizzes / quiz_questions: public read, service-role read/write.
+-- service_role needs `select` here in addition to insert/update/delete: PostgREST constructs its
+-- response (matched-row data, row counts) via a read-back after every write, which requires select
+-- privilege on the table regardless of whether the underlying operation is an upsert, insert, update,
+-- or delete.
 alter table public.quizzes enable row level security;
 alter table public.quiz_questions enable row level security;
 
@@ -257,6 +261,8 @@ with check (true);
 
 grant select on public.quizzes to anon;
 grant select on public.quiz_questions to anon;
+grant select on public.quizzes to service_role;
+grant select on public.quiz_questions to service_role;
 grant insert, update, delete on public.quizzes to service_role;
 grant insert, update, delete on public.quiz_questions to service_role;
 
