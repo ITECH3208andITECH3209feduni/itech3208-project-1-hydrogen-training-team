@@ -6,17 +6,19 @@ import { supabaseServer } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/adminAuth';
 
 type QuestionInput = {
-	id: number;
-	question: string;
-	options: string[];
+	id:           number;
+	question:     string;
+	options:      string[];
 	correctIndex: number;
-	explanation: string;
+	explanation:  string;
+	isCore?:      boolean;
 };
 
 type QuizInput = {
-	title: string;
-	description: string;
+	title:         string;
+	description:   string;
 	passThreshold: number;
+	poolSize?:     number | null;
 };
 
 function statusForAuthError(message: string): number {
@@ -44,6 +46,7 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
+		// Check each question has at least 2 options, one of them the answer.
 		for (const q of questions) {
 			if (!q.options || q.options.length < 2 || q.correctIndex < 0 || q.correctIndex >= q.options.length) {
 				return NextResponse.json(
@@ -53,13 +56,28 @@ export async function POST(req: NextRequest) {
 			}
 		}
 
+		// Check the size of the question pool isn't smaller than the number of core questions.
+		const coreCount = questions.filter((q) => q.isCore).length;
+		const poolSize = quizInput.poolSize ?? null;
+
+		if (poolSize != null && (!Number.isInteger(poolSize) || poolSize < 1)) {
+			return NextResponse.json({ ok: false, error: 'poolSize must be a positive integer or null' }, { status: 400 });
+		}
+		if (poolSize != null && poolSize < coreCount) {
+			return NextResponse.json(
+				{ ok: false, error: `poolSize (${poolSize}) can't be less than the number of core questions (${coreCount})` },
+				{ status: 400 }
+			);
+		}
+
 		// Step 1 — update the 'quizzes' row
 		const { error: upsertError } = await supabaseServer.from('quizzes').upsert(
 			{
-				quiz_id: quizId,
-				title: quizInput.title,
-				description: quizInput.description,
+				quiz_id:        quizId,
+				title:          quizInput.title,
+				description:    quizInput.description,
 				pass_threshold: quizInput.passThreshold,
+				pool_size:      poolSize,
 			},
 			{ onConflict: 'quiz_id' }
 		);
@@ -73,13 +91,14 @@ export async function POST(req: NextRequest) {
 
 		if (questions.length > 0) {
 			const rows = questions.map((q, index) => ({
-				quiz_id: quizId,
-				id: q.id,
-				question: q.question,
-				options: q.options,
+				quiz_id:       quizId,
+				id:            q.id,
+				question:      q.question,
+				options:       q.options,
 				correct_index: q.correctIndex,
-				explanation: q.explanation,
-				sort_order: index,
+				explanation:   q.explanation,
+				is_core:       !!q.isCore,
+				sort_order:    index,
 			}));
 
 			const { error: insertError } = await supabaseServer.from('quiz_questions').insert(rows);

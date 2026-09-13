@@ -67,7 +67,7 @@
 .quiz-card-edit-tab {
 	position: absolute;
 	bottom: 0;
-	left: 20px;
+	right: 20px;
 	transform: translateY(60%);
 	background: var(--navy-mid);
 	border: var(--border-rule);

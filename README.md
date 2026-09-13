@@ -185,7 +185,7 @@ hydrogen-lab/
 │   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
 │   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
 │   ├── guides.ts						# Example second section's data — not linked in nav
-│   ├── questionhazards.ts				# Hydrogen Hazards quiz: `questionhazards` question bank, `QUIZ_TITLE`, `QUIZ_SLUG`, `PASS_THRESHOLD`, `QuizQuestion` type, and `QUIZ_DEFAULTS`
+│   ├── questionhazards.ts				# Hydrogen Hazards quiz: `questionhazards` question bank, `QuizQuestion` type, and `QUIZ_DEFAULTS`
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
 │   ├── firebase.ts						# Firebase client SDK init (auth + Firestore) — browser-side
 │   ├── firebaseAdmin.ts				# Firebase Admin SDK init — server-side, used to verify ID tokens
@@ -223,9 +223,9 @@ hydrogen-lab/
 | `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav                       |
 | `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                                                  |
 | `/quizzes`                       | `app/quizzes/page.tsx`                     | Quizzes hub — lists the Hazards quiz and links to the Leaderboard                           |
-| `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — randomised questions/options, scored, saved                          |
+| `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — a random pool of questions with shuffled options, scored, saved      |
 | `/quizzes/leaderboard`           | `app/quizzes/leaderboard/page.tsx`         | Student leaderboard — top scorers who opted in, requires login                              |
-| `/quizzes/[quizId]/edit`         | `app/quizzes/[quizId]/edit/page.tsx`       | Admin-only quiz content editor — title, description, pass threshold, and question bank      |
+| `/quizzes/[quizId]/edit`         | `app/quizzes/[quizId]/edit/page.tsx`       | Admin-only quiz content editor — quiz details and question bank                             |
 | `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
 | `/feedback`                      | `app/feedback/page.tsx`                    | Feedback form — star rating, category, free-text message                                    |
 | `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |

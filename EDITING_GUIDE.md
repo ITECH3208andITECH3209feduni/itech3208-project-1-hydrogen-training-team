@@ -92,7 +92,7 @@ To add a whole new section rather than another hazard module, see "Adding a new 
 
 ## Customising Quiz Content
 
-Quiz content lives in Supabase, in the `quizzes` table (one row per quiz — `title`, `description`, `pass_threshold`) and the `quiz_questions` table (one row per question, foreign-keyed to `quizzes` via `quiz_id`, deleted automatically via `on delete cascade` if the quiz row is deleted).
+Quiz content lives in Supabase, in the `quizzes` table (one row per quiz — `title`, `description`, `pass_threshold`, `pool_size`) and the `quiz_questions` table (one row per question foreign-keyed to `quizzes` via `quiz_id`, deleted automatically via `on delete cascade` if the quiz row is deleted).
 
 It can be changed either through the in-app quiz editor (see below) or by editing rows in the `quizzes`/`quiz_questions` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
 
@@ -103,14 +103,15 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 
 **Editing:**
 - Title, Description, and Pass Threshold are free-text/number fields at the top of the page.
+- Pool Size is a number field controlling how many questions are drawn per attempt; leave it blank to present every question in the bank.
 - The Questions panel lists every question on the left; click one to edit its question text, options, and explanation on the right.
 - Click **+** in the question list header to add a new question — it's numbered using the first id not already in use (so deleting question 2 and adding a new one reuses id 2 rather than continuing to 4).
 - Use **↑**/**↓** next to a question to reorder it, **✕** to delete it.
 - Each question needs at least 2 options. Click the radio button next to an option to mark it correct;
-	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option;
-	deleting an earlier option shifts the correct answer's position down to match);
+	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option; deleting an earlier option shifts the correct answer's position down to match);
 	click **+ Add option** to add one.
-- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected.
+- A Core checkbox in the question detail panel marks that question to always appear in every drawn pool, regardless of Pool Size's random selection for the rest.
+- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected, or if Pool Size is below 1, below the number of core questions, or above the total number of questions.
 
 **Saving and resetting:**
 - Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.
@@ -127,9 +128,10 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 - `options` — a JSON array of answer strings, in the order they should appear before shuffling.
 - `correct_index` — the zero-based index into `options` of the correct answer.
 - `explanation` — shown after submitting, for questions answered incorrectly.
+- `is_core` — when true, this question is always included in every drawn pool, regardless of `pool_size`.
 - `sort_order` — the question's position; the app loads questions ordered by this column, then shuffles them client-side for each attempt.
 
-**Fallback behaviour:** `lib/questionhazards.ts` exports `QUIZ_DEFAULTS` — `{ title, description, passThreshold, questions }`, sourced from that same file's `QUIZ_TITLE`, `QUIZ_DESCRIPTION`, `PASS_THRESHOLD`, and `questionhazards` array.
+**Fallback behaviour:** `lib/questionhazards.ts` exports `QUIZ_DEFAULTS` — `{ title, description, passThreshold, poolSize, questions }`, sourced from that same file's `QUIZ_TITLE`, `QUIZ_DESCRIPTION`, `PASS_THRESHOLD`, `POOL_SIZE`, and `questionhazards` array.
 	This is shown before the Supabase fetch resolves, and used as a whole-quiz fallback whenever the `'hazards'` row in `quizzes` doesn't exist, has zero `quiz_questions` rows, or the fetch fails outright.
 	A live quiz with a title and threshold but no questions yet falls back entirely — title, description, threshold, and questions all come from `QUIZ_DEFAULTS` together, never mixed with whatever partial live data exists.
 	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase, or through the in-app editor above, takes effect immediately.

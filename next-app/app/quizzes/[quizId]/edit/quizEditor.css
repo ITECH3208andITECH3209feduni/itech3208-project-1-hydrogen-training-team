@@ -190,6 +190,33 @@
 	resize: vertical;
 }
 
+.quiz-editor-core-toggle {
+	flex-direction: row !important;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.quiz-editor-core-toggle input[type='checkbox'] {
+	width: 16px;
+	height: 16px;
+	accent-color: var(--teal);
+	cursor: pointer;
+	flex-shrink: 0;
+	margin: 0;
+}
+
+.quiz-editor-core-badge {
+	background: var(--teal-glow);
+	color: var(--teal);
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	padding: 2px 6px;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
 @media (max-width: 800px) {
 	.quiz-editor-questions { grid-template-columns: 1fr; }
 }

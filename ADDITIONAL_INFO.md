@@ -205,12 +205,14 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/u
 ### Quiz content
 
 Quiz content lives in Supabase, loaded per-quiz through `hooks/useQuiz.ts`:
-- **`useQuiz(quizId, defaults)`** — fetches `GET /api/quizzes/load-quiz?quiz_id=...`, which joins the `quizzes` table (`title`, `description`, `pass_threshold`) with its `quiz_questions` rows (FK'd on `quiz_id`, `on delete cascade`), and returns `{ quizData, loadStatus, usingDefaults }` where `quizData` is `{ title, description, passThreshold, questions }`.
+- **`useQuiz(quizId, defaults)`** — fetches `GET /api/quizzes/load-quiz?quiz_id=...`, which joins the `quizzes` table (`title`, `description`, `pass_threshold`, `pool_size`) with its `quiz_questions` rows (FK'd on `quiz_id`, `on delete cascade`), and returns `{ quizData, loadStatus, usingDefaults }` where `quizData` is `{ title, description, passThreshold, poolSize, questions }`.
 - Unlike `useModules`, there's no per-field merge: a successful, non-empty load (a `quizzes` row that also has at least one `quiz_questions` row) is used **entirely** as-is.
 	Anything else — no matching `quizzes` row, a `quizzes` row with zero questions, a Supabase error, or a network failure — falls back to `defaults` **entirely**, never a mix of live and fallback fields within the same quiz.
 	`usingDefaults` is `true` in exactly those fallback cases, `false` on a verified live load with at least one question.
-- `defaults` is `QUIZ_DEFAULTS` from `lib/questionhazards.ts` — `{ title: QUIZ_TITLE, description: QUIZ_DESCRIPTION, passThreshold: PASS_THRESHOLD, questions: questionhazards }` — a module-scope constant, since a fresh object literal on every render would fail the `useEffect` dependency check inside `useQuiz` and re-fire the fetch in a loop.
-- `mapQuestionRow`/`mapQuizRow` (exported from `useQuiz.ts`) do the field-name translation between Supabase's snake_case row shape (`correct_index`, `pass_threshold`, …) and the app's camelCase `QuizQuestion`/`QuizData` shape.
+- `defaults` is `QUIZ_DEFAULTS` from `lib/questionhazards.ts` — `{ title: QUIZ_TITLE, description: QUIZ_DESCRIPTION, passThreshold: PASS_THRESHOLD, poolSize: POOL_SIZE, questions: questionhazards }` — a module-scope constant, since a fresh object literal on every render would fail the `useEffect` dependency check inside `useQuiz` and re-fire the fetch in a loop.
+- `mapQuestionRow`/`mapQuizRow` (exported from `useQuiz.ts`) do the field-name translation between Supabase's snake_case row shape (`correct_index`, `pass_threshold`, `is_core`, …) and the app's camelCase `QuizQuestion`/`QuizData` shape (`correctIndex`, `passThreshold`, `isCore`, …).
+- **`drawQuizPool(quizData)`** (also exported from `useQuiz.ts`) draws the set of questions presented for one attempt: every question with `isCore: true`, topped up to `poolSize` with a random sample of the rest, with the result shuffled as a whole.
+	`poolSize === null`, or a `poolSize` at or above the bank's total question count, presents every question (shuffled).
 - `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx` both call `useQuiz('hazards', QUIZ_DEFAULTS)` and show a small notice (`.quiz-defaults-notice`/`.quiz-card-notice` in `quizzes.css`) whenever `usingDefaults` is `true`.
 - An in-app editor for quiz content exists at `/quizzes/[quizId]/edit`, admin-only — see "Quiz Content Editor" below and `EDITING_GUIDE.md` for how to use it.
 - `quiz_id` for this quiz is `'hazards'`, matching `QUIZ_SLUG` — deliberately, since `user_quiz_progress`/the leaderboard routes use an independently-hardcoded, differently-spelled `quiz_id` (`"hydrogen-hazards"`); see `BUG_REPORT.md`.
@@ -231,17 +233,19 @@ Unlike the lab and module reader pages, this editor is a separate page rather th
 - Switching `quizId` clears that touched flag and re-seeds the draft — relevant once a second quiz exists, since the dynamic `[quizId]` route reuses the same page component instance across different quiz ids.
 - **`resetToDefaults`** replaces the whole draft with `fallback`, the same semantics as the module editor's Reset to Defaults.
 	Disabled (`canReset: false`) when no `fallback` is supplied — currently only the `hazards` quiz has bundled defaults wired into the lookup map.
-- **Validation:** every question needs at least 2 options and a `correctIndex` pointing at one of them (`hasInvalidQuestion`/`invalidQuestionIndex`).
-	This is checked both client-side (disabling Save via `SaveBar`'s `saveDisabled`/`saveDisabledReason` props) and again inside `saveToSupabase` itself before any request is sent, and once more server-side in the API route below.
+- **Validation:** every question needs at least 2 options and a `correctIndex` pointing at one of them (`hasInvalidQuestion`/`invalidQuestionIndex`);
+	`poolSize`, if set, must be at least 1, at least equal to the number of questions marked `isCore` (`coreCount`), and no more than the total question count (`hasInvalidPoolSize`/`poolSizeError`).
+	Both checks happen client-side (disabling Save via `SaveBar`'s `saveDisabled`/`saveDisabledReason` props) and again inside `saveToSupabase` itself before any request is sent, and once more server-side in the API route below.
 - Deleting an option keeps `correctIndex` pointing at the same answer where possible: it shifts down if a preceding option was removed, or resets to `0` if the correct option itself was the one deleted.
 - New questions are numbered via `nextQuestionId` — the first id not currently in use, mirroring `useHazards.ts`'s hazard-type generation, so deleting question 2 and adding a new one reuses id 2 rather than continuing past the current highest id.
 
-**Editable fields (`app/quizzes/[quizId]/edit/page.tsx`):** `title`, `description`, and `passThreshold` are free-text/number fields.
-	Questions can be added, deleted, and reordered (↑/↓); each question's `question` text, `options` (add/delete), correct answer (radio selection), and `explanation` are editable once selected from the question list.
+**Editable fields (`app/quizzes/[quizId]/edit/page.tsx`):** `title`, `description`, `passThreshold`, and `poolSize` (blank/null = use every question) are free-text/number fields.
+	Questions can be added, deleted, and reordered (↑/↓); each question's `question` text, `options` (add/delete), correct answer (radio selection), `explanation`, and `isCore` (checkbox) are editable once selected from the question list.
 
 **Saving:** `POST /api/quizzes/save-quiz` (`requireAdmin`-gated) takes `{ quizId, quiz, questions }` and:
-1. Upserts the `quizzes` row (`onConflict: 'quiz_id'`) — `sort_order` is deliberately left untouched, the same reasoning `save-module` applies to a module's own `sort_order`.
-2. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement.
+1. Validates that `quiz.poolSize`, if provided, is a positive integer no smaller than the number of questions with `isCore: true`, rejecting the request with a 400 otherwise.
+2. Upserts the `quizzes` row (`onConflict: 'quiz_id'`), writing `title`, `description`, `pass_threshold`, and `pool_size` — `sort_order` is deliberately left untouched, the same reasoning `save-module` applies to a module's own `sort_order`.
+3. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement — including each question's `is_core` value.
 
 This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (see `supabase_setup.sql`) is required for both operations above, independent of which DML statement each performs — PostgREST constructs its response (matched-row data, counts) via a read-back that needs `select` privilege regardless of whether the underlying call is an upsert, insert, update, or delete.
 
@@ -254,9 +258,11 @@ A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the H
 
 ### Taking a quiz (`/quizzes/hazards`)
 
-- **Randomisation:** both question order and each question's option order are shuffled (Fisher–Yates) on load and on retry, with `correctIndex` remapped to follow its option.
+- **Randomisation:** the set of questions presented for an attempt is drawn via `drawQuizPool` — every `isCore` question plus a random sample of the rest, up to the quiz's `poolSize` (or the full bank if `poolSize` is null).
+	Both question order and each question's option order are then shuffled (Fisher–Yates method) on load and on retry, with `correctIndex` remapped to follow its option.
+	A retry draws a fresh pool rather than reshuffling the same one.
 - **Answering:** all questions must be answered before submitting (`answers.some(a => a === null)` blocks submit with an inline error).
-- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`; `passed = percentage >= PASS_THRESHOLD`.
+- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`, where `quiz` is the pool drawn for that attempt — the denominator is the number of questions actually presented, not the full bank; `passed = percentage >= PASS_THRESHOLD`.
 - **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token.
 - **After submitting:** each question re-renders showing correct/incorrect/your-answer state and an explanation for anything missed.
 	A Retry Quiz button (on fail) reshuffles and resets everything, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `handleSubmit` call reaches the server.

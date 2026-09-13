@@ -6,7 +6,7 @@ import '../quizzes.css';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useQuiz } from '@/hooks/useQuiz';
+import { useQuiz, drawQuizPool } from '@/hooks/useQuiz';
 import {
     QUIZ_SLUG,
     QUIZ_DEFAULTS,
@@ -29,11 +29,9 @@ function shuffleArray<T>(array: T[]): T[] {
     return result;
 }
 
-// Quiz Shuffler
-function shuffleQuiz(questions: QuizQuestion[]): QuizQuestion[] {
-    const shuffledQuestions = shuffleArray(questions);
-
-    return shuffledQuestions.map((q) => {
+// Shuffles each question's answer options (question order decided drawQuizPool).
+function shuffleOptions(questions: QuizQuestion[]): QuizQuestion[] {
+    return questions.map((q) => {
         const indexedOptions = q.options.map((option, index) => ({
             option,
             originalIndex: index,
@@ -59,14 +57,15 @@ export default function HazardsQuizPage() {
     const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
     const [answers, setAnswers] = useState<(number | null)[]>([]);
 
-    // Set up and shuffle the quiz questions once either the live or defaults are loaded.
+    // Set up and shuffle the quiz questions pool once either the live or defaults are loaded.
     const [seeded, setSeeded] = useState(false);
     useEffect(() => {
         if (loadStatus === 'loading' || seeded) return;
-        setQuiz(shuffleQuiz(questions));
-        setAnswers(Array(questions.length).fill(null));
+        const pool = shuffleOptions(drawQuizPool(quizData));
+        setQuiz(pool);
+        setAnswers(Array(pool.length).fill(null));
         setSeeded(true);
-    }, [loadStatus, questions, seeded]);
+    }, [loadStatus, quizData, seeded]);
 
     const [submitted, setSubmitted] = useState(false);
     const [attempt, setAttempt] = useState(1);
@@ -242,8 +241,9 @@ export default function HazardsQuizPage() {
     }
 
     function handleRetry() {
-        setQuiz(shuffleQuiz(questions));
-        setAnswers(Array(questions.length).fill(null));
+        const pool = shuffleOptions(drawQuizPool(quizData));
+        setQuiz(pool);
+        setAnswers(Array(pool.length).fill(null));
         setSubmitted(false);
         setError('');
 
@@ -252,10 +252,7 @@ export default function HazardsQuizPage() {
 
         setAttempt((a) => a + 1);
 
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth', });
     }
 
     function handleContinue() {

@@ -69,6 +69,7 @@ create table public.quizzes (
 	title          text    not null,
 	description    text    not null default '',
 	pass_threshold integer not null,
+	pool_size      integer null,
 	sort_order     integer not null default 0
 );
 
@@ -79,6 +80,7 @@ create table public.quiz_questions (
 	options        jsonb   not null,
 	correct_index  integer not null,
 	explanation    text    not null,
+	is_core        boolean not null default false,
 	sort_order     integer not null default 0,
 	constraint quiz_questions_pkey primary key (quiz_id, id),
 	constraint quiz_questions_quiz_id_fkey foreign key (quiz_id) references public.quizzes (quiz_id) on delete cascade

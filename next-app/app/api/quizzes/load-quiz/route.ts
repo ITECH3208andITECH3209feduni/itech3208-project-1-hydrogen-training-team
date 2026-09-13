@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
 	const { data, error } = await supabase
 		.from('quizzes')
 		.select(
-			`quiz_id, title, description, pass_threshold, sort_order,
-			 quiz_questions ( id, question, options, correct_index, explanation, sort_order )`
+			`quiz_id, title, description, pass_threshold, pool_size, sort_order,
+			 quiz_questions ( id, question, options, correct_index, explanation, is_core, sort_order )`
 		)
 		.eq('quiz_id', quizId)
 		.order('sort_order', { ascending: true, referencedTable: 'quiz_questions' })

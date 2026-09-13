@@ -102,6 +102,7 @@ export const handlers = [
                 title: 'Loaded Quiz Title',
                 description: 'Loaded quiz description.',
                 pass_threshold: 70,
+                pool_size: null,
                 quiz_questions: [
                     {
                         id: 1,
@@ -109,6 +110,7 @@ export const handlers = [
                         options: ['Opt A', 'Opt B', 'Opt C'],
                         correct_index: 1,
                         explanation: 'Loaded explanation one.',
+                        is_core: false,
                     },
                     {
                         id: 2,
@@ -116,6 +118,7 @@ export const handlers = [
                         options: ['Opt X', 'Opt Y'],
                         correct_index: 0,
                         explanation: 'Loaded explanation two.',
+                        is_core: false,
                     },
                 ],
             }

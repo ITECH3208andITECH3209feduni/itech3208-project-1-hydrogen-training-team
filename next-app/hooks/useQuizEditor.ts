@@ -25,6 +25,7 @@ export function buildBlankQuestion(questions: QuizQuestion[]): QuizQuestion {
 		options: ['Option 1', 'Option 2'],
 		correctIndex: 0,
 		explanation: '',
+		isCore: false,
 	};
 }
 
@@ -175,9 +176,25 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	) ?? -1;
 	const hasInvalidQuestion = invalidQuestionIndex !== -1;
 
+	const coreCount = draft?.questions.filter((q) => q.isCore).length ?? 0;   // Determine total number of core questions
+	const totalQuestionCount = draft?.questions.length ?? 0;                  // Deternube total number of questions
+
+	// Check if poolSize is within correct margins
+	let poolSizeError: string | null = null;
+	if (draft?.poolSize != null) {   // 'poolSize = null' means use all questions
+		if (draft.poolSize < 1) {
+			poolSizeError = 'Pool size must be at least 1.';
+		} else if (draft.poolSize < coreCount) {
+			poolSizeError = `Pool size can't be smaller than the amount of ${coreCount} core question${coreCount === 1 ? '' : 's'}.`;
+		} else if (draft.poolSize > totalQuestionCount) {
+			poolSizeError = `Pool size can't be greater than the total number of questions (${totalQuestionCount}).`;
+		}
+	}
+	const hasInvalidPoolSize = poolSizeError !== null;
+
 	// ── Save ──────────────────────────────────────────────────────────────────
 	const saveToSupabase = useCallback(async () => {
-		if (!draft || !user || hasInvalidQuestion) return;
+		if (!draft || !user || hasInvalidQuestion || hasInvalidPoolSize) return;
 		setSaveStatus('saving');
 		try {
 			const token = await user.getIdToken();
@@ -193,6 +210,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 						title: draft.title,
 						description: draft.description,
 						passThreshold: draft.passThreshold,
+						poolSize: draft.poolSize, // <-- NEW
 					},
 					questions: draft.questions,
 				}),
@@ -208,7 +226,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [draft, quizId, user, hasInvalidQuestion]);
+	}, [draft, quizId, user, hasInvalidQuestion, hasInvalidPoolSize]);
 
 	return {
 		draft,
@@ -229,5 +247,8 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 		canReset: !!fallback,
 		hasInvalidQuestion,
 		invalidQuestionIndex,
+		coreCount,
+		hasInvalidPoolSize,
+		poolSizeError,
 	};
 }

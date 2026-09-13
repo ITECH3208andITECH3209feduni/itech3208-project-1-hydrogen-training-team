@@ -14,6 +14,7 @@ interface TestQuizQuestion {
 	options: string[];
 	correctIndex: number;
 	explanation: string;
+	isCore: boolean;
 }
 
 // Create mock user (defaults as logged-in, since editing requires an authenticated admin)
@@ -36,6 +37,7 @@ const q = (id: number): TestQuizQuestion => ({
 	options: ['A', 'B'],
 	correctIndex: 0,
 	explanation: '',
+	isCore: false,
 });
 
 // A mock "live" quiz, standing in for what useQuiz would have resolved.
@@ -43,9 +45,10 @@ const liveItem: QuizData = {
 	title: 'Live Quiz Title',
 	description: 'Live quiz description.',
 	passThreshold: 70,
+	poolSize: null,
 	questions: [
-		{ id: 1, question: 'Question 1?', options: ['A', 'B', 'C'], correctIndex: 1, explanation: 'Explanation 1.' },
-		{ id: 2, question: 'Question 2?', options: ['X', 'Y'], correctIndex: 0, explanation: 'Explanation 2.' },
+		{ id: 1, question: 'Question 1?', options: ['A', 'B', 'C'], correctIndex: 1, explanation: 'Explanation 1.', isCore: false },
+		{ id: 2, question: 'Question 2?', options: ['X', 'Y'], correctIndex: 0, explanation: 'Explanation 2.', isCore: false },
 	],
 };
 
@@ -55,7 +58,8 @@ const defaultItem: QuizData = {
 	title: 'Default Quiz Title',
 	description: 'Default quiz description.',
 	passThreshold: 50,
-	questions: [{ id: 1, question: 'Default question?', options: ['Yes', 'No'], correctIndex: 0, explanation: 'Default explanation.' }],
+	poolSize: null,
+	questions: [{ id: 1, question: 'Default question?', options: ['Yes', 'No'], correctIndex: 0, explanation: 'Default explanation.', isCore: false }],
 };
 
 // ─── Unit Tests (test purely internal functions) ────────────────────────────────────────────────────
@@ -85,8 +89,9 @@ describe('2. buildBlankQuestion', () => {
 	it('2.2 seeds a valid placeholder question', () => {
 		const question = buildBlankQuestion([]);
 		expect(question.question).toBeTruthy();                      // Check that question text not empty
-		expect(question.options.length).toBeGreaterThanOrEqual(2);   // Check that it starts with at least 2 options
+		expect(question.options.length).toBeGreaterThanOrEqual(2);   // Check that question starts with at least 2 options
 		expect(question.correctIndex).toBe(0);                       // Check that correctIndex points at a real option
+		expect(question.isCore).toBe(false);                         // Check that question defaults to not being a core question
 	});
 });
 
@@ -266,11 +271,66 @@ describe('6. hasInvalidQuestion', () => {
 	});
 });
 
+// 7. Test hasInvalidPoolSize
+describe('7. hasInvalidPoolSize', () => {
+	it('7.1 coreCount reflects the number of questions marked core', () => {
+		const item: QuizData = {
+			...liveItem,
+			questions: [
+				{ ...liveItem.questions[0], isCore: true },
+				{ ...liveItem.questions[1], isCore: false },
+			],
+		};
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+		expect(result.current.coreCount).toBe(1);
+	});
+
+	it('7.2 hasInvalidPoolSize is false when poolSize is null', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
+		expect(result.current.hasInvalidPoolSize).toBe(false);
+		expect(result.current.poolSizeError).toBeNull();
+	});
+
+	it('7.3 hasInvalidPoolSize is true when poolSize is below 1', () => {
+		const item: QuizData = { ...liveItem, poolSize: 0 };
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+
+		expect(result.current.hasInvalidPoolSize).toBe(true);
+		expect(result.current.poolSizeError).toMatch(/at least 1/);
+	});
+
+	it('7.4 hasInvalidPoolSize is true when poolSize is below the number of core questions', () => {
+		const item: QuizData = {
+			...liveItem,
+			poolSize: 1,
+			questions: liveItem.questions.map((q) => ({ ...q, isCore: true })), // both core — poolSize of 1 can't fit them
+		};
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+
+		expect(result.current.hasInvalidPoolSize).toBe(true);
+		expect(result.current.poolSizeError).toMatch(/core question/);
+	});
+
+	it('7.5 hasInvalidPoolSize is true when poolSize exceeds the total question count', () => {
+		const item: QuizData = { ...liveItem, poolSize: 5 }; // liveItem only has 2 questions
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+
+		expect(result.current.hasInvalidPoolSize).toBe(true);
+		expect(result.current.poolSizeError).toMatch(/greater than/);
+	});
+
+	it('7.6 hasInvalidPoolSize is false for a valid pool size', () => {
+		const item: QuizData = { ...liveItem, poolSize: 2 };
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+		expect(result.current.hasInvalidPoolSize).toBe(false);
+	});
+});
+
 // ─── Integration Tests (test API calls with mock server) ────────────────────────────────────────────────────
 
-// 7. Test save-quiz API call
-describe('7. save-quiz', () => {
-	it('7.1 sets saveStatus to saved on a successful save', async () => {
+// 8. Test save-quiz API call
+describe('8. save-quiz', () => {
+	it('8.1 sets saveStatus to saved on a successful save', async () => {
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
 
 		// Mock a successful save to Supabase
@@ -281,7 +341,7 @@ describe('7. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('saved');   // Check that saveStatus correctly set
 	});
 
-	it('7.2 sets saveStatus to error when the server reports a failure', async () => {
+	it('8.2 sets saveStatus to error when the server reports a failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		// Mock an error response to saving the quiz
@@ -302,7 +362,7 @@ describe('7. save-quiz', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('7.3 sets saveStatus to error on a network failure', async () => {
+	it('8.3 sets saveStatus to error on a network failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		server.use(http.post('/api/quizzes/save-quiz', () => HttpResponse.error()));
@@ -317,7 +377,7 @@ describe('7. save-quiz', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('7.4 does nothing when there is no signed-in user', async () => {
+	it('8.4 does nothing when there is no signed-in user', async () => {
 		mockUseAuth.mockReturnValue({ user: null, loading: false });   // Simulate user being signed out
 
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
@@ -330,7 +390,7 @@ describe('7. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('7.5 does nothing when the draft has an invalid question', async () => {
+	it('8.5 does nothing when the draft has an invalid question', async () => {
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.updateQuestion(0, 'correctIndex', 5));   // Make the draft invalid
@@ -339,11 +399,22 @@ describe('7. save-quiz', () => {
 			await result.current.saveToSupabase();
 		});
 
-		// Status stays idle — the guard clause returns before any fetch/status change, same as 7.4.
+		// Status stays idle — the guard clause returns before any fetch/status change.
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('7.6 sends the full quiz + questions payload', async () => {
+	it('8.6 does nothing when the draft has an invalid pool size', async () => {
+		const item: QuizData = { ...liveItem, poolSize: 5 }; // exceeds liveItem's 2 questions
+		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
+
+		await act(async () => {
+			await result.current.saveToSupabase();
+		});
+
+		expect(result.current.saveStatus).toBe('idle');
+	});
+
+	it('8.7 sends the full quiz + questions payload', async () => {
 		let capturedBody: any = null;
 		// Mock a successful save to Supabase that captures the sent data
 		server.use(
@@ -366,6 +437,8 @@ describe('7. save-quiz', () => {
 		expect(capturedBody.quizId).toBe('hazards');
 		expect(capturedBody.quiz.title).toBe('Saved Title');
 		expect(capturedBody.quiz.passThreshold).toBe(70);
+		expect(capturedBody.quiz.poolSize).toBeNull();
 		expect(capturedBody.questions).toHaveLength(2);
+		expect(capturedBody.questions[0].isCore).toBe(false);
 	});
 });

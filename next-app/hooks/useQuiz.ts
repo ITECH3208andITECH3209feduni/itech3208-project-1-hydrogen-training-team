@@ -7,47 +7,84 @@ import { QuizQuestion } from '@/lib/questionhazards';
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
 export interface SupabaseQuizQuestionRow {
-	id: number;
-	question: string;
-	options: string[];
+	id:            number;
+	question:      string;
+	options:       string[];
 	correct_index: number;
-	explanation: string;
+	explanation:   string;
+	is_core:       boolean;
 }
 
 export interface SupabaseQuizRow {
-	quiz_id: string;
-	title: string;
-	description: string;
+	quiz_id:        string;
+	title:          string;
+	description:    string;
 	pass_threshold: number;
+	pool_size:      number | null;
 	quiz_questions: SupabaseQuizQuestionRow[];
 }
 
 export interface QuizData {
-	title: string;
-	description: string;
+	title:         string;
+	description:   string;
 	passThreshold: number;
-	questions: QuizQuestion[];
+	poolSize:      number | null;
+	questions:     QuizQuestion[];
 }
 
 // Map individual question data to interface used by app.
 export function mapQuestionRow(row: SupabaseQuizQuestionRow): QuizQuestion {
 	return {
-		id: row.id,
-		question: row.question,
-		options: row.options,
+		id:           row.id,
+		question:     row.question,
+		options:      row.options,
 		correctIndex: row.correct_index,
-		explanation: row.explanation,
+		explanation:  row.explanation,
+		isCore:       row.is_core,
 	};
 }
 
 // Map quiz data to interface used by app.
 export function mapQuizRow(row: SupabaseQuizRow): QuizData {
 	return {
-		title: row.title,
-		description: row.description,
+		title:         row.title,
+		description:   row.description,
 		passThreshold: row.pass_threshold,
-		questions: row.quiz_questions.map(mapQuestionRow),
+		poolSize:      row.pool_size,
+		questions:     row.quiz_questions.map(mapQuestionRow),
 	};
+}
+
+// ─── Pool drawing ───────────────────────────────────────────────────────────────────────────────────
+function shuffle<T>(arr: T[]): T[] {
+	const copy = [...arr];
+	for (let i = copy.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[copy[i], copy[j]] = [copy[j], copy[i]];
+	}
+	return copy;
+}
+
+// Draw a subset of questions to use in a quiz attempt
+export function drawQuizPool(quizData: QuizData): QuizQuestion[] {
+	const { questions, poolSize } = quizData;
+	// If poolSize null or >= total questions, use all questions
+	if (poolSize == null || poolSize >= questions.length) {
+		return shuffle(questions);
+	}
+
+	// Core questions guaranteed to be included (rest filled with random set of other questions)
+	const core = questions.filter((q) => q.isCore);
+	const rest = questions.filter((q) => !q.isCore);
+
+	// Defensive clamp — guard against poolSize smaller than total core questions (or stale/edited-elsewhere data)
+	if (core.length >= poolSize) {
+		return shuffle(core).slice(0, poolSize);
+	}
+
+	const fillCount = poolSize - core.length;
+	const sampledRest = shuffle(rest).slice(0, fillCount);
+	return shuffle([...core, ...sampledRest]);
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -19,7 +19,7 @@ const QUIZ_DEFAULTS_BY_ID: Record<string, QuizData> = {
 };
 
 // Stable placeholder for a quiz with no defaults yet — a module-scope constant so useQuiz's effect (keyed on this object's identity) doesn't refire on every render.
-const EMPTY_QUIZ: QuizData = { title: '', description: '', passThreshold: 70, questions: [] };
+const EMPTY_QUIZ: QuizData = { title: '', description: '', passThreshold: 70, poolSize: null, questions: [] };
 
 export default function QuizEditorPage() {
 	const params = useParams();
@@ -62,8 +62,7 @@ export default function QuizEditorPage() {
 		const isExternal = url.origin !== window.location.origin;
 		const isModifiedClick = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
 
-		// Ignore same-page anchors, external links, and modified clicks (e.g. cmd-click to open a
-		// new tab) — none of those actually navigate this tab away from the editor.
+		// Ignore same-page anchors, external links, and modified clicks (e.g. open a new tab) — none of those actually navigate this tab away from the editor.
 		if (isSamePage || isExternal || isModifiedClick) return;
 
 		const confirmed = window.confirm('You have unsaved changes. Leave without saving?');
@@ -71,8 +70,7 @@ export default function QuizEditorPage() {
 			e.preventDefault();
 			e.stopPropagation();
 		}
-		// If confirmed, do nothing — let the click continue through to Next's own Link handler
-		// exactly as it normally would.
+		// If confirmed, do nothing — let the click continue through to Next's own Link handler exactly as it normally would.
 	};
 
 	document.addEventListener('click', handleClick, true);
@@ -101,16 +99,19 @@ export default function QuizEditorPage() {
 
 			<div className="quiz-editor-panel">
 				<div className="quiz-editor-fields">
+					{/* Quiz Title */}
 					<label>
 						Title
 						<input type="text" value={draft.title} onChange={(e) => editor.updateField('title', e.target.value)} />
 					</label>
 
+					{/* Description */}
 					<label>
 						Description
 						<textarea value={draft.description} onChange={(e) => editor.updateField('description', e.target.value)} />
 					</label>
 
+					{/* Pass Threshold */}
 					<label>
 						Pass Threshold (%)
 						<input
@@ -121,9 +122,28 @@ export default function QuizEditorPage() {
 							onChange={(e) => editor.updateField('passThreshold', Number(e.target.value))}
 						/>
 					</label>
+
+					{/* Question Pool Size */}
+					<label>
+						Pool Size
+						<input
+							type="number"
+							min={editor.coreCount || 1}
+							max={draft.questions.length}
+							value={draft.poolSize ?? ''}
+							placeholder={`All ${draft.questions.length} questions`}
+							onChange={(e) =>
+								editor.updateField('poolSize', e.target.value === '' ? null : Number(e.target.value))
+							}
+						/>
+					</label>
+					{editor.poolSizeError && (
+						<p className="quiz-editor-load-error">{editor.poolSizeError}</p>
+					)}
 				</div>
 
 				<div className="quiz-editor-questions">
+					{/* Question List */}
 					<div className="quiz-editor-question-list">
 						<div className="quiz-editor-question-list-header">
 							<span>Questions</span>
@@ -139,6 +159,7 @@ export default function QuizEditorPage() {
 								onClick={() => editor.setSelectedQuestion(i)}
 							>
 								<span className="quiz-editor-question-row-text">{q.question || '(untitled question)'}</span>
+								{q.isCore && <span className="quiz-editor-core-badge">CORE</span>}
 
 								<span className="quiz-editor-question-row-actions">
 									<button
@@ -165,9 +186,11 @@ export default function QuizEditorPage() {
 						)}
 					</div>
 
+					{/* Question Details */}
 					<div className="quiz-editor-question-detail">
 						{activeQuestion && selectedQuestion !== null ? (
 							<>
+								{/* Question Text */}
 								<label>
 									Question
 									<textarea
@@ -176,6 +199,7 @@ export default function QuizEditorPage() {
 									/>
 								</label>
 
+								{/* Question Options */}
 								<div className="quiz-editor-options">
 									<span className="quiz-editor-options-label">Options (select the correct answer)</span>
 
@@ -205,6 +229,7 @@ export default function QuizEditorPage() {
 									<button onClick={() => editor.addOption(selectedQuestion)} className="quiz-editor-add-option">+ Add option</button>
 								</div>
 
+								{/* Incorrect Answer Response */}
 								<label>
 									Explanation (shown after an incorrect answer)
 									<textarea
@@ -212,6 +237,16 @@ export default function QuizEditorPage() {
 										value={activeQuestion.explanation}
 										onChange={(e) => editor.updateQuestion(selectedQuestion, 'explanation', e.target.value)}
 									/>
+								</label>
+
+								{/* Core Question Toggle */}
+								<label className="quiz-editor-core-toggle">
+									<input
+										type="checkbox"
+										checked={activeQuestion.isCore}
+										onChange={(e) => editor.updateQuestion(selectedQuestion, 'isCore', e.target.checked)}
+									/>
+									Core question — always included in every pool
 								</label>
 							</>
 						) : (
@@ -227,11 +262,11 @@ export default function QuizEditorPage() {
 				onSave={editor.saveToSupabase}
 				resetDisabled={!editor.canReset}
 				resetDisabledReason={!editor.canReset ? 'No defaults exist for this quiz.' : undefined}
-				saveDisabled={editor.hasInvalidQuestion}
+				saveDisabled={editor.hasInvalidQuestion || editor.hasInvalidPoolSize}
 				saveDisabledReason={
 					editor.hasInvalidQuestion
 						? 'Every question needs at least 2 options and a selected correct answer.'
-						: undefined
+						: editor.poolSizeError ?? undefined
 				}
 			/>
 

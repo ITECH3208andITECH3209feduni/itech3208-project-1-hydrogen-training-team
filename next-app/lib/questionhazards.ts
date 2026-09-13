@@ -7,12 +7,14 @@ export interface QuizQuestion {
 	options: string[];
 	correctIndex: number;
 	explanation: string;
+	isCore: boolean;
 }
 
 export const QUIZ_TITLE = 'Hydrogen Hazards Quiz';
 export const QUIZ_SLUG = 'hazards';
 export const QUIZ_DESCRIPTION = 'Flammability, storage, buoyancy, and detection';
-export const PASS_THRESHOLD = 70; // percent required to pass
+export const PASS_THRESHOLD = 70;               // percent required to pass
+export const POOL_SIZE: number | null = null;   // null = use the full bank
 
 export const questionhazards: QuizQuestion[] = [
 	{
@@ -26,16 +28,16 @@ export const questionhazards: QuizQuestion[] = [
 			'It makes no sound when leaking',
 		],
 		correctIndex: 1,
-		explanation:
-			'Hydrogen cannot be seen, smelled, or tasted, which is why dedicated hydrogen gas detectors are essential safety equipment in any hydrogen facility.',
+		explanation: 'Hydrogen cannot be seen, smelled, or tasted, which is why dedicated hydrogen gas detectors are essential safety equipment in any hydrogen facility.',
+		isCore: false,
 	},
 	{
 		id: 2,
 		question: "What is hydrogen's flammability range in air?",
 		options: ['1–10%', '4–75%', '15–30%', '50–90%'],
 		correctIndex: 1,
-		explanation:
-			'Hydrogen is flammable across an unusually wide range, from 4% to 75% concentration in air, making it easier to accidentally create an ignitable mixture.',
+		explanation: 'Hydrogen is flammable across an unusually wide range, from 4% to 75% concentration in air, making it easier to accidentally create an ignitable mixture.',
+		isCore: false,
 	},
 	{
 		id: 3,
@@ -47,8 +49,8 @@ export const questionhazards: QuizQuestion[] = [
 			'Heavier when cold and lighter when warm',
 		],
 		correctIndex: 2,
-		explanation:
-			'Hydrogen is about 14 times lighter than air and disperses rapidly upward, which changes where leaks tend to accumulate.',
+		explanation: 'Hydrogen is about 14 times lighter than air and disperses rapidly upward, which changes where leaks tend to accumulate.',
+		isCore: false,
 	},
 	{
 		id: 4,
@@ -61,8 +63,8 @@ export const questionhazards: QuizQuestion[] = [
 			'There is no accumulation risk indoors',
 		],
 		correctIndex: 1,
-		explanation:
-			'Rising hydrogen can pool at ceilings and in enclosed spaces with poor ventilation, creating serious explosion hazards even though ground-level risk is reduced.',
+		explanation: 'Rising hydrogen can pool at ceilings and in enclosed spaces with poor ventilation, creating serious explosion hazards even though ground-level risk is reduced.',
+		isCore: false,
 	},
 	{
 		id: 5,
@@ -74,8 +76,8 @@ export const questionhazards: QuizQuestion[] = [
 			'It burns at a lower temperature than other fuels',
 		],
 		correctIndex: 0,
-		explanation:
-			'A hydrogen flame is pale and nearly invisible in daylight, so workers can be dangerously close to a fire without realising it is there.',
+		explanation: 'A hydrogen flame is pale and nearly invisible in daylight, so workers can be dangerously close to a fire without realising it is there.',
+		isCore: false,
 	},
 	{
 		id: 6,
@@ -87,24 +89,24 @@ export const questionhazards: QuizQuestion[] = [
 			'Stored in open atmospheric tanks',
 		],
 		correctIndex: 0,
-		explanation:
-			'Hydrogen is commonly stored as a compressed gas (up to 700 bar), a cryogenic liquid, or in solid-state materials — each with its own hazard profile.',
+		explanation: 'Hydrogen is commonly stored as a compressed gas (up to 700 bar), a cryogenic liquid, or in solid-state materials — each with its own hazard profile.',
+		isCore: false,
 	},
 	{
 		id: 7,
 		question: 'At what temperature is hydrogen stored as a cryogenic liquid?',
 		options: ['−40°C', '−100°C', '−196°C', '−253°C'],
 		correctIndex: 3,
-		explanation:
-			'Liquid hydrogen is stored at around −253°C, cold enough to cause severe cryogenic burns and embrittlement of some materials on contact.',
+		explanation: 'Liquid hydrogen is stored at around −253°C, cold enough to cause severe cryogenic burns and embrittlement of some materials on contact.',
+		isCore: false,
 	},
 	{
 		id: 8,
 		question: 'What by-product is produced when hydrogen is used in a fuel cell?',
 		options: ['Carbon dioxide', 'Water', 'Nitrogen oxides', 'Methane'],
 		correctIndex: 1,
-		explanation:
-			'Hydrogen fuel cells combine H₂ with oxygen to produce electricity, with water as the only by-product — a key reason hydrogen is considered a clean energy carrier.',
+		explanation: 'Hydrogen fuel cells combine H₂ with oxygen to produce electricity, with water as the only by-product — a key reason hydrogen is considered a clean energy carrier.',
+		isCore: false,
 	},
 ];
 
@@ -112,6 +114,7 @@ export const QUIZ_DEFAULTS = {
 	title: QUIZ_TITLE,
 	description: QUIZ_DESCRIPTION,
 	passThreshold: PASS_THRESHOLD,
+	poolSize: POOL_SIZE,
 	questions: questionhazards,
 };
 
