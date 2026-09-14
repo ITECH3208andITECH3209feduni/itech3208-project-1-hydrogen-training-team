@@ -201,10 +201,12 @@ export function useModules(section: string, defaults: ModuleData[]) {
 }
 
 // Convenience wrapper for reader pages that just need one module by id.
+// Also returns the full list, since the reader needs it to check whether
+// this module is locked behind an incomplete prerequisite.
 export function useModuleById(section: string, defaults: ModuleData[], id: string | undefined) {
 	const { modules, loadStatus, usingDefaults } = useModules(section, defaults);
 	const item = id ? getModuleById(modules, id) : undefined;
-	return { item, loadStatus, usingDefaults };
+	return { item, modules, loadStatus, usingDefaults };
 }
 
 

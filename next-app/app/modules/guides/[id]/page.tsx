@@ -13,11 +13,12 @@ import { guides } from '@/lib/guides';
 export default function GuidePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item, usingDefaults } = useModuleById('guides', guides, id);
+	const { item, modules, usingDefaults } = useModuleById('guides', guides, id);
 
 	return (
 		<ModuleReaderPage
 			item={item}
+			allModules={modules}
 			section="guides"
 			basePath="/modules/guides"
 			// No badgeLabel — these items have no badgeNum, so no badge is shown.

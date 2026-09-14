@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireUser } from "@/lib/authUser";
+import { isModuleLockedForUser } from "@/lib/progressLock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,6 +88,16 @@ export async function POST(request: NextRequest) {
 					error: "section is required",
 				},
 				{ status: 400 }
+			);
+		}
+
+		if (await isModuleLockedForUser(uid, section, module_id)) {
+			return NextResponse.json(
+				{
+					ok: false,
+					error: "This module is locked until its prerequisite is completed.",
+				},
+				{ status: 403 }
 			);
 		}
 
@@ -199,6 +210,16 @@ export async function PATCH(request: NextRequest) {
 					error: "section is required",
 				},
 				{ status: 400 }
+			);
+		}
+
+		if (await isModuleLockedForUser(uid, section, module_id)) {
+			return NextResponse.json(
+				{
+					ok: false,
+					error: "This module is locked until its prerequisite is completed.",
+				},
+				{ status: 403 }
 			);
 		}
 

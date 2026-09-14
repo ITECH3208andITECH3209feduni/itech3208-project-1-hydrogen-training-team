@@ -13,11 +13,12 @@ import { hazardModules } from '@/lib/hazardModules';
 export default function HazardModulePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item, usingDefaults } = useModuleById('hazard-modules', hazardModules, id);
+	const { item, modules, usingDefaults } = useModuleById('hazard-modules', hazardModules, id);
 
 	return (
 		<ModuleReaderPage
 			item={item}
+			allModules={modules}
 			section="hazard-modules"
 			basePath="/modules/hazard-modules"
 			badgeLabel="⚠ Hazard"

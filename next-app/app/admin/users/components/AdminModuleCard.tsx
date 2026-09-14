@@ -21,6 +21,8 @@ interface AdminModuleCardProps {
     animationDelay?: number;
     mode?: "student" | "admin";
     adminProgress?: AdminProgress;
+    onOverride?: (moduleId: string, status: ModuleStatus) => void;
+    overriding?: boolean;
 }
 
 const statusMeta: Record<ModuleStatus, {
@@ -79,7 +81,7 @@ function formatTimeSpent(value: number | string | null | undefined): string {
     return `${value} mins`;
 }
 
-export default function AdminModuleCard({ item, animationDelay = 0, adminProgress, }: AdminModuleCardProps) {
+export default function AdminModuleCard({ item, animationDelay = 0, adminProgress, onOverride, overriding = false, }: AdminModuleCardProps) {
     const progressValue = adminProgress?.progress !== null && adminProgress?.progress !== undefined
         ? Math.max(0, Math.min(100, Number(adminProgress.progress)))
         : 0;
@@ -155,6 +157,23 @@ export default function AdminModuleCard({ item, animationDelay = 0, adminProgres
                     <span>{item.sections.length} sections</span>
                     <span>{progressValue}%</span>
                 </div>
+
+                {onOverride && (
+                    <div className="admin-override-row">
+                        <span className="admin-override-label">Admin override:</span>
+                        {(["todo", "progress", "done"] as ModuleStatus[]).map((s) => (
+                            <button
+                                key={s}
+                                type="button"
+                                className={`admin-override-btn ${displayStatus === s ? "active" : ""}`}
+                                disabled={overriding || displayStatus === s}
+                                onClick={() => onOverride(String(item.id), s)}
+                            >
+                                {statusMeta[s].label.replace("✓ ", "")}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

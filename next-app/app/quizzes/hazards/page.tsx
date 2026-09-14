@@ -7,10 +7,14 @@ import '../quizzes.css';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useQuizLock } from '@/hooks/useQuizLock';
+import { hazardModules } from '@/lib/hazardModules';
+import { getModuleById } from '@/lib/moduleTypes';
 
 import {
     questionhazards,
     QUIZ_TITLE,
+    QUIZ_ID,
     PASS_THRESHOLD,
     QuizQuestion,
 } from '@/lib/questionhazards';
@@ -68,6 +72,16 @@ function shuffleQuiz(
 export default function HazardsQuizPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { locked, ready: lockReady, requiredModuleId } = useQuizLock(QUIZ_ID, user, loading);
+    const requiredModuleTitle = requiredModuleId
+        ? getModuleById(hazardModules, requiredModuleId)?.title
+        : undefined;
+
+    useEffect(() => {
+        if (!loading && user && lockReady && locked) {
+            router.replace('/quizzes');
+        }
+    }, [loading, user, lockReady, locked, router]);
 
     const [quiz, setQuiz] = useState<
         QuizQuestion[]
@@ -172,6 +186,26 @@ export default function HazardsQuizPage() {
     if (!user) {
         router.replace('/login');
         return null;
+    }
+
+    if (!lockReady) {
+        return null;
+    }
+
+    if (locked) {
+        return (
+            <main className="main">
+                <div className="quiz-blocked">
+                    <h1>This quiz is locked</h1>
+                    <p>
+                        {requiredModuleTitle
+                            ? `Complete "${requiredModuleTitle}" to unlock this quiz.`
+                            : 'Complete the required module to unlock this quiz.'}{' '}
+                        Redirecting you back to Quizzes…
+                    </p>
+                </div>
+            </main>
+        );
     }
 
     function selectOption(

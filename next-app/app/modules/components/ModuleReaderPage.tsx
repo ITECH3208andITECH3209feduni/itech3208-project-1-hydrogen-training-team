@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { ModuleData, getModuleById } from "@/lib/moduleTypes";
+import { ModuleData, getModuleById, isModuleLocked } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
 import ModuleVideo from "./ModuleVideo";
 import ModuleEditor from "./ModuleEditor";
@@ -20,6 +20,7 @@ import { useModuleEditor } from "@/hooks/useModuleEditor";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
+    allModules: ModuleData[];
     section: string;
     basePath: string;
     badgeLabel?: string;
@@ -31,6 +32,7 @@ interface ModuleReaderPageProps {
 
 export default function ModuleReaderPage({
     item,
+    allModules,
     section,
     basePath,
     badgeLabel,
@@ -41,6 +43,8 @@ export default function ModuleReaderPage({
 }: ModuleReaderPageProps) {
     const { user, loading, permissions } = useAuth();
     const router = useRouter();
+    // Admins bypass locking — they need access to any module to edit it.
+    const locked = item && !permissions.canManageUsers ? isModuleLocked(item, allModules) : false;
 
     const {
         currentProgress,
@@ -90,6 +94,12 @@ export default function ModuleReaderPage({
         }
     }, [loading, user, item, router, basePath]);
 
+    useEffect(() => {
+        if (!loading && user && item && locked) {
+            router.replace(basePath);
+        }
+    }, [loading, user, item, locked, router, basePath]);
+
     // Safety Net - Exit edit mode if lose permission mid-session (e.g. role change)
     useEffect(() => {
         if (editMode && !permissions.canManageUsers) {
@@ -106,6 +116,10 @@ export default function ModuleReaderPage({
     }
 
     if (!item) {
+        return null;
+    }
+
+    if (locked) {
         return null;
     }
 
