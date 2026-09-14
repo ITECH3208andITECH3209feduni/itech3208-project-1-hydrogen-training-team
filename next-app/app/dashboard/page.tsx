@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx - Hydrogen Lab Safety Dashboard
+﻿// app/dashboard/page.tsx - Hydrogen Lab Safety Dashboard
 
 "use client";
 
@@ -30,6 +30,15 @@ export default function Dashboard() {
         useState<QuizProgress | null>(null);
 
     const [quizLoading, setQuizLoading] =
+        useState(true);
+
+    const [hazardProgress, setHazardProgress] =
+        useState<{
+            completedHazards: number;
+            totalHazards: number;
+        } | null>(null);
+
+    const [hazardLoading, setHazardLoading] =
         useState(true);
 
     // Redirect unauthenticated users
@@ -82,6 +91,54 @@ export default function Dashboard() {
 
         if (!loading) {
             loadQuizProgress();
+        }
+    }, [user, loading]);
+
+
+    // Load user's interactive lab hazard progress
+    useEffect(() => {
+        async function loadHazardProgress() {
+            try {
+                setHazardLoading(true);
+
+                if (!user) {
+                    setHazardProgress(null);
+                    return;
+                }
+
+                const token = await user.getIdToken();
+
+                const response = await fetch("/api/hazards/progress", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    cache: "no-store",
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    setHazardProgress({
+                        completedHazards: Number(data.completedHazards ?? 0),
+                        totalHazards: Number(data.totalHazards ?? 0),
+                    });
+                } else {
+                    setHazardProgress(null);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to load dashboard hazard progress:",
+                    error
+                );
+                setHazardProgress(null);
+            } finally {
+                setHazardLoading(false);
+            }
+        }
+
+        if (!loading) {
+            loadHazardProgress();
         }
     }, [user, loading]);
 
@@ -149,7 +206,7 @@ export default function Dashboard() {
 
                         <div className="count">
                             {loadStatus === "loading"
-                                ? "—"
+                                ? "\u2014"
                                 : totalModules
                             }
                         </div>
@@ -157,15 +214,14 @@ export default function Dashboard() {
                         <div className="sub">
                             {loadStatus === "loading"
                                 ? "Loading..."
-                                : `${completedModules} completed · ${inProgressModules} in progress`
+                                : `${completedModules} completed \u00B7 ${inProgressModules} in progress`
                             }
                         </div>
                     </div>
 
-                    <div className="stat-arrow">→</div>
+                    <div className="stat-arrow">&rarr;</div>
                 </Link>
-
-                {/* Scenarios - static for now */}
+                {/* Scenarios / Simulation */}
                 <Link
                     href="/lab"
                     className="stat-card"
@@ -173,12 +229,26 @@ export default function Dashboard() {
                     <div className="stat-icon scenarios">&#128300;</div>
 
                     <div className="stat-info">
-                        <div className="label">Scenarios / Simulation</div>
-                        <div className="count">8</div>
-                        <div className="sub">2 completed · 1 in progress</div>
+                        <div className="label">
+                            Scenarios / Simulation
+                        </div>
+
+                        <div className="count">
+                            {hazardLoading
+                                ? "—"
+                                : `${hazardProgress?.completedHazards ?? 0}/${hazardProgress?.totalHazards ?? 0}`
+                            }
+                        </div>
+
+                        <div className="sub">
+                            {hazardLoading
+                                ? "Loading..."
+                                : `${hazardProgress?.completedHazards ?? 0} hazards identified`
+                            }
+                        </div>
                     </div>
 
-                    <div className="stat-arrow">→</div>
+                    <div className="stat-arrow">&#8594;</div>
                 </Link>
 
                 {/* Quizzes */}
@@ -193,10 +263,10 @@ export default function Dashboard() {
 
                         <div className="count">
                             {quizLoading
-                                ? "—"
+                                ? "\u2014"
                                 : quizProgress
                                     ? `${quizProgress.score}%`
-                                    : "—"
+                                    : "\u2014"
                             }
                         </div>
 
@@ -205,14 +275,14 @@ export default function Dashboard() {
                                 ? "Loading..."
                                 : quizProgress
                                     ? quizProgress.passed
-                                        ? "Passed · Final Quiz"
+                                        ? "Passed \u00B7 Final Quiz"
                                         : `${quizProgress.attempts} attempt${quizProgress.attempts === 1 ? "" : "s"}`
                                     : "Not attempted"
                             }
                         </div>
                     </div>
 
-                    <div className="stat-arrow">→</div>
+                    <div className="stat-arrow">&rarr;</div>
                 </Link>
             </div>
 
@@ -230,7 +300,7 @@ export default function Dashboard() {
                             href="/modules/hazard-modules"
                             className="panel-link"
                         >
-                            View Modules →
+                            View Modules &rarr;
                         </Link>
                     </div>
 
@@ -244,7 +314,7 @@ export default function Dashboard() {
                                         <span className="topic-number">{String(index + 1).padStart(2, "0")}</span>
                                         <span className="topic-divider" />
                                         <span className="topic-title">{topic.title}</span>
-                                        <span className="topic-arrow">→</span>
+                                        <span className="topic-arrow">&rarr;</span>
                                     </Link>
                         ))) : (
                             <div className="topics-loading">Training topics are loading...</div>
@@ -252,7 +322,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="topics-footer">
-                        <Link href="/modules/hazard-modules">View all modules →</Link>
+                        <Link href="/modules/hazard-modules">View all modules &rarr;</Link>
                     </div>
                 </section>
 
@@ -283,8 +353,8 @@ export default function Dashboard() {
                             className="btn-cert"
                         >
                             {certificateEligible
-                                ? "View Certificate →"
-                                : "Check Eligibility →"
+                                ? "View Certificate \u2192"
+                                : "Check Eligibility \u2192"
                             }
                         </Link>
                     </div>
@@ -310,3 +380,4 @@ export default function Dashboard() {
         </main>
     );
 }
+

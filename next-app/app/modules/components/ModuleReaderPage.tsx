@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, getModuleById } from "@/lib/moduleTypes";
@@ -42,6 +42,12 @@ export default function ModuleReaderPage({
     const { user, loading, permissions } = useAuth();
     const router = useRouter();
 
+    // Video editor state
+    const [videoType, setVideoType] = useState<"youtube" | "mp4">("youtube");
+    const [youtubeUrl, setYoutubeUrl] = useState("");
+    const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
+    const [videoSaving, setVideoSaving] = useState(false);
+
     const {
         currentProgress,
         progressLoaded,
@@ -77,6 +83,160 @@ export default function ModuleReaderPage({
         resetToDefaults,
         canReset,
     } = useModuleEditor(section, item, fallbackItem);
+
+    // Keep video controls in sync with the current module
+    useEffect(() => {
+        if (!item) return;
+
+        setVideoType(item.videoType === "mp4" ? "mp4" : "youtube");
+        setYoutubeUrl(
+            item.videoType === "youtube"
+                ? item.videoUrl ?? ""
+                : ""
+        );
+        setSelectedVideoFile(null);
+    }, [item?.id, item?.videoUrl, item?.videoType]);
+
+    // Save or replace a YouTube video
+    const saveYoutubeVideo = async () => {
+        if (!user || !draft || !youtubeUrl.trim()) return;
+
+        try {
+            setVideoSaving(true);
+
+            const token = await user.getIdToken();
+            const formData = new FormData();
+
+            formData.append("moduleId", draft.id);
+            formData.append("section", section);
+            formData.append("videoType", "youtube");
+            formData.append("videoUrl", youtubeUrl.trim());
+
+            const response = await fetch("/api/admin/modules/video", {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const json = await response.json();
+
+            if (!response.ok || !json.ok) {
+                throw new Error(json.error ?? "Unable to save video.");
+            }
+
+            updateField("videoUrl", json.module.video_url);
+            updateField("videoType", json.module.video_type);
+        } catch (error) {
+            console.error("SAVE YOUTUBE VIDEO ERROR:", error);
+
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Unable to save YouTube video."
+            );
+        } finally {
+            setVideoSaving(false);
+        }
+    };
+
+    // Upload or replace an MP4 video
+    const uploadMp4Video = async () => {
+        if (!user || !draft || !selectedVideoFile) return;
+
+        try {
+            setVideoSaving(true);
+
+            const token = await user.getIdToken();
+            const formData = new FormData();
+
+            formData.append("moduleId", draft.id);
+            formData.append("section", section);
+            formData.append("videoType", "mp4");
+            formData.append("file", selectedVideoFile);
+
+            const response = await fetch("/api/admin/modules/video", {
+                method: "PUT",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const json = await response.json();
+
+            if (!response.ok || !json.ok) {
+                throw new Error(json.error ?? "Unable to upload video.");
+            }
+
+            updateField("videoUrl", json.module.video_url);
+            updateField("videoType", json.module.video_type);
+            setSelectedVideoFile(null);
+        } catch (error) {
+            console.error("UPLOAD MP4 VIDEO ERROR:", error);
+
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Unable to upload MP4 video."
+            );
+        } finally {
+            setVideoSaving(false);
+        }
+    };
+
+    // Remove an existing module video
+    const removeModuleVideo = async () => {
+        if (!user || !draft) return;
+
+        const confirmed = window.confirm(
+            "Remove this video from the module?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            setVideoSaving(true);
+
+            const token = await user.getIdToken();
+
+            const response = await fetch("/api/admin/modules/video", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    moduleId: draft.id,
+                    section,
+                }),
+            });
+
+            const json = await response.json();
+
+            if (!response.ok || !json.ok) {
+                throw new Error(json.error ?? "Unable to remove video.");
+            }
+
+            updateField("videoUrl", null);
+            updateField("videoType", null);
+
+            setYoutubeUrl("");
+            setSelectedVideoFile(null);
+            setVideoType("youtube");
+        } catch (error) {
+            console.error("REMOVE MODULE VIDEO ERROR:", error);
+
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : "Unable to remove video."
+            );
+        } finally {
+            setVideoSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (!loading && !user) {
@@ -166,7 +326,7 @@ export default function ModuleReaderPage({
             {/* Fallback content warning */}
             {usingDefaults && !editMode && (
                 <div className="fallback-warning">
-                    ⚠️ You are viewing fallback content because live content could not be loaded. 
+                    ⚠️ You are viewing fallback content because live content could not be loaded.
                     Your progress on this module may not accurately reflect the current version.
                 </div>
             )}
@@ -192,9 +352,7 @@ export default function ModuleReaderPage({
             {progressLoaded && currentProgress > 0 && currentProgress < 100 && (
                 <button
                     type="button"
-                    onClick={
-                        continueFromSavedProgress
-                    }
+                    onClick={continueFromSavedProgress}
                     className="module-secondary-btn module-resume-btn"
                 >
                     Continue from saved progress
@@ -213,9 +371,9 @@ export default function ModuleReaderPage({
             ))}
 
             {/* Module Video */}
-            <ModuleVideo 
-                videoUrl={item.videoUrl} 
-                videoType={item.videoType}
+            <ModuleVideo
+                videoUrl={displayed.videoUrl}
+                videoType={displayed.videoType}
             />
 
             {/* Key Takeaway */}
@@ -293,6 +451,16 @@ export default function ModuleReaderPage({
                     onUpdateSectionItem={updateSectionItem}
                     onAddSectionItem={addSectionItem}
                     onDeleteSectionItem={deleteSectionItem}
+                    videoType={videoType}
+                    youtubeUrl={youtubeUrl}
+                    selectedVideoFile={selectedVideoFile}
+                    videoSaving={videoSaving}
+                    onChangeVideoType={setVideoType}
+                    onChangeYoutubeUrl={setYoutubeUrl}
+                    onSelectVideoFile={setSelectedVideoFile}
+                    onSaveYoutubeVideo={saveYoutubeVideo}
+                    onUploadMp4Video={uploadMp4Video}
+                    onRemoveVideo={removeModuleVideo}
                 />
             )}
 
