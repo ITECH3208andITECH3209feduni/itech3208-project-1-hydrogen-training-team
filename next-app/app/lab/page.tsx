@@ -62,6 +62,42 @@ export default function LabPage() {
 		}
 	}, [editMode, permissions.canManageUsers, toggleEditMode]);
 
+	async function recordHazardProgress(hazardId: string) {
+    if (!user) return;
+
+    try {
+        const token = await user.getIdToken();
+
+        const response = await fetch(
+            "/api/hazards/progress",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    hazardId,
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const data = await response.json();
+
+            console.error(
+                "Failed to record hazard progress:",
+                data.error
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Failed to record hazard progress:",
+            error
+        );
+    }
+}
+
 	if (loading) {
 		return <div>Loading...</div>;
 	}
@@ -120,6 +156,7 @@ export default function LabPage() {
 									setSelected(index);
 								} else {
 									setActiveHazard(hs.type);
+									recordHazardProgress(hs.type);
 								}
 							}}
 						/>
