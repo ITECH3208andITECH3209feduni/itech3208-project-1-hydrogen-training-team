@@ -17,6 +17,10 @@ But it was evaluated in a context where the write endpoint it feeds into, `POST 
 ### `/admin/users/[uid]/progress` client-side gate is weaker than its parent page
 `/admin/users` checks `isAdmin` before rendering. `/admin/users/[uid]/progress` only checks that a user is logged in (`useAuth()`'s `user`), not `isAdmin`. In practice this is a shell-only gap — the API route behind it, `GET /api/admin/users/{uid}/progress`, does enforce `requireAdmin`, so a non-admin who navigates here directly gets a static shell and every data fetch comes back `403`. Still worth tightening for consistency, since relying on "the API happens to reject it" is a thinner guarantee than gating the page itself.
 
+### `/feedback` doesn't redirect unauthenticated visitors, unlike every other protected page
+Every other page gated on login (`/dashboard`, `/lab`, the module and quiz pages, etc.) calls `useAuth()` and redirects to `/login` via a `useEffect` when there's no user (see `ADDITIONAL_INFO.md`, "Auth redirect pattern"). `app/feedback/page.tsx` calls `useAuth()` too, but never redirects — the form renders fully for a logged-out visitor, and the only auth check happens inside `handleSubmit`, which sets an inline "You must be logged in to submit feedback." error rather than routing anywhere. A logged-out visitor can fill out the whole form before discovering they can't submit it.
+**Fix:** add the same `useEffect`-based redirect used by every other protected page, or, if the form is meant to be publicly viewable, document that as an intentional exception rather than an oversight.
+
 ### Status-code mapping is inconsistent between the two auth helpers
 Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"Missing authorization token"`, `"User profile not found"`) to `403`; anything else becomes `500`. Routes using `requireUser` (`/api/modules/progress`, `/api/quizzes/progress`, `/api/quizzes/leaderboard`) return a blanket `401` for anything thrown in the `try` block — including non-auth errors, such as a malformed JSON body (`/api/modules/progress` and `/api/quizzes/progress` call `request.json()` with no validation of their own). A malformed request currently looks identical to an auth failure on these routes.
 
@@ -34,7 +38,7 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 **Fix:** correct `UserProfile['user_type']` in `AuthContext.tsx` to the real 6-value set, update the modal's options to match, and add server-side validation in the PATCH route.
 
 ### Quiz ID naming mismatch
-`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug.
+`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug. The `quizzes`/`quiz_questions` tables (loaded via `useQuiz`/`GET /api/quizzes/load-quiz`, see `ADDITIONAL_INFO.md`) are not affected — both are keyed by `QUIZ_SLUG` (`"hazards"`) directly, so this mismatch is isolated to `user_quiz_progress` and the two routes below.
 
 ### Quiz ID is hardcoded independently in two places
 `const QUIZ_ID = "hydrogen-hazards"` is declared separately in both `app/api/quizzes/progress/route.ts` and `app/api/quizzes/leaderboard/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the two `QUIZ_ID` copies staying in sync — if one is ever changed without the other (e.g. when a second quiz is added and this gets refactored), the leaderboard would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning an empty leaderboard rather than an error.
@@ -51,10 +55,6 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 ### `handleContinue`'s `localStorage` write is now dead code
 `/certificate` used to gate entirely on a `localStorage` record written by `/quizzes/hazards`'s `handleContinue` — this has been fixed; the page now fetches `/api/modules/progress` and `/api/quizzes/progress` server-side instead (see `ADDITIONAL_INFO.md`). But `handleContinue` still writes `{ passed: true, score, date }` to `localStorage` (key `hydrogenlabsafety_quiz_hazards_${uid}`) before routing to `/certificate`, and `/certificate` no longer reads that key at all. The write, and the `storageKey()` helper that builds it, currently do nothing.
 **Fix:** remove the `localStorage` write (and `storageKey()`) from `handleContinue`.
-
-### Admin "Certificate eligibility" and the real `/certificate` page use overlapping but different criteria
-Previously these were entirely unrelated criteria (module completion vs. a `localStorage`-only quiz pass). Now that `/certificate` is server-driven, it requires **both** all modules completed *and* a passing quiz score — but the admin panel's "Certificate eligibility" indicator still only checks module completion (`completedModules >= totalModules`) and ignores the quiz entirely. So a user who's completed every module but never taken (or passed) the quiz now shows "Eligible" in admin while still seeing "No certificate yet" on the real page.
-**Fix:** have the admin indicator also require a quiz pass, matching `/certificate`'s real logic.
 
 ### Admin panel's two progress numbers disagree with each other, and with reality
 `GET /api/admin/users` already returns a server-computed `statistics` object (`totalUsers`, `administrators`, `learners`, `trainingCompleted`, `averageProgress`, `totalModules`), derived from `user_module_progress` using `hazardModules.length` (currently 5) as `totalModules` and `progress >= 100` as "complete." **The admin page ignores this entirely.** Instead, for every non-admin, non-`public`-type user, it separately fetches `GET /api/admin/users/{uid}/progress` and recomputes the same two numbers itself:
@@ -74,10 +74,6 @@ The admin panel shows "Eligible"/"Pending" based on `completedModules >= totalMo
 ### Certificate pass-threshold is hardcoded separately from the real threshold — now in both copy and logic
 `/certificate`'s "No certificate yet" panel hardcodes "70% or higher" as prose text, independent of `PASS_THRESHOLD` in `lib/questionhazards.ts` (used by the actual scoring logic). This now goes beyond copy: `quizPassed` itself is computed as `record.score >= 70`, a second independent hardcoded `70`, rather than trusting the `passed` boolean that `/api/quizzes/progress` already computed and stored from `PASS_THRESHOLD` at submit time. If `PASS_THRESHOLD` ever changes, both this string and the certificate's actual gating logic would silently disagree with the real threshold — and with each other.
 **Fix:** import `PASS_THRESHOLD` in both the prose and `quizPassed`, or gate on `record.passed` directly instead of recomputing it from `score`.
-
-### Leaderboard opt-in banner doesn't reflect the already-saved preference
-After submitting, `/quizzes/hazards` shows a "Show My Score" / "Keep Private" banner that always starts unset, even on a retry where the user already has a saved `leaderboard_visible` preference from a prior attempt (which `POST /api/quizzes/progress` explicitly preserves rather than resetting). A student who already opted in, retries, and doesn't touch the buttons again stays opted in server-side — but the UI gives no indication of that, and re-clicking "Keep Private" out of habit would silently opt them back out.
-**Fix:** fetch the existing `leaderboard_visible` value (e.g. via `GET /api/quizzes/progress`) and pre-select/label the banner accordingly.
 
 ### Logout's `sessionStorage` flag can go stale, silently eating the next Login click
 `Navbar.tsx`'s `handleLogout` sets `sessionStorage.setItem("logoutRedirect", "true")` before logging out, meant to be consumed by `/login` on its next mount to suppress a flash of the login form during the logout redirect race (see `ADDITIONAL_INFO.md`). But it's only consumed if `/login` actually mounts during that race — which only happens if the page the user logged out *from* has its own competing redirect-to-`/login` effect. Logging out from `/` or `/about` (both allow logged-in users and have no such effect) means the flag is never cleared at logout time; it just persists in `sessionStorage` for that tab.
@@ -108,6 +104,10 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 
 ### `next.config.ts` coexists with `next.config.js`
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.
+
+### `GET /api/admin/feedback` has no admin-facing page reading it
+The route (`requireAdmin`-gated) returns every row from the `feedback` table ordered by `created_at` descending, but no page under `app/admin/` currently calls it — feedback submitted via `/feedback` reaches the database with no way to view it in the app.
+**Fix:** add an admin feedback-listing page, or, if reviewing submissions directly in the Supabase dashboard is the intended workflow, note that here so this isn't mistaken for an unfinished feature.
 
 ### `leaderboard_visible` is returned by the admin per-user progress route but never displayed
 `GET /api/admin/users/{uid}/progress` selects `*` on `user_quiz_progress`, so `leaderboard_visible` comes through in the response, but no admin UI currently reads or shows it.
@@ -140,8 +140,21 @@ See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-a
 ### The lab's edit mode lives entirely in `app/lab/page.tsx` + `useHazards.ts` — worth revisiting if a third editable page appears
 The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple sections and (eventually) both listing and reader pages. `useHazards.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHazards.ts` preemptively for a pattern used by only one page today.
 
+### The quiz editor has an "unsaved changes" warning that the lab and module editors don't
+`app/quizzes/[quizId]/edit/page.tsx` warns before an admin loses in-progress edits — on tab close/refresh, on any in-app link click while a change is unsaved, and on the page's own "Back to Quizzes" link (see `ADDITIONAL_INFO.md`, "Quiz Content Editor"). Neither `/lab`'s edit mode nor the module reader pages' editors have any equivalent — navigating away from either with unsaved hotspot/module edits loses them silently, with no prompt. Worth deciding whether the other two should get the same treatment for consistency, or whether the quiz editor's separate-page structure (as opposed to the other two's in-place edit-mode toggle) makes the warning more necessary there specifically.
+
 ### `app/api/` has no subfolder grouping for `hazards`/lab-image/module routes
 Of the module-content routes, only `save-module` (added this round) and the pre-existing `modules/progress` live under `app/api/modules/` — `load-modules` and `load-module-options` are still flat top-level folders under `app/api/`, alongside `load-hazards`, `save-hazards`, `load-image`, and `upload-image`. Moving those remaining ones into `app/api/lab/` and `app/api/modules/` respectively would finish the grouping, at the cost of updating every `fetch('/api/...')` call site for them. Worth doing as one deliberate pass rather than piecemeal, since it's a routing/URL change, not just a file move.
+
+### `hooks/` has no subfolder grouping, and is growing one file per editable page
+`hooks/` holds a flat mix of read-only data hooks (`useHazards.ts`, `useModules.ts`, `useQuiz.ts`, `useModuleOptions.ts`) and editor hooks (`useModuleEditor.ts`, `useQuizEditor.ts`), each pair mostly used by only one page or section. This is the same shape of issue as `app/api/`'s flat routes above, just for hooks instead of routes — worth grouping before a fourth or fifth editable page adds two more files to the same flat list. Two reasonable directions, not mutually exclusive: subfolders within `hooks/` itself (e.g. `hooks/lab/`, `hooks/quizzes/`), or moving each pair into the `app/` folder of the page that actually uses it (e.g. `app/lab/hooks/`), colocating the hook with its one consumer. The latter is closer to Next.js's general colocation conventions but is a bigger reorganization since it touches every import path across the app; the former is a smaller, more mechanical move.
+
+### CSS is split across many page-specific files with no canonical reference for which classes are global vs. local
+Every page/component folder that needs styling imports its own `.css` file (see the CSS Structure table in `README.md`), and `globals.css` holds `nav`, `.main`, `.panel`, edit-mode toggle, and save-bar styles used everywhere. But there's no single place listing which classes are safe to assume as globally available versus which need a local definition — confirming this for a new page means reading `globals.css` in full, or checking how an existing page with similar markup handles it.
+
+`app/quizzes/[quizId]/edit/quizEditor.css` duplicates `.quiz-defaults-notice` (already defined once in `quizzes.css`) rather than sharing it, since the two pages don't import each other's stylesheets and there's no shared partial for classes used by more than one page but not all of them. Some classes are also used identically across multiple page-specific files without being pulled into `globals.css`, even though they're not page-specific in nature — `.page-header` is used by the admin pages, the quizzes pages, and others, but is defined independently (or, in at least one case, not confirmed to be defined at all) in each.
+
+**Fix:** an audit of every `.css` file against the classes actually used in its corresponding page(s) — confirming each class is defined exactly once, in the appropriate scope (`globals.css` for genuinely shared patterns, a page-specific file for one-off use) — would likely surface both missing and duplicated rules, and is worth doing as its own deliberate pass rather than catching each instance individually as new pages are added.
 
 ---
 

@@ -52,9 +52,14 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 `lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
 
 **Route coverage:**
-- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`)
-- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`)
+- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/feedback` (`POST`)
+- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`), `/api/quizzes/save-quiz` (`POST`), `/api/admin/feedback` (`GET`)
 - No guard: `load-hazards`, `load-image`, `load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above). `save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
+
+**`export const dynamic = 'force-dynamic'` on `GET` routes:** any `GET` handler that calls `requireUser`/`requireAdmin` (or otherwise reads `request.headers`) needs this export declared above the handler.
+	Next.js attempts to statically render `GET` route handlers at build time by default; it can't know at build time what a request's `Authorization` header will contain, so without this export `npm run build` fails with a "Dynamic server usage" error the first time it reaches such a route.
+	`POST`/`PATCH`/`DELETE` handlers are exempt — Next treats them as dynamic automatically, since there's no meaningful "build-time version" of a request with a body.
+	Every `GET` route listed under `requireUser`/`requireAdmin` above declares this export.
 
 ---
 
@@ -197,15 +202,67 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/u
 
 ## Quizzes & Certificate
 
+### Quiz content
+
+Quiz content lives in Supabase, loaded per-quiz through `hooks/useQuiz.ts`:
+- **`useQuiz(quizId, defaults)`** — fetches `GET /api/quizzes/load-quiz?quiz_id=...`, which joins the `quizzes` table (`title`, `description`, `pass_threshold`, `pool_size`) with its `quiz_questions` rows (FK'd on `quiz_id`, `on delete cascade`), and returns `{ quizData, loadStatus, usingDefaults }` where `quizData` is `{ title, description, passThreshold, poolSize, questions }`.
+- Unlike `useModules`, there's no per-field merge: a successful, non-empty load (a `quizzes` row that also has at least one `quiz_questions` row) is used **entirely** as-is.
+	Anything else — no matching `quizzes` row, a `quizzes` row with zero questions, a Supabase error, or a network failure — falls back to `defaults` **entirely**, never a mix of live and fallback fields within the same quiz.
+	`usingDefaults` is `true` in exactly those fallback cases, `false` on a verified live load with at least one question.
+- `defaults` is `QUIZ_DEFAULTS` from `lib/questionhazards.ts` — `{ title: QUIZ_TITLE, description: QUIZ_DESCRIPTION, passThreshold: PASS_THRESHOLD, poolSize: POOL_SIZE, questions: questionhazards }` — a module-scope constant, since a fresh object literal on every render would fail the `useEffect` dependency check inside `useQuiz` and re-fire the fetch in a loop.
+- `mapQuestionRow`/`mapQuizRow` (exported from `useQuiz.ts`) do the field-name translation between Supabase's snake_case row shape (`correct_index`, `pass_threshold`, `is_core`, …) and the app's camelCase `QuizQuestion`/`QuizData` shape (`correctIndex`, `passThreshold`, `isCore`, …).
+- **`drawQuizPool(quizData)`** (also exported from `useQuiz.ts`) draws the set of questions presented for one attempt: every question with `isCore: true`, topped up to `poolSize` with a random sample of the rest, with the result shuffled as a whole.
+	`poolSize === null`, or a `poolSize` at or above the bank's total question count, presents every question (shuffled).
+- `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx` both call `useQuiz('hazards', QUIZ_DEFAULTS)` and show a small notice (`.quiz-defaults-notice`/`.quiz-card-notice` in `quizzes.css`) whenever `usingDefaults` is `true`.
+- An in-app editor for quiz content exists at `/quizzes/[quizId]/edit`, admin-only — see "Quiz Content Editor" below and `EDITING_GUIDE.md` for how to use it.
+- `quiz_id` for this quiz is `'hazards'`, matching `QUIZ_SLUG` — deliberately, since `user_quiz_progress`/the leaderboard routes use an independently-hardcoded, differently-spelled `quiz_id` (`"hydrogen-hazards"`); see `BUG_REPORT.md`.
+	`quizzes`/`quiz_questions` are not affected by that mismatch, since both are keyed by `QUIZ_SLUG` directly.
+
+### Quiz Content Editor
+
+`/quizzes/[quizId]/edit` (`app/quizzes/[quizId]/edit/page.tsx`) is an admin-only editor for a quiz's metadata and question bank, gated the same way as `/admin/users` — it checks `isAdmin` directly and redirects anyone who fails that check to `/dashboard`.
+
+Unlike the lab and module reader pages, this editor is a separate page rather than an in-place edit mode on the quiz itself — there's no toggle switch, since navigating to the page is itself the edit mode.
+	This is deliberate: the attempt page shuffles question and option order per attempt, and the editor needs to work against the underlying, unshuffled question list rather than whatever order a given attempt happened to render in.
+	The entry point is a small ✏️ Edit tab attached to the bottom edge of a quiz's card on `/quizzes`, shown only when `permissions.canManageUsers` is true.
+
+**State (`hooks/useQuizEditor.ts`):** takes the `quizId`, the live `item` from `useQuiz`, and an optional `fallback` (the matching bundled `QUIZ_DEFAULTS`, looked up via a `quiz_id`-keyed map in the page component).
+	It holds a `draft` copy of the quiz, seeded from `item`.
+- There's no `editMode` flag to gate on, unlike `useModuleEditor` — a `hasEditedRef`/`hasUnsavedChanges` pair tracks whether the draft has actually been touched instead, serving the same purpose `editModeRef` serves in the module editor:
+	a background refresh of `item` (e.g. the initial live fetch resolving) only overwrites `draft` while nothing's been edited yet.
+- Switching `quizId` clears that touched flag and re-seeds the draft — relevant once a second quiz exists, since the dynamic `[quizId]` route reuses the same page component instance across different quiz ids.
+- **`resetToDefaults`** replaces the whole draft with `fallback`, the same semantics as the module editor's Reset to Defaults.
+	Disabled (`canReset: false`) when no `fallback` is supplied — currently only the `hazards` quiz has bundled defaults wired into the lookup map.
+- **Validation:** every question needs at least 2 options and a `correctIndex` pointing at one of them (`hasInvalidQuestion`/`invalidQuestionIndex`);
+	`poolSize`, if set, must be at least 1, at least equal to the number of questions marked `isCore` (`coreCount`), and no more than the total question count (`hasInvalidPoolSize`/`poolSizeError`).
+	Both checks happen client-side (disabling Save via `SaveBar`'s `saveDisabled`/`saveDisabledReason` props) and again inside `saveToSupabase` itself before any request is sent, and once more server-side in the API route below.
+- Deleting an option keeps `correctIndex` pointing at the same answer where possible: it shifts down if a preceding option was removed, or resets to `0` if the correct option itself was the one deleted.
+- New questions are numbered via `nextQuestionId` — the first id not currently in use, mirroring `useHazards.ts`'s hazard-type generation, so deleting question 2 and adding a new one reuses id 2 rather than continuing past the current highest id.
+
+**Editable fields (`app/quizzes/[quizId]/edit/page.tsx`):** `title`, `description`, `passThreshold`, and `poolSize` (blank/null = use every question) are free-text/number fields.
+	Questions can be added, deleted, and reordered (↑/↓); each question's `question` text, `options` (add/delete), correct answer (radio selection), `explanation`, and `isCore` (checkbox) are editable once selected from the question list.
+
+**Saving:** `POST /api/quizzes/save-quiz` (`requireAdmin`-gated) takes `{ quizId, quiz, questions }` and:
+1. Validates that `quiz.poolSize`, if provided, is a positive integer no smaller than the number of questions with `isCore: true`, rejecting the request with a 400 otherwise.
+2. Upserts the `quizzes` row (`onConflict: 'quiz_id'`), writing `title`, `description`, `pass_threshold`, and `pool_size` — `sort_order` is deliberately left untouched, the same reasoning `save-module` applies to a module's own `sort_order`.
+3. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement — including each question's `is_core` value.
+
+This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (see `supabase_setup.sql`) is required for both operations above, independent of which DML statement each performs — PostgREST constructs its response (matched-row data, counts) via a read-back that needs `select` privilege regardless of whether the underlying call is an upsert, insert, update, or delete.
+
+**Unsaved-changes protection:** the editor warns before an admin navigates away with an edit in progress, via three independent guards: a `beforeunload` handler (tab close/refresh), a capture-phase `click` listener on `document` that intercepts any in-app link click — including the navigation bar, since it's rendered into the same document via `layout.tsx` — while `hasUnsavedChanges` is true, and the page's own "Back to Quizzes" link going through that same listener.
+	This doesn't cover the navigation bar's Logout button (a plain `<button>`, not a link, so the click listener has nothing to intercept) or the browser's own Back/Forward buttons.
+
 ### Quizzes hub (`/quizzes`)
 
 A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
 
 ### Taking a quiz (`/quizzes/hazards`)
 
-- **Randomisation:** both question order and each question's option order are shuffled (Fisher–Yates) on load and on retry, with `correctIndex` remapped to follow its option.
+- **Randomisation:** the set of questions presented for an attempt is drawn via `drawQuizPool` — every `isCore` question plus a random sample of the rest, up to the quiz's `poolSize` (or the full bank if `poolSize` is null).
+	Both question order and each question's option order are then shuffled (Fisher–Yates method) on load and on retry, with `correctIndex` remapped to follow its option.
+	A retry draws a fresh pool rather than reshuffling the same one.
 - **Answering:** all questions must be answered before submitting (`answers.some(a => a === null)` blocks submit with an inline error).
-- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`; `passed = percentage >= PASS_THRESHOLD`.
+- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`, where `quiz` is the pool drawn for that attempt — the denominator is the number of questions actually presented, not the full bank; `passed = percentage >= PASS_THRESHOLD`.
 - **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token.
 - **After submitting:** each question re-renders showing correct/incorrect/your-answer state and an explanation for anything missed.
 	A Retry Quiz button (on fail) reshuffles and resets everything, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `handleSubmit` call reaches the server.
@@ -237,6 +294,22 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 
 **The certificate itself** is drawn client-side onto an HTML `<canvas>` (`drawCertificate()` in `app/certificate/page.tsx`) — title, "Certificate of Achievement", the learner's Firebase `displayName` or `email`, `QUIZ_TITLE`, score, and a formatted date — and downloaded as a PNG via `canvas.toDataURL('image/png')`.
 	There's no server-generated file and no PDF; "printable certificate" (per the About page's copy) means printing this downloaded PNG yourself, not an in-app print/PDF flow.
+
+---
+
+## Feedback
+
+`/feedback` (`app/feedback/page.tsx`, styled by `feedback.css`) is a form for submitting a 1–5 star rating, a category (one of a fixed six-item list — `Training Modules`, `Scenarios / Simulations`, `Quizzes`, `Website / Navigation`, `Technical Issue`, `Other`, duplicated as `VALID_CATEGORIES` in the route below), and a free-text message (up to 5000 characters).
+	All three fields are required before the Submit button enables.
+
+**Submitting** — `POST /api/feedback` (`requireUser`-gated) validates the rating (integer 1–5), category (must be one of `VALID_CATEGORIES`), and message (non-empty, ≤5000 characters after trimming), looks up the caller's `email` from their `profiles` row, then inserts `{ user_id, email, rating, category, message }` into the `feedback` table.
+	A successful submission swaps the form for a thank-you panel linking back to `/dashboard`.
+
+**Reading submissions** — `GET /api/admin/feedback` (`requireAdmin`-gated) returns every row from `feedback`, ordered by `created_at` descending.
+	No admin-facing page currently calls this route — see `BUG_REPORT.md`.
+
+Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` doesn't redirect unauthenticated visitors to `/login` — it renders for anyone, and only blocks at submit time (an inline error, not a redirect) if there's no signed-in user.
+	See "Auth redirect pattern" above and `BUG_REPORT.md`.
 
 ---
 
