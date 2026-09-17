@@ -61,11 +61,8 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 		prevId: row.prev_id ?? undefined,
 		nextId: row.next_id ?? undefined,
 		videoUrl: row.video_url ?? fallback?.videoUrl ?? null,
-		videoType:
-    		row.video_type === "youtube" ||
-   			row.video_type === "mp4"
-        		? row.video_type
-        		: null,
+		videoType: row.video_type === "youtube" || row.video_type === "mp4"
+        	? row.video_type : (fallback?.videoType ?? null),
 		status: fallback?.status ?? 'todo',
 		progress: fallback?.progress ?? 0,
 	};

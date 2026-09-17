@@ -12,9 +12,7 @@ export const hazardModules: ModuleData[] = [
 		icon: '💨',
 		iconBg: 'rgba(0,180,216,0.15)',
 		title: 'Gas Leak Detection',
-		description:
-			'Understand how hydrogen leaks occur, why they are dangerous, and how to detect and respond to them safely.',
-		videoUrl: 'https://www.youtube.com/watch?v=m-vS2y5nERk',
+		description: 'Understand how hydrogen leaks occur, why they are dangerous, and how to detect and respond to them safely.',
 		status: 'todo',
 		progress: 0,
 		sections: [
@@ -75,9 +73,10 @@ export const hazardModules: ModuleData[] = [
 				],
 			},
 		],
-		keyTakeaway:
-			'Hydrogen leaks are difficult to detect but can quickly become dangerous if ignored. Understanding the warning signs, using proper detection systems, and responding safely are essential for maintaining a safe hydrogen laboratory environment.',
+		keyTakeaway: 'Hydrogen leaks are difficult to detect but can quickly become dangerous if ignored. Understanding the warning signs, using proper detection systems, and responding safely are essential for maintaining a safe hydrogen laboratory environment.',
 		nextId: '2',
+		videoUrl: 'https://www.youtube.com/watch?v=m-vS2y5nERk',
+		videoType: 'youtube',
 	},
 	{
 		id: '2',
@@ -86,8 +85,7 @@ export const hazardModules: ModuleData[] = [
 		icon: '🌬️',
 		iconBg: 'rgba(0,229,160,0.12)',
 		title: 'Ventilation System',
-		description:
-			'Learn how ventilation systems protect against hydrogen accumulation and what to do when they fail.',
+		description: 'Learn how ventilation systems protect against hydrogen accumulation and what to do when they fail.',
 		status: 'todo',
 		progress: 0,
 		sections: [
@@ -151,8 +149,7 @@ export const hazardModules: ModuleData[] = [
 				],
 			},
 		],
-		keyTakeaway:
-			'Ventilation systems are essential in hydrogen laboratories because they help prevent dangerous gas accumulation. Maintaining proper airflow, using ventilation equipment correctly, and responding quickly to ventilation issues are critical parts of hydrogen safety.',
+		keyTakeaway: 'Ventilation systems are essential in hydrogen laboratories because they help prevent dangerous gas accumulation. Maintaining proper airflow, using ventilation equipment correctly, and responding quickly to ventilation issues are critical parts of hydrogen safety.',
 		prevId: '1',
 		nextId: '3',
 	},
@@ -163,8 +160,7 @@ export const hazardModules: ModuleData[] = [
 		icon: '🔧',
 		iconBg: 'rgba(255,190,80,0.12)',
 		title: 'Equipment & Leak Points',
-		description:
-			'Identify common leak points in hydrogen equipment — valves, regulators, tubing and connectors — and how to inspect them.',
+		description: 'Identify common leak points in hydrogen equipment — valves, regulators, tubing and connectors — and how to inspect them.',
 		status: 'todo',
 		progress: 0,
 		sections: [
@@ -235,8 +231,7 @@ export const hazardModules: ModuleData[] = [
 				callout: 'Proper maintenance is one of the most important parts of hydrogen safety.',
 			},
 		],
-		keyTakeaway:
-			'Equipment failures and leaks often begin at small connection points such as valves, fittings, or tubing. Regular inspection, proper maintenance, and early detection are essential to prevent hydrogen leaks and maintain a safe laboratory environment.',
+		keyTakeaway: 'Equipment failures and leaks often begin at small connection points such as valves, fittings, or tubing. Regular inspection, proper maintenance, and early detection are essential to prevent hydrogen leaks and maintain a safe laboratory environment.',
 		prevId: '2',
 		nextId: '4',
 	},
@@ -247,8 +242,7 @@ export const hazardModules: ModuleData[] = [
 		icon: '🧪',
 		iconBg: 'rgba(255,107,107,0.12)',
 		title: 'Chemical Storage',
-		description:
-			'Explore safe chemical storage practices in hydrogen labs, including labelling, separation of incompatibles, and ventilation.',
+		description: 'Explore safe chemical storage practices in hydrogen labs, including labelling, separation of incompatibles, and ventilation.',
 		status: 'todo',
 		progress: 0,
 		sections: [
@@ -318,8 +312,7 @@ export const hazardModules: ModuleData[] = [
 				],
 			},
 		],
-		keyTakeaway:
-			'Proper chemical storage is essential for maintaining safety in hydrogen laboratories. Organised storage, correct labelling, good ventilation, and regular inspections help reduce the risk of leaks, fires, and hazardous reactions.',
+		keyTakeaway: 'Proper chemical storage is essential for maintaining safety in hydrogen laboratories. Organised storage, correct labelling, good ventilation, and regular inspections help reduce the risk of leaks, fires, and hazardous reactions.',
 		prevId: '3',
 		nextId: '5',
 	},
@@ -330,8 +323,7 @@ export const hazardModules: ModuleData[] = [
 		icon: '🧯',
 		iconBg: 'rgba(180,100,255,0.12)',
 		title: 'Gas Cylinder Storage',
-		description:
-			'Understand how to safely store and handle high-pressure hydrogen gas cylinders, including securing, capping, and inspection.',
+		description: 'Understand how to safely store and handle high-pressure hydrogen gas cylinders, including securing, capping, and inspection.',
 		status: 'todo',
 		progress: 0,
 		sections: [
@@ -398,8 +390,7 @@ export const hazardModules: ModuleData[] = [
 				],
 			},
 		],
-		keyTakeaway:
-			'Hydrogen gas cylinders contain large amounts of stored energy and must be handled and stored carefully. Proper securing, ventilation, regular inspection, and safe storage practices are essential to prevent leaks, fires, and serious accidents in laboratory environments.',
+		keyTakeaway: 'Hydrogen gas cylinders contain large amounts of stored energy and must be handled and stored carefully. Proper securing, ventilation, regular inspection, and safe storage practices are essential to prevent leaks, fires, and serious accidents in laboratory environments.',
 		prevId: '4',
 	},
 ];

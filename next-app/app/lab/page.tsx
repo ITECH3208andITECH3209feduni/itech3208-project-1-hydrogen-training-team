@@ -45,6 +45,16 @@ export default function LabPage() {
 		saveToSupabase,
 		resetDefaults,
 		liveHazardData,
+		videoDraftType,
+		videoDraftYoutubeUrl,
+		videoDraftFile,
+		videoSaving,
+		changeVideoDraftType,
+		changeVideoDraftYoutubeUrl,
+		selectVideoDraftFile,
+		saveHotspotYoutubeVideo,
+		uploadHotspotMp4Video,
+		removeHotspotVideo,
 	} = useHazards(containerRef);
 
 	const moduleOptions = useModuleOptions();
@@ -178,6 +188,16 @@ export default function LabPage() {
 					onAdd={addHotspot}
 					onDelete={deleteHotspot}
 					onUploadImage={uploadImage}
+					videoType={videoDraftType}
+					youtubeUrl={videoDraftYoutubeUrl}
+					selectedVideoFile={videoDraftFile}
+					videoSaving={videoSaving}
+					onChangeVideoType={changeVideoDraftType}
+					onChangeYoutubeUrl={changeVideoDraftYoutubeUrl}
+					onSelectVideoFile={selectVideoDraftFile}
+					onSaveYoutubeVideo={saveHotspotYoutubeVideo}
+					onUploadMp4Video={uploadHotspotMp4Video}
+					onRemoveVideo={removeHotspotVideo}
 				/>
 			)}
 			

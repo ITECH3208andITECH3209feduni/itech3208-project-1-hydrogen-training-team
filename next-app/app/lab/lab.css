@@ -355,6 +355,26 @@
 	background: #ffffff;
 }
 
+/* ─── Embedded video — override to account for the popup's light background ────────── */
+.popup-content .module-video-heading h2,
+.popup-content .module-video-launcher-text strong {
+	color: #555;
+}
+
+.popup-content .module-video-launcher-text span {
+	color: #666;
+}
+
+.popup-content .module-video-launcher {
+	border-color: rgba(0,119,168,0.55);
+	background: linear-gradient(135deg, rgba(0,119,168,0.3), rgba(0,180,216,0.2));
+}
+
+.popup-content .module-video-launcher:hover {
+	border-color: var(--teal-dark);
+	background: linear-gradient(135deg, rgba(0,119,168,0.37), rgba(0,180,216,0.27));
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
 	.hotspot                                       { width: 28px; height: 28px; }

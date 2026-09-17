@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { HazardInfo } from "@/lib/hazards";
+import ModuleVideo from "@/components/ModuleVideo";
 
 interface HazardPopupProps {
     info: HazardInfo;
@@ -37,9 +38,14 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 				<button className="close-btn" onClick={onClose} aria-label="Close">
 					×
 				</button>
+				
 				{/* Title & Text */}
 				<h2 id="popup-title">{info.title}</h2>
 				<p id="popup-text">{info.text}</p>
+				
+				{/* Embedded Video */}
+				<ModuleVideo videoUrl={info.videoUrl} videoType={info.videoType} />
+
 				{/* Learn More button (only renders if connected to a module) */}
 				{info.moduleSection && info.moduleId && (
 					<Link

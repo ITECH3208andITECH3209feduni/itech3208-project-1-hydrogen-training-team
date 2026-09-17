@@ -6,6 +6,7 @@ import { EditableHotspot, UploadStatus } from '@/hooks/useHazards';
 import { ModuleSectionOptions } from '@/hooks/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
+import VideoEditorPanel from '@/components/VideoEditorPanel';
 
 interface HotspotEditorProps {
 	hotspots:           EditableHotspot[];
@@ -13,12 +14,24 @@ interface HotspotEditorProps {
 	uploadStatus:       UploadStatus;
 	moduleOptions:      ModuleSectionOptions[];
 	onSelect:           (index: number) => void;
-	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string) => void;
+	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string | null) => void;
 	onUpdatePosition:   (index: number, field: 'top' | 'left', value: string) => void;
 	onUpdateModuleLink: (index: number, moduleSection: string | null, moduleId: string | null) => void;
 	onAdd:              () => void;
 	onDelete:           (index: number) => void;
 	onUploadImage:      (file: File) => void;
+
+	// Video controls for the currently-select hotspot
+	videoType:          'youtube' | 'mp4';
+	youtubeUrl:         string;
+	selectedVideoFile:  File | null;
+	videoSaving:        boolean;
+	onChangeVideoType:  (type: 'youtube' | 'mp4') => void;
+	onChangeYoutubeUrl: (url: string) => void;
+	onSelectVideoFile:  (file: File | null) => void;
+	onSaveYoutubeVideo: () => void;
+	onUploadMp4Video:   () => void;
+	onRemoveVideo:      () => void;
 }
 
 export default function HotspotEditor({
@@ -33,6 +46,16 @@ export default function HotspotEditor({
 	onAdd,
 	onDelete,
 	onUploadImage,
+	videoType,
+	youtubeUrl,
+	selectedVideoFile,
+	videoSaving,
+	onChangeVideoType,
+	onChangeYoutubeUrl,
+	onSelectVideoFile,
+	onSaveYoutubeVideo,
+	onUploadMp4Video,
+	onRemoveVideo,
 }: HotspotEditorProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	
@@ -225,9 +248,27 @@ export default function HotspotEditor({
 									</p>
 								</div>
 
-								<p className="drag-hint">
-									💡 Drag the hotspot on the image to reposition — values above update automatically.
-								</p>
+								{/* Embedded Video */}
+								<div>
+									<label style={labelStyle}>Hotspot Video</label>
+									<VideoEditorPanel
+										currentVideoUrl={hotspots[selected].info.videoUrl}
+										currentVideoType={hotspots[selected].info.videoType}
+										videoType={videoType}
+										youtubeUrl={youtubeUrl}
+										selectedVideoFile={selectedVideoFile}
+										videoSaving={videoSaving}
+										onChangeVideoType={onChangeVideoType}
+										onChangeYoutubeUrl={onChangeYoutubeUrl}
+										onSelectVideoFile={onSelectVideoFile}
+										onSaveYoutubeVideo={onSaveYoutubeVideo}
+										onUploadMp4Video={onUploadMp4Video}
+										onRemoveVideo={onRemoveVideo}
+										noVideoMessage="Shown under this hazard's description in its popup."
+									/>
+								</div>
+
+								<p className="drag-hint">💡 Drag the hotspot on the image to reposition — values above update automatically.</p>
 							</div>
 						)}
 					</div>

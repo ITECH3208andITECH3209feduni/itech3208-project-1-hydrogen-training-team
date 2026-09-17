@@ -1,11 +1,25 @@
 // hooks/useHazards.test.ts
 // Unit & Integration tests for functions in useHazards.ts & related API calls
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { buildDefaultHotspots, clamp, generateType, useHazards } from './useHazards';
 import { server } from '../mocks/server';
 import { http, HttpResponse } from 'msw';
+import { File } from 'node:buffer';
+
+// Create mock user (defaults as logged-in — video saves require an authenticated admin)
+const { mockUseAuth } = vi.hoisted(() => ({ mockUseAuth: vi.fn() }));
+
+vi.mock('@/context/AuthContext', () => ({
+	useAuth: mockUseAuth,
+}));
+
+const fakeUser = { getIdToken: vi.fn().mockResolvedValue('fake-token') };
+
+beforeEach(() => {
+	mockUseAuth.mockReturnValue({ user: fakeUser, loading: false });
+});
 
 // ─── Unit Tests (test purely internal functions) ───────────────
 
@@ -218,12 +232,85 @@ describe('7. toggleEditMode', () => {
   });
 });
 
+// 8. Test video draft state syncing with the selected hotspot
+describe('8. video draft sync', () => {
+  it('8.1 loads the selected hotspot\'s persisted video into the draft', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.addHotspot(); });
+    const index = result.current.hotspots.length - 1;
+    act(() => { result.current.updateInfo(index, 'videoUrl', 'https://www.youtube.com/watch?v=abc123'); });
+    act(() => { result.current.updateInfo(index, 'videoType', 'youtube'); });
+
+    act(() => { result.current.setSelected(index); });
+
+    expect(result.current.videoDraftType).toBe('youtube');
+    expect(result.current.videoDraftYoutubeUrl).toBe('https://www.youtube.com/watch?v=abc123');
+    expect(result.current.videoDraftFile).toBeNull();
+  });
+
+  it('8.2 defaults to an empty YouTube draft for a hotspot with no video', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.setSelected(0); });
+
+    expect(result.current.videoDraftType).toBe('youtube');
+    expect(result.current.videoDraftYoutubeUrl).toBe('');
+  });
+
+  it('8.3 resets the draft file when switching to a different hotspot', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    act(() => { result.current.setSelected(0); });
+    const fakeFile = new File(['x'], 'test.mp4', { type: 'video/mp4' });
+    act(() => { result.current.selectVideoDraftFile(fakeFile); });
+    expect(result.current.videoDraftFile).toBe(fakeFile);
+
+    act(() => { result.current.addHotspot(); });
+    const newIndex = result.current.hotspots.length - 1;
+    act(() => { result.current.setSelected(newIndex); });
+
+    expect(result.current.videoDraftFile).toBeNull();
+  });
+});
+
+// 9. Test selectVideoDraftFile
+describe('9. selectVideoDraftFile', () => {
+  it('9.1 accepts a file under the 50MB limit', () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    const smallFile = new File(['x'.repeat(10)], 'small.mp4', { type: 'video/mp4' });
+    act(() => { result.current.selectVideoDraftFile(smallFile); });
+
+    expect(result.current.videoDraftFile).toBe(smallFile);
+  });
+
+  it('9.2 rejects a file over the 50MB limit and alerts', () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    const bigFile = new File(['x'], 'big.mp4', { type: 'video/mp4' });
+    Object.defineProperty(bigFile, 'size', { value: 51 * 1024 * 1024 });
+
+    act(() => { result.current.selectVideoDraftFile(bigFile); });
+
+    expect(result.current.videoDraftFile).toBeNull();
+    expect(alertSpy).toHaveBeenCalledWith('MP4 videos must be smaller than 50MB.');
+    alertSpy.mockRestore();
+  });
+});
+
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 8. Test load-hazards API call
-describe('8. load-hazards', () => {
+// 10. Test load-hazards API call
+describe('10. load-hazards', () => {
   // Test if loads successfully
-  it('8.1 maps response into hotspots, including moduleId from defaults', async () => {
+  it('10.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -243,10 +330,12 @@ describe('8. load-hazards', () => {
     expect(loadedHotspot.info.text).toBe('Loaded description text.');
     expect(loadedHotspot.info.moduleId).toBe('1');
     expect(loadedHotspot.info.moduleSection).toBe('hazard-modules');
+    expect(loadedHotspot.info.videoUrl).toBeNull();
+    expect(loadedHotspot.info.videoType).toBeNull();
   });
   
   // Test if uses default info when API returns empty
-  it('8.2 falls back to defaults when API returns empty', async () => {
+  it('10.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
@@ -262,7 +351,7 @@ describe('8. load-hazards', () => {
   });
   
   // Test if uses default info when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('8.3 falls back to defaults when API responds with an error', async () => {
+  it('10.3 falls back to defaults when API responds with an error', async () => {
     // Replace console error with a fake (avoids clutter)
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -282,7 +371,7 @@ describe('8. load-hazards', () => {
   });
 
   // Test if uses default info when API call fails (internet failure, server crash, etc.)
-  it('8.4 falls back to defaults on a network failure', async () => {
+  it('10.4 falls back to defaults on a network failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
@@ -299,7 +388,7 @@ describe('8. load-hazards', () => {
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
-  it('8.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+  it('10.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/load-hazards', () => HttpResponse.json({
         ok: true,
@@ -312,6 +401,8 @@ describe('8. load-hazards', () => {
             text: 'No module linked to this one.',
             module_section: null,
             module_id: null,
+            video_url: null,
+            video_type: null,
           },
         ],
       }))
@@ -328,10 +419,10 @@ describe('8. load-hazards', () => {
   });
 });
 
-// 9. Test load-image API call
-describe('9. load-image', () => {
+// 11. Test load-image API call
+describe('11. load-image', () => {
   // Test if loads successfully and sets imageUrl state
-  it('9.1 sets imageUrl from API when available', async () => {
+  it('11.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
     
@@ -339,7 +430,7 @@ describe('9. load-image', () => {
   });
 
   // Test if uses default when API returns empty
-  it('9.2 keeps the default image when no image exists in the API', async () => {
+  it('11.2 keeps the default image when no image exists in the API', async () => {
     server.use(http.get('/api/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
@@ -351,7 +442,7 @@ describe('9. load-image', () => {
   });
 
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('9.3 keeps the default image when API responds with an error', async () => {
+  it('11.3 keeps the default image when API responds with an error', async () => {
     server.use(
       http.get('/api/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
@@ -364,10 +455,10 @@ describe('9. load-image', () => {
   });
 });
 
-// 10. Test save-hazards API call
-describe('10. save-hazards', () => {
+// 12. Test save-hazards API call
+describe('12. save-hazards', () => {
   // Test a successful save
-  it('10.1 sets saveStatus to saved on a successful save', async () => {
+  it('12.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -378,7 +469,7 @@ describe('10. save-hazards', () => {
   });
 
   // Test a failed save
-  it('10.2 sets saveStatus to error if the save request fails', async () => {
+  it('12.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
       http.post('/api/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
@@ -392,7 +483,7 @@ describe('10. save-hazards', () => {
   });
 
   // Test if all fields are sent to the API (hotspots + hazardData)
-  it('10.3 sends the full hotspots + hazardData payload', async () => {
+  it('12.3 sends the full hotspots + hazardData payload', async () => {
     let capturedBody: any = null;
     server.use(
       http.post('/api/save-hazards', async ({ request }) => {
@@ -420,11 +511,13 @@ describe('10. save-hazards', () => {
       text: 'Loaded description text.',
       moduleId: '1',
       moduleSection: 'hazard-modules',
+      videoUrl: null,
+      videoType: null,
     });
   });
 
   // Test if guards against saving when a hotspot has an invalid module link
-  it('10.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
+  it('12.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
       http.post('/api/save-hazards', () => {
@@ -449,7 +542,7 @@ describe('10. save-hazards', () => {
   });
   
   // Test if a save proceeds normally once the link is fixed back to a valid state
-  it('10.5 proceeds with the save once the module link is valid again', async () => {
+  it('12.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
       http.post('/api/save-hazards', () => {
@@ -476,10 +569,10 @@ describe('10. save-hazards', () => {
   });
 });
 
-// 11. Test upload-image API call
-describe('11. upload-image', () => {
+// 13. Test upload-image API call
+describe('13. upload-image', () => {
   // Test a successful upload
-  it('11.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
+  it('13.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -495,7 +588,7 @@ describe('11. upload-image', () => {
   });
 
   // Test a failed upload
-  it('11.2 sets uploadStatus to error if the upload fails', async () => {
+  it('13.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
       http.post('/api/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
@@ -507,5 +600,182 @@ describe('11. upload-image', () => {
 
     await act(async () => { await result.current.uploadImage(fakeFile); });
     expect(result.current.uploadStatus).toBe('error');
+  });
+});
+
+// 14. Test saveHotspotYoutubeVideo API call
+describe('14. saveHotspotYoutubeVideo', () => {
+  it('14.1 saves the draft YouTube URL and updates the hotspot\'s info', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+    act(() => { result.current.changeVideoDraftYoutubeUrl('https://www.youtube.com/watch?v=xyz'); });
+
+    await act(async () => { await result.current.saveHotspotYoutubeVideo(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBe('https://www.youtube.com/watch?v=xyz');
+    expect(result.current.hotspots[0].info.videoType).toBe('youtube');
+  });
+
+  it('14.2 does nothing when there is no signed-in user', async () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: false });
+    let called = false;
+    server.use(
+      http.put('/api/lab/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+    act(() => { result.current.changeVideoDraftYoutubeUrl('https://www.youtube.com/watch?v=xyz'); });
+
+    await act(async () => { await result.current.saveHotspotYoutubeVideo(); });
+
+    expect(called).toBe(false);
+  });
+
+  it('14.3 alerts and leaves the hotspot unchanged on a failed save', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    server.use(
+      http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Invalid URL' }, { status: 400 }))
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+    act(() => { result.current.changeVideoDraftYoutubeUrl('not a real url'); });
+
+    await act(async () => { await result.current.saveHotspotYoutubeVideo(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBeNull();
+    expect(alertSpy).toHaveBeenCalledWith('Invalid URL');
+    alertSpy.mockRestore();
+  });
+});
+
+// 15. Test uploadHotspotMp4Video API call
+describe('15. uploadHotspotMp4Video', () => {
+  it('15.1 uploads the draft file, updates the hotspot\'s info, and clears the draft file', async () => {
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+
+    const fakeFile = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    act(() => { result.current.selectVideoDraftFile(fakeFile); });
+
+    await act(async () => { await result.current.uploadHotspotMp4Video(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBe('/uploads/mock-video.mp4');
+    expect(result.current.hotspots[0].info.videoType).toBe('mp4');
+    expect(result.current.videoDraftFile).toBeNull();
+  });
+
+  it('15.2 alerts and leaves the hotspot unchanged on a failed upload', async () => {
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    server.use(
+      http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Upload failed' }, { status: 500 }))
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+
+    const fakeFile = new File(['fake video content'], 'test.mp4', { type: 'video/mp4' });
+    act(() => { result.current.selectVideoDraftFile(fakeFile); });
+
+    await act(async () => { await result.current.uploadHotspotMp4Video(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBeNull();
+    expect(alertSpy).toHaveBeenCalledWith('Upload failed');
+    alertSpy.mockRestore();
+  });
+});
+
+// 16. Test removeHotspotVideo API call
+describe('16. removeHotspotVideo', () => {
+  it('16.1 clears the hotspot\'s video after confirming', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    server.use(
+      http.get('/api/load-hazards', () => HttpResponse.json({
+        ok: true,
+        data: [{
+          type: 'gas', top: '20.0%', left: '30.0%',
+          title: 'Loaded Title', text: 'Loaded description text.',
+          module_section: 'hazard-modules', module_id: '1',
+          video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
+        }],
+      }))
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+    expect(result.current.hotspots[0].info.videoUrl).not.toBeNull();
+
+    await act(async () => { await result.current.removeHotspotVideo(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBeNull();
+    expect(result.current.hotspots[0].info.videoType).toBeNull();
+    vi.restoreAllMocks();
+  });
+
+  it('16.2 does nothing if the confirmation is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    let called = false;
+    server.use(
+      http.delete('/api/lab/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+
+    await act(async () => { await result.current.removeHotspotVideo(); });
+
+    expect(called).toBe(false);
+    vi.restoreAllMocks();
+  });
+
+  it('16.3 alerts and leaves the hotspot unchanged on a failed removal', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    server.use(
+      http.get('/api/load-hazards', () => HttpResponse.json({
+        ok: true,
+        data: [{
+          type: 'gas', top: '20.0%', left: '30.0%',
+          title: 'Loaded Title', text: 'Loaded description text.',
+          module_section: 'hazard-modules', module_id: '1',
+          video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
+        }],
+      })),
+      http.delete('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Removal failed' }, { status: 500 }))
+    );
+
+    const ref = createRef<HTMLDivElement>();
+    const { result } = renderHook(() => useHazards(ref));
+
+    await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+    act(() => { result.current.setSelected(0); });
+
+    await act(async () => { await result.current.removeHotspotVideo(); });
+
+    expect(result.current.hotspots[0].info.videoUrl).toBe('https://www.youtube.com/watch?v=abc');
+    expect(alertSpy).toHaveBeenCalledWith('Removal failed');
+    vi.restoreAllMocks();
   });
 });

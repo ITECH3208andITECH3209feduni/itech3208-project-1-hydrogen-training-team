@@ -76,14 +76,14 @@ hydrogen-lab/
 │   │   ├── page.tsx					# Interactive hydrogen lab (/lab)
 │   │   ├── lab.css						# Lab-specific styles
 │   │   └── components/
-│   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, lab image and linked module
-│   │       └── HazardPopup.tsx			# Modal popup for hazard info
+│   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, embedded video, lab image and linked module
+│   │       └── HazardPopup.tsx			# Modal popup for hazard info (+ embedded video & learn more link, if set)
 │   ├── modules/
 │   │   ├── modules.css					# Shared styles for every section under app/modules/
 │   │   ├── components/
 │   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
 │   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — progress tracking & in-app editing
-│   │   │   ├── ModuleEditor.tsx		# Edit panel for a module's fields and sections, rendered by ModuleReaderPage
+│   │   │   ├── ModuleEditor.tsx		# Edit panel for a module's fields, sections and embedded video, rendered by ModuleReaderPage
 │   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every section)
 │   │   │   ├── ModuleCard.css			# Styles for ModuleCard, shared with AdminModuleCard (app/admin/users/components/)
 │   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page — body supports embedded HTML
@@ -127,10 +127,18 @@ hydrogen-lab/
 │       ├── load-module-options/
 │       │   └── route.ts				# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
 │       ├── modules/
+│       │   ├── video/
+│       │   │   └── route.ts			# PUT/DELETE — sets, replaces, or removes a module's embedded video (`requireAdmin`-gated); backs the reader-page editor's Video panel
 │       │   ├── progress/
 │       │   │   └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress` and `useModules`' listing-card progress
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
+│       ├── lab/
+│       │   └── video/
+│       │       └── route.ts			# PUT/DELETE — sets, replaces, or removes a hotspot's embedded video (`requireAdmin`-gated); backs the hotspot editor's Video panel
+│       ├── hazards/
+│       │   └── progress/
+│       │       └── route.ts			# GET/POST — per-user hotspot-click progress for `/lab` (`requireUser`-gated)
 │       ├── admin/
 │       │   ├── users/
 │       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
@@ -160,11 +168,13 @@ hydrogen-lab/
 │   ├── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
 │   ├── EditModeToggle.tsx				# Toggle switch to enter/exit edit mode; expands into the banner text when on.
 │   ├── SaveBar.tsx						# Reset and save buttons for an in-app editor;
+│   ├── ModuleVideo.tsx					# Embedded-video launcher card + modal player (YouTube iframe or mp4), shared by module reader pages and the lab hotspot popup
+│   ├── VideoEditorPanel.tsx			# Shared video-editing fields (type toggle, YouTube URL, mp4 upload, remove), used by ModuleEditor.tsx and HotspotEditor.tsx
 │   └── editorStyles.ts					# Shared inline style objects (labels, inputs, buttons) used by in-app editors
 ├── context/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
-│   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload
+│   ├── useHazards.ts					# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
 │   ├── useHazards.test.ts				# Unit + integration tests for useHazards.ts
 │   ├── useModules.ts					# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ section
 │   ├── useModules.test.ts				# Unit + integration tests for useModules.ts
@@ -181,7 +191,9 @@ hydrogen-lab/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
 ├── lib/
-│   ├── hazards.ts						# Default hazard data + hotspot positions + module link (fallback)
+│   ├── hazards.ts						# Default hazard data + hotspot positions + module link + embedded video (fallback)
+│   ├── video.ts						# Shared video helpers (YouTube URL parsing, Storage path parsing, mp4 validation, 50MB size limit) — used by the modules and lab video routes
+│   ├── video.test.ts					# Unit tests for lib/video.ts
 │   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
 │   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
 │   ├── guides.ts						# Example second section's data — not linked in nav
@@ -296,10 +308,10 @@ Styles are split across several files to keep page-specific rules isolated:
 
 | File                                      | Scope																						                         |
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `app/globals.css`                         | Reset, design tokens, nav, panel/field-layout helpers, animations, edit-mode toggle and save bar                   |
+| `app/globals.css`                         | Reset, design tokens, nav, panel/field-layout helpers, animations, edit-mode toggle, save bar, embedded-video      |
 | `app/intro.css`                           | Landing page only — hero, quick facts, content sections, CTA                                                       |
 | `app/dashboard/dashboard.css`             | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
-| `app/lab/lab.css`                         | Lab page only — hotspots, popup, hotspot editor                                                                    |
+| `app/lab/lab.css`                         | Lab page only — hotspots, popup (+ embedded-video override), hotspot editor                                        |
 | `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav, editor  |
 | `app/modules/components/ModuleCard.css`   | Shared base styles used by both ModuleCard and AdminModuleCard (found in admin folder)                             |
 | `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
@@ -378,7 +390,7 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), the `lab-images` storage bucket.
+	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
 	It also creates all the Row Level Security policies and grants those tables and the bucket need.
 	(public `anon` read + `service_role` read/write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
 	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)

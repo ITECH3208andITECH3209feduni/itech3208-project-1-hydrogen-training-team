@@ -10,13 +10,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, getModuleById } from "@/lib/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import ModuleVideo from "./ModuleVideo";
+import ModuleVideo from "@/components/ModuleVideo";
 import ModuleEditor from "./ModuleEditor";
 import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { useModuleEditor } from "@/hooks/useModuleEditor";
-
+import { MAX_MP4_BYTES } from "@/lib/video";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
@@ -112,7 +112,7 @@ export default function ModuleReaderPage({
             formData.append("videoType", "youtube");
             formData.append("videoUrl", youtubeUrl.trim());
 
-            const response = await fetch("/api/admin/modules/video", {
+            const response = await fetch("/api/modules/video", {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ export default function ModuleReaderPage({
             formData.append("videoType", "mp4");
             formData.append("file", selectedVideoFile);
 
-            const response = await fetch("/api/admin/modules/video", {
+            const response = await fetch("/api/modules/video", {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -201,7 +201,7 @@ export default function ModuleReaderPage({
 
             const token = await user.getIdToken();
 
-            const response = await fetch("/api/admin/modules/video", {
+            const response = await fetch("/api/modules/video", {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -236,6 +236,15 @@ export default function ModuleReaderPage({
         } finally {
             setVideoSaving(false);
         }
+    };
+
+    // Reject oversized files before they ever reach the upload route
+    const handleSelectVideoFile = (file: File | null) => {
+        if (file && file.size > MAX_MP4_BYTES) {
+            alert("MP4 videos must be smaller than 50MB.");
+            return;
+        }
+        setSelectedVideoFile(file);
     };
 
     useEffect(() => {
@@ -457,7 +466,7 @@ export default function ModuleReaderPage({
                     videoSaving={videoSaving}
                     onChangeVideoType={setVideoType}
                     onChangeYoutubeUrl={setYoutubeUrl}
-                    onSelectVideoFile={setSelectedVideoFile}
+                    onSelectVideoFile={handleSelectVideoFile}
                     onSaveYoutubeVideo={saveYoutubeVideo}
                     onUploadMp4Video={uploadMp4Video}
                     onRemoveVideo={removeModuleVideo}

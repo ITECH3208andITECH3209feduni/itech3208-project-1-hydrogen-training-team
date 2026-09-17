@@ -1,4 +1,7 @@
-﻿"use client";
+﻿// components/Navbar.tsx
+// Universal navigation header that appears on all pages (some may purposfully hide it)
+
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";

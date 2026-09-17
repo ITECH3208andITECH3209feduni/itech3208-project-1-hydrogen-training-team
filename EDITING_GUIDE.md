@@ -21,6 +21,8 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 **Hotspots:**
 - Hotspots turn blue — drag them to reposition.
 - Click a hotspot on the image, or select one from the list, to edit its title and description.
+- Once a hotspot is selected, its **Hotspot Video** field lets you attach a YouTube link or upload an mp4 file (max size 50MB) — shown under the description in its popup.
+	Saving or removing a video takes effect immediately, independently of Save Changes/Reset to Defaults for the rest of the hotspot's fields.
 - Position values update automatically as you drag (clamped to 0–95% on each axis, so a hotspot can't be dragged fully off the image), or can be typed directly.
 - Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image, titled "⚠️ New Hazard" with no linked module, and is auto-selected for editing.
 	Its `type` is auto-generated as `hazard_N`, using the first number not already in use (so deleting `hazard_2` and adding a new hotspot reuses `hazard_2` rather than continuing to `hazard_4`).
@@ -45,6 +47,10 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 
 **Module fields:** title, description, icon, icon background colour, slug, badge number, and the previous/next module IDs are all free-text fields in the "Module Details" panel.
 	The module's `id` itself is shown but can't be changed here, since routes are built from it.
+
+**Video:** each module can have one embedded video, set from the **Video** panel — either a YouTube link or an uploaded mp4 file (max size 50MB).
+	Learners see it as a launcher card that opens in a modal player.
+	Saving or removing a video takes effect immediately, independently of Save Changes/Reset to Defaults for the rest of the module.
 
 **Sections:** the "Sections" panel lists every section on the left; click one to edit its heading, body, list (none/bulleted/numbered, with items you can add/edit/remove), and callout on the right.
 - Click **+** in the section list header to add a new section at the end.
@@ -83,6 +89,8 @@ Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections
 	- `callout` text gets a 💡 prefix added automatically by the reader.
 - `keyTakeaway` — displayed at the bottom of the reader
 - `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/hazardModules.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
+- `videoUrl` / `videoType` — the module's embedded video, if any (`videoType` is `'youtube'` or `'mp4'`, or both `null`/absent for no video).
+	Like other fields, a bundled `lib/` entry's video is used as a fallback when Supabase hasn't set one yet.
 
 Changes to `lib/hazardModules.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
 

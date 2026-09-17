@@ -83,6 +83,15 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 ### `save-hazards` does a full delete-then-reinsert, not a diff
 `/api/save-hazards` deletes every row in the `hazards` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
 
+### Several tables store a `uid` (or other cross-table reference) with no foreign key enforcing it
+`user_module_progress` does this correctly — `fk_user_progress` ties its `uid` to `profiles.uid`, and `fk_user_progress_module` ties `(section, module_id)` to `modules`. Nothing else follows that pattern:
+- `user_quiz_progress.uid` has no FK to `profiles.uid`; `quiz_id` has no FK to `quizzes.quiz_id`.
+- `feedback.user_id` has no FK to `profiles.uid`.
+- `user_hazard_progress.uid` has no FK to `profiles.uid`; `hazard_id` has no FK to `hazards.type`.
+
+Application code checks referential validity in some of these cases (e.g. `POST /api/hazards/progress` looks up the hazard before inserting), but the database itself doesn't enforce it — a row could be inserted directly, or by a future code path that skips the check, referencing a `uid`/`hazard_id`/`quiz_id` that doesn't exist.
+**Fix:** add the missing foreign keys, following `user_module_progress`'s existing pattern.
+
 ---
 
 ## Dashboard placeholder content
@@ -108,6 +117,9 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 ### `GET /api/admin/feedback` has no admin-facing page reading it
 The route (`requireAdmin`-gated) returns every row from the `feedback` table ordered by `created_at` descending, but no page under `app/admin/` currently calls it — feedback submitted via `/feedback` reaches the database with no way to view it in the app.
 **Fix:** add an admin feedback-listing page, or, if reviewing submissions directly in the Supabase dashboard is the intended workflow, note that here so this isn't mistaken for an unfinished feature.
+
+### `GET /api/hazards/progress` has no page reading it
+The route returns the signed-in user's hazard-click history, `completedHazards`, and `totalHazards`, but no page in the app currently displays lab/hotspot progress anywhere — not the dashboard, not the admin per-user progress page (which only reads module and quiz progress). Only the `POST` side is currently wired up.
 
 ### `leaderboard_visible` is returned by the admin per-user progress route but never displayed
 `GET /api/admin/users/{uid}/progress` selects `*` on `user_quiz_progress`, so `leaderboard_visible` comes through in the response, but no admin UI currently reads or shows it.
@@ -145,9 +157,13 @@ The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) w
 
 ### `app/api/` has no subfolder grouping for `hazards`/lab-image/module routes
 Of the module-content routes, only `save-module` (added this round) and the pre-existing `modules/progress` live under `app/api/modules/` — `load-modules` and `load-module-options` are still flat top-level folders under `app/api/`, alongside `load-hazards`, `save-hazards`, `load-image`, and `upload-image`. Moving those remaining ones into `app/api/lab/` and `app/api/modules/` respectively would finish the grouping, at the cost of updating every `fetch('/api/...')` call site for them. Worth doing as one deliberate pass rather than piecemeal, since it's a routing/URL change, not just a file move.
+`app/api/lab/video/route.ts` and `app/api/hazards/progress/route.ts` add a third and fourth flavor to this same inconsistency: `lab/video` already sits under the eventual target folder (`app/api/lab/`), while `hazards/progress` sits under a folder (`app/api/hazards/`) that matches neither the flat routes above nor the `app/api/lab/` grouping either is headed toward. Folding `load-hazards`, `save-hazards`, `load-image`, `upload-image`, and `hazards/progress` all into `app/api/lab/` (alongside `video`, which is already there) would resolve all of it in one pass.
 
 ### `hooks/` has no subfolder grouping, and is growing one file per editable page
 `hooks/` holds a flat mix of read-only data hooks (`useHazards.ts`, `useModules.ts`, `useQuiz.ts`, `useModuleOptions.ts`) and editor hooks (`useModuleEditor.ts`, `useQuizEditor.ts`), each pair mostly used by only one page or section. This is the same shape of issue as `app/api/`'s flat routes above, just for hooks instead of routes — worth grouping before a fourth or fifth editable page adds two more files to the same flat list. Two reasonable directions, not mutually exclusive: subfolders within `hooks/` itself (e.g. `hooks/lab/`, `hooks/quizzes/`), or moving each pair into the `app/` folder of the page that actually uses it (e.g. `app/lab/hooks/`), colocating the hook with its one consumer. The latter is closer to Next.js's general colocation conventions but is a bigger reorganization since it touches every import path across the app; the former is a smaller, more mechanical move.
+
+### `lib/` has no subfolder grouping either
+Same shape of issue as `app/api/` and `hooks/` above: `lib/` is a flat mix of data files (`hazards.ts`, `hazardModules.ts`, `guides.ts`, `questionhazards.ts`, `moduleTypes.ts`), auth helpers (`authUser.ts`, `adminAuth.ts`), service clients (`supabase.ts`, `firebase.ts`, `firebaseAdmin.ts`), and now `video.ts`. Worth grouping into subfolders along the same lines once a natural split presents itself, rather than continuing to add files to one flat list.
 
 ### CSS is split across many page-specific files with no canonical reference for which classes are global vs. local
 Every page/component folder that needs styling imports its own `.css` file (see the CSS Structure table in `README.md`), and `globals.css` holds `nav`, `.main`, `.panel`, edit-mode toggle, and save-bar styles used everywhere. But there's no single place listing which classes are safe to assume as globally available versus which need a local definition — confirming this for a new page means reading `globals.css` in full, or checking how an existing page with similar markup handles it.
@@ -160,6 +176,5 @@ Every page/component folder that needs styling imports its own `.css` file (see 
 
 ## Cosmetic / minor
 
-### `forgot-password` duplicates `auth.css`'s look as an inline style object
-`app/login/forgot-password/page.tsx` visually matches the login/register card, logo, form, and button styling, but doesn't import `auth.css` — it defines an equivalent `styles` object inline and applies it via the `style` prop. The two are kept in sync by hand; a change to `auth.css` won't propagate here, and vice versa.
-**Fix:** have the page import and use `auth.css` directly.
+### `ModuleVideo.tsx`/`VideoEditorPanel.tsx` still use "module"-prefixed names despite being shared with the lab page
+`ModuleVideo.tsx`'s CSS classes (`module-video-*`, defined in `globals.css`) and the classes `VideoEditorPanel.tsx` reuses from the module editor (`module-field-stack`, `module-select`, `module-add-item-btn`, `module-delete-btn`) read as module-specific, but both files are shared with `HotspotEditor.tsx`/`HazardPopup.tsx` on `/lab` too. The component name itself has the same problem — `ModuleVideo` for something that's just as much a lab component now would more accurately be `EmbeddedVideo`. Purely cosmetic — nothing behaves incorrectly — but worth a rename pass (component, file, and the CSS classes) for clarity.

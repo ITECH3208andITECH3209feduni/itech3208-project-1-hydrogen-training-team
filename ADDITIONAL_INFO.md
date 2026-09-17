@@ -100,6 +100,7 @@ Module content lives in Supabase, loaded per-section through `hooks/useModules.t
 	If there's no signed-in user, or no matching record for a given module, that module's `status`/`progress` are left as whatever `mergeRow` already set from `defaults`.
 - `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link.
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
+- `videoUrl`/`videoType` fall back to `defaults` together.
 
 Each section's data file (e.g. `lib/hazardModules.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
@@ -365,14 +366,49 @@ For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
 
 ---
 
+## Lab Progress Tracking
+
+`user_hazard_progress` records the first time a signed-in user clicks each hotspot on `/lab`, outside edit mode — `scenario_id` defaults to `'interactive-lab'`, a forward-looking column for if a second interactive scenario is ever added, always that one value today.
+
+**`POST /api/hazards/progress`** (`requireUser`-gated): called from `recordHazardProgress` in `app/lab/page.tsx` on every hotspot click.
+	Confirms the hazard type exists in `hazards` first, then upserts onto `(uid, scenario_id, hazard_id)` with `ignoreDuplicates: true` — so only the first click on a given hotspot is ever recorded;
+	later clicks on the same hotspot are silent no-ops, and `first_clicked_at` reflects that first click specifically, not the most recent one.
+
+**`GET /api/hazards/progress`** (`requireUser`-gated): returns the signed-in user's recorded rows, `completedHazards` (their row count), and `totalHazards` (a live count of every row currently in `hazards`, not a fixed number). See `BUG_REPORT.md`.
+
+---
+
+## Embedded Videos
+
+Both module reader pages and lab hotspots can have one embedded video — a YouTube link or an uploaded mp4 (50MB limit, the ceiling Supabase Storage enforces on the free tier).
+	`modules.video_url`/`modules.video_type` and `hazards.video_url`/`hazards.video_type` store it;
+	`video_type` is `'youtube'`, `'mp4'`, or `null`.
+
+**Display (`components/ModuleVideo.tsx`):** a shared, stateless component taking `videoUrl`/`videoType` and rendering nothing when both are absent.
+	Otherwise it renders a compact launcher card; clicking it opens a modal with either a YouTube `<iframe>` (the URL is parsed into an embed URL first) or a native `<video>` element for mp4.
+	The modal closes on Escape, on clicking its backdrop, or its own close button, and locks body scroll while open.
+	`ModuleReaderPage.tsx` renders it above a module's sections; `HazardPopup.tsx` renders it inline, under the hazard's description and above the Learn More link — the same component, two different surrounding contexts, styled via a light-background override in `lab.css` scoped to `.popup-content`.
+
+**Editing (`components/VideoEditorPanel.tsx`):** the fields shared by both editors — a YouTube/mp4 type toggle, a YouTube URL field with its own save button, an mp4 file input with its own upload button, and a remove button when a video is already set.
+	`ModuleEditor.tsx` and `HotspotEditor.tsx` each wrap it in their own panel chrome and wire it to their own draft state and handlers; the component itself holds no state of its own.
+
+**Saving:** unlike a module's other fields or a hotspot's title/position, a video change is written to Supabase immediately when its own save/upload/remove button is clicked — not staged into the draft and sent along with the rest of a Save Changes click.
+	`PUT /api/modules/video` and `PUT /api/lab/video` (both `requireAdmin`-gated) handle a YouTube URL or an mp4 file upload; `DELETE` on each removes the video.
+	An mp4 upload goes to Supabase Storage (`module-videos` or `lab-videos`, one file per module/hotspot) and the route updates `video_url`/`video_type` afterwards; replacing or removing an existing mp4 deletes the old Storage object once the database write succeeds.
+	`lib/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), and mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
+
+Once a video is saved through either route, the hook managing that page (`useModuleEditor`'s inline handlers on `ModuleReaderPage.tsx`, or `useHazards.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo`) writes the returned `video_url`/`video_type` into local state, so the display component picks it up without a full page reload.
+
+---
+
 ## Testing
 
 The project uses **Vitest** for unit and integration tests, with **React Testing Library** for rendering hooks/components and **MSW (Mock Service Worker)** for mocking API routes — no real Supabase calls are made during tests.
 
 ### What's covered
 
-- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/useHazards.ts`;)
-- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`;)
+- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video.ts`)
+- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`, `/api/lab/video`;)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/useHazards.ts` → `hooks/useHazards.test.ts`). Vitest picks these up automatically.
 

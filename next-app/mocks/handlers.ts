@@ -4,6 +4,7 @@ import { http, HttpResponse } from 'msw';
 
 // Put a successful response in each route (for fail cases, override in test file)
 export const handlers = [
+    // Lab page routes
     http.get('/api/load-hazards', () => {
         return HttpResponse.json({
             ok: true,
@@ -16,6 +17,8 @@ export const handlers = [
                     text: 'Loaded description text.',
                     module_section: 'hazard-modules',
                     module_id: '1',
+                    video_url: null,
+                    video_type: null,
                 },
             ],
         });
@@ -29,6 +32,42 @@ export const handlers = [
     http.post('/api/upload-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/mock-image.jpg' });
     }),
+    http.get('/api/load-module-options', () => {
+        return HttpResponse.json({
+            ok: true,
+            data: [
+                { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+                { section: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
+                { section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
+                { section: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
+            ],
+        });
+    }),
+    http.put('/api/lab/video', async ({ request }) => {
+        const formData = await request.formData();
+        const videoType = formData.get('videoType');
+
+        return HttpResponse.json({
+            ok: true,
+            hazard: {
+                type: formData.get('hazardType'),
+                title: 'Mock Title',
+                video_url:
+                    videoType === 'youtube'
+                        ? formData.get('videoUrl')
+                        : '/uploads/mock-video.mp4',
+                video_type: videoType,
+            },
+        });
+    }),
+    http.delete('/api/lab/video', () => {
+        return HttpResponse.json({
+            ok: true,
+            hazard: { type: 'gas', title: 'Mock Title', video_url: null, video_type: null },
+        });
+    }),
+    
+    // Module page routes
     http.get('/api/load-modules', () => {
         return HttpResponse.json({
             ok: true,  
@@ -44,6 +83,8 @@ export const handlers = [
                     key_takeaway: 'key takeaway',
                     prev_id: null,
                     next_id: '2',
+                    video_url: null,
+                    video_type: null,
                     module_sections: [
                         {
                             num: '01',
@@ -74,17 +115,6 @@ export const handlers = [
             ],
         });
     }),
-    http.get('/api/load-module-options', () => {
-        return HttpResponse.json({
-            ok: true,
-            data: [
-                { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
-                { section: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
-                { section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
-                { section: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
-            ],
-        });
-    }),
     http.post('/api/modules/save-module', () => {
         return HttpResponse.json({ ok: true });
     }),
@@ -94,6 +124,8 @@ export const handlers = [
             progress: [{ module_id: '1', progress: 100, status: 'done' }],
         });
     }),
+
+    // Quiz page routes
     http.get('/api/quizzes/load-quiz', () => {
         return HttpResponse.json({
             ok: true,
