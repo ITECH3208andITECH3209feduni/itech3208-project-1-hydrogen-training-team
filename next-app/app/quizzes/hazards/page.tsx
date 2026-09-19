@@ -1,4 +1,4 @@
-// app/quizzes/hazards
+// app/quizzes/hazards/page.tsx
 
 'use client';
 

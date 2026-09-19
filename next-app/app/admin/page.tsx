@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// app/admin/page.tsx
+"use client";
 
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";

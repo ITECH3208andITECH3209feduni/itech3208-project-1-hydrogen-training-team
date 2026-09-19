@@ -48,7 +48,7 @@ hydrogen-lab/
 │   ├── page.tsx              			# Public landing/intro page (/) — root, no login required
 │   ├── intro.css						# Landing-page-specific styles
 │   ├── dashboard/
-│   │   ├── page.tsx					# Dashboard (/dashboard) — static placeholder data, see BUG_REPORT
+│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and lab-hazard progress from the API for the signed-in user
 │   │   └── dashboard.css				# Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
@@ -63,15 +63,19 @@ hydrogen-lab/
 │   │   └── forgot-password/
 │   │       └── page.tsx				# Forgot-password page (/login/forgot-password)
 │   ├── admin/
-│   │   └── users/
-│   │       ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal
-│   │       ├── admin.css				# Styles for the admin users page — table, modal, stat cards, admin module cards
-│   │       ├── [uid]/
-│   │       │   └── progress/
-│   │       │       └── page.tsx		# Per-user training record (/admin/users/[uid]/progress) — read-only, admin-facing
-│   │       └── components/
-│   │           ├── EditUserModal.tsx	# Modal for editing a user's role, user_type, and organisation
-│   │           └── AdminModuleCard.tsx	# Read-only per-user module progress card; shares ModuleCard.css with ModuleCard
+│   │   ├── page.tsx					# Admin hub (/admin) — cards linking to User Management and Learner Feedback
+│   │   ├── users/
+│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal
+│   │   │   ├── admin.css				# Styles for the admin users page — table, modal, stat cards, admin module cards
+│   │   │   ├── [uid]/
+│   │   │   │   └── progress/
+│   │   │   │       └── page.tsx		# Per-user training record (/admin/users/[uid]/progress) — read-only, admin-facing
+│   │   │   └── components/
+│   │   │       ├── EditUserModal.tsx	# Modal for editing a user's role, user_type, and organisation
+│   │   │       └── AdminModuleCard.tsx	# Read-only per-user module progress card; shares ModuleCard.css with ModuleCard
+│   │   └── feedback/
+│   │       ├── page.tsx				# Admin "Feedback" page (/admin/feedback) — rating summary + full submission list
+│   │       └── admin-feedback.css		# Styles for the admin feedback page
 │   ├── lab/
 │   │   ├── page.tsx					# Interactive hydrogen lab (/lab)
 │   │   ├── lab.css						# Lab-specific styles
@@ -96,7 +100,7 @@ hydrogen-lab/
 │   │       └── [id]/
 │   │           └── page.tsx			# Example reader page
 │   ├── quizzes/
-│   │   ├── quizzes.css				# Shared styles for the quizzes hub and attempt pages
+│   │   ├── quizzes.css					# Shared styles for the quizzes hub and attempt pages
 │   │   ├── page.tsx					# Quizzes hub — lists available quizzes (currently just one, Hazards)
 │   │   ├── [quizId]/
 │   │   │   └── edit/
@@ -240,14 +244,17 @@ hydrogen-lab/
 | `/quizzes/[quizId]/edit`         | `app/quizzes/[quizId]/edit/page.tsx`       | Admin-only quiz content editor — quiz details and question bank                             |
 | `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
 | `/feedback`                      | `app/feedback/page.tsx`                    | Feedback form — star rating, category, free-text message                                    |
+| `/admin`                         | `app/admin/page.tsx`                       | Admin-only hub — cards linking to User Management and Learner Feedback                      |
 | `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
 | `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
+| `/admin/feedback`                | `app/admin/feedback/page.tsx`              | Admin-only feedback dashboard — rating summary and the full list of submissions             |
 
 There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
 	The Navbar and dashboard both link straight to `/modules/hazard-modules`.
 
 All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and `/about` redirect unauthenticated users to `/login`.
-	`/admin/users` and `/quizzes/[quizId]/edit` are further exceptions: both check `isAdmin` specifically and redirect anyone who fails that check to `/dashboard` rather than `/login`.
+	`/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` are further exceptions:
+	Each checks `isAdmin` specifically and redirects anyone who fails that check to `/dashboard` rather than `/login`.
 	`/feedback` renders for anyone regardless of auth state; only submitting blocks with an inline error if no user is signed in — see `BUG_REPORT.md`.
 	See `ADDITIONAL_INFO.md` for the redirect implementation pattern and per-page exceptions in more detail.
 
@@ -263,7 +270,7 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | *(all pages)*                  | Navbar → Scenarios           | `/lab`                         |
 | *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                     |
 | *(all pages)*                  | Navbar → About               | `/about`                       |
-| *(all pages)*                  | Navbar → Administration      | `/admin/users`                 |
+| *(all pages)*                  | Navbar → Administration      | `/admin`                       |
 | *(all pages)*                  | Navbar → Logout              | `/`                            |
 | `/`                            | Get Started → || Continue →  | `/dashboard`                   |
 | `/`                            | Learn the Basics             | `/modules/hazard-modules`      |
@@ -286,11 +293,16 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 | `/quizzes/leaderboard`         | Take Quiz →                  | `/quizzes/hazards`             |
 | `/quizzes/leaderboard`         | Login → (logged out)         | `/login`                       |
 | `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
+| `/certificate` (blocked state) | Take the Quiz →              | `/quizzes/hazards`             |
+| `/certificate` (blocked state) | Complete Training Modules    | `/modules/hazard-modules`      |
 | `/feedback`                    | ← Back to Dashboard          | `/dashboard`                   |
 | `/feedback`                    | Cancel                       | `/dashboard`                   |
 | `/feedback`                    | Return to Dashboard →        | `/dashboard`                   |
+| `/admin`                       | "User Management" card       | `/admin/users`                 |
+| `/admin`                       | "Learner Feedback" card      | `/admin/feedback`              |
 | `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
 | `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
+| `/admin/feedback`              | ← Back to Administration     | `/admin`                       |
 | `/login`                       | Sign in                      | `/dashboard`                   |
 | `/login`                       | Forgot Password?             | `/login/forgot-password`       |
 | `/login`                       | Create one                   | `/login/register`              |
@@ -317,6 +329,7 @@ Styles are split across several files to keep page-specific rules isolated:
 | `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
 | `app/about/about.css`                     | About page only — header, section cards, info/feature/tech grids, footer                                           |
 | `app/admin/users/admin.css`               | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
+| `app/admin/feedback/admin-feedback.css`   | Admin feedback page only — summary cards, rating breakdown bars, submission list                                   |
 | `app/quizzes/quizzes.css`                 | Quizzes hub and attempt pages — quiz cards, edit tab, question/option list, result banner, leaderboard opt-in      |
 | `app/quizzes/[quizId]/edit/quizEditor.css`| Quiz editor page only — quiz info fields, question list and detail panels, load/validation notices                 |
 | `app/quizzes/leaderboard/leaderboard.css` | Leaderboard page only — badge, podium (top 3), ranked list, empty/error states                                     |
@@ -334,7 +347,7 @@ Styles are split across several files to keep page-specific rules isolated:
 Firebase handles authentication (sign-in, sign-up, session state).
 	Each user also has a **profile** — role, user type, organisation — stored separately in Supabase and managed through two API routes:
 - `GET /api/profile/get?uid=...` — loads the profile matching a Firebase uid
-- `POST /api/profile/create` — creates a profile record
+- `POST /api/profile/create`     — creates a profile record
 
 A profile's `role` is one of `"user" | "staff" | "admin"`. `useAuth()` derives a `permissions` object from this:
 
@@ -349,8 +362,13 @@ A profile's `role` is one of `"user" | "staff" | "admin"`. `useAuth()` derives a
 | `canViewAnalytics`   | admin only         |
 | `canViewAuditLogs`   | admin only         |
 
-Only `canManageUsers` is currently wired into the UI — it gates the **Administration** link in `Navbar.tsx` and the **Edit Mode** switch on `/lab` (`EditModeToggle.tsx`). see `BUG_REPORT.md` for the other seven.
-	Promoting a user to `staff`/`admin`, or changing their `user_type`/`organisation`, is done through the **Edit User** modal on `/admin/users`.
+Only `canManageUsers` is currently wired into the UI — it gates:
+- the **Administration** link in `Navbar.tsx`
+- the **Edit Mode** switch on `/lab` and every module reader page (both use `EditModeToggle.tsx`)
+- the "✏️ Edit" tab on the Hydrogen Hazards quiz card on `/quizzes` (linking to `/quizzes/hazards/edit`, which independently re-checks `isAdmin` itself rather than relying on the link being hidden).
+	
+See `BUG_REPORT.md` for the other seven.
+Promoting a user to `staff`/`admin`, or changing their `user_type`/`organisation`, is done through the **Edit User** modal on `/admin/users`.
 
 Two server-side helpers protect API routes using a Firebase ID token:
 - `requireUser` (`lib/authUser.ts`) verifies the token and returns the caller's `uid`.
@@ -390,10 +408,10 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
+	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_hazard_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
 	It also creates all the Row Level Security policies and grants those tables and the bucket need.
 	(public `anon` read + `service_role` read/write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
-	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
+	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`user_hazard_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
@@ -528,4 +546,6 @@ All `NEXT_PUBLIC_` variables are embedded in the client bundle at build time.
 
 ## Extending the app
 
-For adding a new standalone page or a new `app/modules/`-style section, see `ADDITIONAL_INFO.md`. For customising existing module or hotspot content, see `EDITING_GUIDE.md`.
+For adding a new standalone page or a new `app/modules/`-style section, or a full route-by-route reference of every `app/api/` endpoint, see `ADDITIONAL_INFO.md`.
+
+For customising existing module or hotspot content, see `EDITING_GUIDE.md`.

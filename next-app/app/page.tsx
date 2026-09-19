@@ -1,4 +1,4 @@
-// app/intro/page.tsx
+// app/page.tsx
 // Landing page & introduction to hydrogen topic.
 
 'use client';	// Marks as Client Component, makes interactive

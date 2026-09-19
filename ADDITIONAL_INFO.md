@@ -15,9 +15,10 @@ Exceptions:
 - `/login`, `/login/register`, `/login/forgot-password` — auth pages themselves.
 - `/` — the public landing/intro page; calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 - `/about` — doesn't call `useAuth()` at all; a fully static public page with no auth-dependent UI.
-- `/admin/users` — checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/dashboard` rather than `/login`.
+- `/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` — each checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/dashboard` rather than `/login`.
 
 `Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`. Its site-title logo links to `/` (the landing page), its "Home" nav link goes to `/dashboard`.
+	Its Modules/Scenarios/Quizzes links only render while a user is signed in; the Administration link only renders while `permissions.canManageUsers` (i.e. `isAdmin`) is true, and points at `/admin`.
 
 **Logout** (`handleLogout` in `Navbar.tsx`) sets a `sessionStorage` flag (`logoutRedirect: "true"`), awaits Firebase `logout()`, then `router.replace('/')` — logging out now lands on the home page, not `/login`.
 	The flag exists to suppress a flash of the login form: during `await logout()`, the currently-mounted protected page's own redirect-to-`/login` effect (the pattern described above) can fire before the navbar's own `replace('/')` does, briefly navigating to `/login` first.
@@ -40,6 +41,12 @@ Firebase handles authentication itself (sign-in, sign-up, session state);
 `role` forms a hierarchy: `isStaff` is true for `"staff"` or `"admin"`, `isAdmin` is true for `"admin"` only.
 	Since `register()`'s hardcoded values are still the only sign-up path, every value besides `"user"`/`"public"` has to be set by an admin afterwards, through the Edit User modal on `/admin/users` (see "Admin: Access Management" below).
 
+`AuthContext.tsx`'s `permissions` object also derives `canEditContent` and `canManageScenarios` from `isStaff`, but nothing in the app currently checks either flag — every in-app editor (the lab hotspot editor, the module reader's editor, the quiz editor) gates on `permissions.canManageUsers` (i.e. `isAdmin`) instead.
+	So a `staff`-role account currently behaves identically to a plain `user` account everywhere in the UI; the `staff` tier exists in the data model and permission object but has no observable effect yet.
+
+The `user_type` values `AuthContext.tsx`'s `UserProfile` type declares (`student`, `lecturer`, `researcher`, `industry_professional`, `public`) don't match the set the database actually accepts (`engineering_student`, `science_student`, `researcher`, `public`, `lecturer`, `teaching_staff` — see `profiles_user_type_check` in `supabase_setup.sql`).
+	The Edit User modal on `/admin/users` offers the same mismatched set as its dropdown options — see `BUG_REPORT.md`.
+
 ---
 
 ## Server-side auth guards
@@ -52,14 +59,52 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 `lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
 
 **Route coverage:**
-- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/feedback` (`POST`)
-- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/modules/save-module` (`POST`), `/api/quizzes/save-quiz` (`POST`), `/api/admin/feedback` (`GET`)
-- No guard: `load-hazards`, `load-image`, `load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above). `save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
+- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/hazards/progress` (all methods), `/api/feedback` (`POST`)
+- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/admin/feedback` (`GET`), `/api/modules/save-module` (`POST`), `/api/modules/video` (`PUT`/`DELETE`), `/api/quizzes/save-quiz` (`POST`), `/api/lab/video` (`PUT`/`DELETE`)
+- No guard: `load-hazards`, `load-image`, `load-modules`, `load-module-options` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above).
+	`save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
+	`/api/profile/get` and `/api/profile/create` also take no steps to confirm the caller owns the `uid` they pass, so either route can be used to read or create a profile for an arbitrary uid — see `BUG_REPORT.md`.
+
+Status-code handling for a caught auth failure isn't perfectly uniform across `requireAdmin` routes:
+	most map `"Access denied"`/`"Missing authorization token"`/`"User profile not found"` to `403`, but `GET /api/admin/feedback` maps `"Missing authorization token"` to `401` instead and falls through to a generic `500` for `"User profile not found"`.
 
 **`export const dynamic = 'force-dynamic'` on `GET` routes:** any `GET` handler that calls `requireUser`/`requireAdmin` (or otherwise reads `request.headers`) needs this export declared above the handler.
-	Next.js attempts to statically render `GET` route handlers at build time by default; it can't know at build time what a request's `Authorization` header will contain, so without this export `npm run build` fails with a "Dynamic server usage" error the first time it reaches such a route.
+	Next.js attempts to statically render `GET` route handlers at build time by default;
+	it can't know at build time what a request's `Authorization` header will contain, so without this export `npm run build` fails with a "Dynamic server usage" error the first time it reaches such a route.
 	`POST`/`PATCH`/`DELETE` handlers are exempt — Next treats them as dynamic automatically, since there's no meaningful "build-time version" of a request with a body.
 	Every `GET` route listed under `requireUser`/`requireAdmin` above declares this export.
+---
+
+## API Routes Reference
+
+Every route under `app/api/`, what it reads/writes in Supabase, and what in the app actually calls it. Auth column refers to the guards described above; "public" means no guard is applied (see `BUG_REPORT.md` for which of those are write endpoints and arguably shouldn't be).
+
+| Route                             | Method(s)       | Auth                         | Supabase tables / storage                                | Called from                                                                                                            |
+|-----------------------------------|-----------------|------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `/api/load-hazards`               | `GET`           | public                       | `hazards`                                                | `useHazards.ts` (`/lab`)                                                                                               |
+| `/api/save-hazards`               | `POST`          | public — see `BUG_REPORT.md` | `hazards` (delete-all, reinsert)                         | `useHazards.ts` (`/lab` editor save)                                                                                   |
+| `/api/load-image`                 | `GET`           | public                       | `lab-images` storage bucket                              | `useHazards.ts` (`/lab`)                                                                                               |
+| `/api/upload-image`               | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHazards.ts` (`/lab` editor image upload)                                                                           |
+| `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hazards`, `lab-videos` storage bucket                   | `useHazards.ts` (`/lab` editor video panel)                                                                            |
+| `/api/hazards/progress`           | `GET`, `POST`   | `requireUser`                | `user_hazard_progress`, `hazards` (count)                | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Scenarios stat card)             |
+| `/api/load-modules`               | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
+| `/api/load-module-options`        | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/lab` editor's Linked Module dropdown)                                                         |
+| `/api/modules/video`              | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `ModuleReaderPage.tsx`'s in-app editor                                                                                 |
+| `/api/modules/progress`           | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress),                                               |
+| ^^^^^                             | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/dashboard/page.tsx` (Modules stat card, via `useModules`), `app/certificate/page.tsx` (module-completion check)   |
+| `/api/modules/save-module`        | `POST`          | `requireAdmin`               | `modules`, `module_sections`                             | `useModuleEditor.ts` (module reader editor save)                                                                       |
+| `/api/quizzes/load-quiz`          | `GET`           | public                       | `quizzes`, `quiz_questions`                              | `useQuiz.ts` (`/quizzes` hub, `/quizzes/hazards`, quiz editor)                                                         |
+| `/api/quizzes/save-quiz`          | `POST`          | `requireAdmin`               | `quizzes`, `quiz_questions`                              | `useQuizEditor.ts` (`/quizzes/[quizId]/edit` save)                                                                     |
+| `/api/quizzes/progress`           | `GET`, `POST`,  | `requireUser`                | `user_quiz_progress`                                     | `app/quizzes/hazards/page.tsx` (submit + leaderboard opt-in), `app/dashboard/page.tsx` (Quizzes stat card),            |
+| ^^^^^                             | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/certificate/page.tsx` (quiz-pass check)                                                                           |
+| `/api/quizzes/leaderboard`        | `GET`           | `requireUser`                | `user_quiz_progress`, `profiles`                         | `app/quizzes/leaderboard/page.tsx`                                                                                     |
+| `/api/feedback`                   | `POST`          | `requireUser`                | `feedback`, `profiles` (email lookup)                    | `app/feedback/page.tsx`                                                                                                |
+| `/api/admin/feedback`             | `GET`           | `requireAdmin`               | `feedback`                                               | `app/admin/feedback/page.tsx`                                                                                          |
+| `/api/admin/users`                | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`                       | `app/admin/users/page.tsx`                                                                                             |
+| `/api/admin/users/{uid}`          | `PATCH`         | `requireAdmin`               | `profiles`                                               | `EditUserModal.tsx`                                                                                                    |
+| `/api/admin/users/{uid}/progress` | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`, `user_quiz_progress` | `app/admin/users/[uid]/progress/page.tsx`, and `app/admin/users/page.tsx` (one fetch per learner, see `BUG_REPORT.md`) |
+| `/api/profile/get`                | `GET`           | public — see `BUG_REPORT.md` | `profiles`                                               | `AuthContext.tsx` (profile bootstrap on every auth-state change)                                                       |
+| `/api/profile/create`             | `POST`          | public — see `BUG_REPORT.md` | `profiles`                                               | `AuthContext.tsx` (bootstrap for a brand-new Firebase user), `register()` (called from `app/login/register/page.tsx`)  |
 
 ---
 
@@ -109,15 +154,21 @@ For the `ModuleData` field reference and how to edit live module content, see `E
 
 ### Module Content Editor
 
-Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that module's content, gated on `canManageUsers` — the same permission and the same shared toggle component (`components/EditModeToggle.tsx`) used by `/lab`. `components/SaveBar.tsx` is likewise shared between the two. Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
+Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that module's content, gated on `canManageUsers` — the same permission and the same shared toggle component (`components/EditModeToggle.tsx`) used by `/lab`.
+	`components/SaveBar.tsx` is likewise shared between the two.
+	Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
 
 **State (`hooks/useModuleEditor.ts`):** takes the section name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
 - Toggling edit mode off does **not** discard unsaved changes — mirroring `useHazards`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
-- Navigating to a different module (the prev/next links, or the section listing) re-seeds the draft from the new module and forces edit mode off. This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`. A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving) but only while not currently editing, so a background refresh can't overwrite an in-progress edit.
-- **`resetToDefaults`** replaces the whole draft with `fallback` — reverting to the bundled `lib/` entry, the same semantics as `/lab`'s Reset to Defaults reverting to `lib/hazards.ts` rather than to whatever Supabase last returned. Disabled (`canReset: false`) when no `fallback` was supplied — a section whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
+- Navigating to a different module (the prev/next links, or the section listing) re-seeds the draft from the new module and forces edit mode off.
+	This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`.
+	A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving) but only while not currently editing, so a background refresh can't overwrite an in-progress edit.
+- **`resetToDefaults`** replaces the whole draft with `fallback` — reverting to the bundled `lib/` entry, the same semantics as `/lab`'s Reset to Defaults reverting to `lib/hazards.ts` rather than to whatever Supabase last returned.
+	Disabled (`canReset: false`) when no `fallback` was supplied — a section whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
 - While edit mode is on, `ModuleReaderPage` renders the whole reading view (hero, sections, key takeaway, prev/next links) from `draft` instead of `item`, so edits appear live above the editor panel.
 
-**Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields. Sections can be added, deleted, reordered (↑/↓), and each edited for `heading`, `body`, `listType` (none/bulleted/numbered), `items`, and `callout`.
+**Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields.
+	Sections can be added, deleted, reordered (↑/↓), and each edited for `heading`, `body`, `listType` (none/bulleted/numbered), `items`, and `callout`.
 	A section's `num` is not directly editable — `renumberSections` (in `useModuleEditor.ts`) recomputes it from array position on every add/delete/move, since `num` is what `ModuleReaderPage` renders as `data-section-number`, which `useModuleProgress`'s `IntersectionObserver` reads positionally (see "Module Progress Tracking" below) — an out-of-sequence `num` would throw that off.
 
 **Saving:** `POST /api/modules/save-module` (`requireAdmin`-gated) takes `{ section, module, sections }` and:
@@ -263,14 +314,14 @@ A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the H
 	Both question order and each question's option order are then shuffled (Fisher–Yates method) on load and on retry, with `correctIndex` remapped to follow its option.
 	A retry draws a fresh pool rather than reshuffling the same one.
 - **Answering:** all questions must be answered before submitting (`answers.some(a => a === null)` blocks submit with an inline error).
-- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`, where `quiz` is the pool drawn for that attempt — the denominator is the number of questions actually presented, not the full bank; `passed = percentage >= PASS_THRESHOLD`.
-- **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token.
+- **Scoring:** `percentage = round(correctCount / quiz.length * 100)`, where `quiz` is the pool drawn for that attempt — the denominator is the number of questions actually presented, not the full bank;
+	`passed = percentage >= passThreshold`, where `passThreshold` is `quizData.passThreshold` from `useQuiz` — the quiz's live, admin-editable pass threshold (falling back to `PASS_THRESHOLD` from `lib/questionhazards.ts` only when Supabase content isn't available), not a hardcoded value.
+- **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token — `passed` here is computed against the live threshold above and stored as-is.
 - **After submitting:** each question re-renders showing correct/incorrect/your-answer state and an explanation for anything missed.
 	A Retry Quiz button (on fail) reshuffles and resets everything, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `handleSubmit` call reaches the server.
 - **Leaderboard opt-in:** once submitted, a banner offers "🏆 Show My Score" / "🔒 Keep Private", each firing `PATCH /api/quizzes/progress` with `{ leaderboard_visible }`.
-	This is local UI state only — it always renders as unset after every fresh submit or retry, even though the server-side preference is actually preserved across retries (see "Leaderboard" below);
-	the banner doesn't fetch or reflect whatever was previously saved. See `BUG_REPORT.md`.
-- **On pass**, a "Get Your Certificate" button routes to `/certificate` via a client-side write to `localStorage` — now vestigial, see "Certificate gating" below.
+	The page fetches the caller's existing preference on load (`GET /api/quizzes/progress`), but `handleSubmit` unconditionally resets local `leaderboardVisible` state to `false` right after a successful submission — so the banner shows "Keep Private" as the active choice immediately after submitting or retrying, regardless of whatever the caller had actually chosen previously, until they press one of the two buttons again (which does then save correctly). See `BUG_REPORT.md`.
+- **On pass**, a "Get Your Certificate" button routes to `/certificate` via a client-side write to `localStorage` — dead code the certificate page no longer reads, see "Certificate gating" below.
 
 ### Leaderboard (`/quizzes/leaderboard`)
 
@@ -307,7 +358,8 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 	A successful submission swaps the form for a thank-you panel linking back to `/dashboard`.
 
 **Reading submissions** — `GET /api/admin/feedback` (`requireAdmin`-gated) returns every row from `feedback`, ordered by `created_at` descending.
-	No admin-facing page currently calls this route — see `BUG_REPORT.md`.
+	`/admin/feedback` (`app/admin/feedback/page.tsx`) is the admin-facing view for this: a summary row (total responses, average rating, date of the most recent submission), a star-rating breakdown bar chart, and the full list of submissions with rating, category, message, submitter email, and timestamp.
+	Its "Average Rating" summary card always renders a fixed five-star string (`★★★★★`) regardless of the computed average — the average itself is only shown as the numeric value next to it, not reflected in the stars.
 
 Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` doesn't redirect unauthenticated visitors to `/login` — it renders for anyone, and only blocks at submit time (an inline error, not a redirect) if there's no signed-in user.
 	See "Auth redirect pattern" above and `BUG_REPORT.md`.
@@ -315,6 +367,8 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 ---
 
 ## Admin: Access Management
+
+`/admin` (`app/admin/page.tsx`) is the admin-only landing page for these tools — two cards, "User Management" (→ `/admin/users`) and "Learner Feedback" (→ `/admin/feedback`, see "Feedback" above).
 
 `/admin/users` (`app/admin/users/page.tsx`) is an admin-only page for managing user accounts and reviewing training progress.
 
@@ -334,6 +388,9 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 - **`ModuleProgress`** — one row per module the user has touched, straight from `user_module_progress`: `uid`, `module_id`, `status`, `progress`, `attempts`, `time_spent`, `started_at`, `last_accessed`, `completed_at`.
 - **`QuizProgress`** — one row per quiz, from `user_quiz_progress`: `uid`, `quiz_id`, `score`, `attempts`, `passed`, `last_attempted_at`, and now `leaderboard_visible` (the route selects `*`, so it comes through automatically).
 	This page's Quiz panel only ever reads `quizProgress[0]`; there's only one quiz today, even though the schema (`quiz_id` as part of a composite key) supports more.
+- **`summary`** — alongside the raw `moduleProgress`/`quizProgress` arrays, `GET /api/admin/users/{uid}/progress` also returns `{ totalModules, completedModules, overallProgress, quizAverage, quizPassed }`.
+	`quizPassed` is computed route-side against its own hardcoded `QUIZ_ID`/pass-score constants (see `BUG_REPORT.md`) and is what `/admin/users`' "Training Completed" stat card checks alongside module completion.
+	The per-user progress page's own **Certificate** panel, however, only checks module completion (`completedModules >= totalModules`) for its "Eligible"/"Pending" status — it doesn't factor in `summary.quizPassed` at all, so it can disagree with both the "Training Completed" stat card and the learner-facing `/certificate` page's own (differently-computed) eligibility rule. See `BUG_REPORT.md`.
 	Nothing in the admin UI currently displays `leaderboard_visible`.
 - Each module is rendered via `AdminModuleCard.tsx` with `mode="admin"` and `adminProgress={module.adminProgress}`.
 
@@ -395,7 +452,7 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 **Saving:** unlike a module's other fields or a hotspot's title/position, a video change is written to Supabase immediately when its own save/upload/remove button is clicked — not staged into the draft and sent along with the rest of a Save Changes click.
 	`PUT /api/modules/video` and `PUT /api/lab/video` (both `requireAdmin`-gated) handle a YouTube URL or an mp4 file upload; `DELETE` on each removes the video.
 	An mp4 upload goes to Supabase Storage (`module-videos` or `lab-videos`, one file per module/hotspot) and the route updates `video_url`/`video_type` afterwards; replacing or removing an existing mp4 deletes the old Storage object once the database write succeeds.
-	`lib/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), and mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
+	`lib/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
 
 Once a video is saved through either route, the hook managing that page (`useModuleEditor`'s inline handlers on `ModuleReaderPage.tsx`, or `useHazards.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo`) writes the returned `video_url`/`video_type` into local state, so the display component picks it up without a full page reload.
 

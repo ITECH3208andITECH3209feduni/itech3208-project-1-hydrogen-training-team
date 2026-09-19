@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// app/about/page.tsx
+"use client";
 
 import "./about.css";
 
@@ -280,7 +281,7 @@ export default function AboutPage() {
                 <div className="contributor-avatar">👤</div>
 
                 <div className="leadership-card-content">
-                  <h3>Ass Prof Surbhi Sharma</h3>
+                  <h3>Assoc. Prof. Surbhi Sharma</h3>
 
                   <div className="contributor-role">
                     Product Owner &amp; Content Contributor
