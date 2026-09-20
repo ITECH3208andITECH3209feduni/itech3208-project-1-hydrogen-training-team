@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import "../../admin.css";
-import { hazardModules } from "@/lib/hazardModules";
+import { hazardModules } from "@/lib/modules/hazards";
 import AdminModuleCard from "@/app/admin/users/components/AdminModuleCard";
 import { useAuth } from "@/context/AuthContext";
 

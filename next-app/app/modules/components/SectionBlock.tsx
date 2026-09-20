@@ -1,7 +1,7 @@
 // app/modules/components/SectionBlock.tsx
 // Renders a single numbered section inside a module page.
 
-import { ModuleSection } from '@/lib/moduleTypes';
+import { ModuleSection } from '@/lib/modules/moduleTypes';
 
 interface SectionBlockProps {
 	section: ModuleSection;

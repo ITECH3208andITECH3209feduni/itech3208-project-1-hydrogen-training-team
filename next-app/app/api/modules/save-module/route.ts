@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/adminAuth';
+import { requireAdmin } from '@/lib/firebase/adminAuth';
 
 type SectionInput = {
 	num: string;

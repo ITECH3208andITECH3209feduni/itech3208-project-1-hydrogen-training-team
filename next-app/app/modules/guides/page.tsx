@@ -7,7 +7,7 @@
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
 import { useModules } from '@/hooks/modules/useModules';
-import { guides } from '@/lib/guides';
+import { guides } from '@/lib/modules/guides';
 
 export default function GuidesPage() {
 	const { modules, usingDefaults } = useModules('guides', guides);

@@ -7,7 +7,7 @@
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
 import { useModules } from '@/hooks/modules/useModules';
-import { hazardModules } from '@/lib/hazardModules';
+import { hazardModules } from '@/lib/modules/hazards';
 
 export default function HazardModulesPage() {
 	const { modules, usingDefaults } = useModules('hazard-modules', hazardModules);

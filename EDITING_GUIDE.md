@@ -60,7 +60,7 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 
 **Saving and resetting:**
 - Click **Save Changes** to write the module's fields and sections to Supabase — changes persist everywhere immediately, including for a module that only existed as bundled fallback content before.
-- Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/` entry (e.g. `lib/hazardModules.ts`). This button is disabled, with an explanatory tooltip, for any section that doesn't have bundled defaults wired up.
+- Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/modules/` entry (e.g. `lib/modules/hazards.ts`). This button is disabled, with an explanatory tooltip, for any section that doesn't have bundled defaults wired up.
 
 ---
 
@@ -69,30 +69,30 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 Hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'`.
 	It can be changed either through each module's in-app editor (see "Module Reader Pages" under "Edit Mode" above) or by editing rows in the `modules`/`module_sections` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
 
-> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `hazard-modules` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
+> **Note:** `guides` also has rows in these tables (seeded to match `lib/modules/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `hazard-modules` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
 	`guides` is a template section not linked from navigation, so day-to-day editing here is mainly relevant for keeping the dropdown's options in sync with any real section you build from it.
 
-`lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/modules/useModules.ts` merges the two).
+`lib/modules/hazards.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/modules/useModules.ts` merges the two).
 
-Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/moduleTypes.ts`):
+Each entry — whether in `lib/modules/hazards.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/modules/moduleTypes.ts`):
 - `id` — numeric string matching the URL segment (e.g. `'1'`) — this is the stable, permanent key; routes are built from it, not `slug`
 - `slug` — optional stable identifier (e.g. `'gas-leak-detection'`); not currently used for routing, exposed as a `data-slug` attribute on the card and reader for things like analytics or test selectors.
 	It is also under consideration for replacing the current url scheme, going from '/section/id' to '/section/slug'.
-- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`
+- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/modules/guides.ts`
 - `title`, `icon`, `iconBg`, `description` — used by the listing card
 - `status`, `progress` — used by the listing card; live per-user values come from the separate `user_module_progress` table, merged in by `useModules` for a signed-in user.
-	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/` file (e.g. `lib/hazardModules.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
+	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/modules/` file (e.g. `lib/modules/hazards.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
 - `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects;
 	in Supabase this is the `module_sections` table (one row per section, foreign-keyed to its parent `modules` row, deleted automatically via `on delete cascade` if the module is deleted)
 	- `num` must stay sequential (`'01'`, `'02'`, `'03'`, …) matching each section's position — it drives progress tracking positionally (see `ADDITIONAL_INFO.md`), so an out-of-sequence value throws off a learner's progress percentage.
 		The in-app editor manages this automatically; editing `module_sections` rows directly in Supabase means keeping it in sync by hand.
 	- `callout` text gets a 💡 prefix added automatically by the reader.
 - `keyTakeaway` — displayed at the bottom of the reader
-- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/hazardModules.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
+- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/modules/hazards.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
 - `videoUrl` / `videoType` — the module's embedded video, if any (`videoType` is `'youtube'` or `'mp4'`, or both `null`/absent for no video).
-	Like other fields, a bundled `lib/` entry's video is used as a fallback when Supabase hasn't set one yet.
+	Like other fields, a bundled `lib/modules/` entry's video is used as a fallback when Supabase hasn't set one yet.
 
-Changes to `lib/hazardModules.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
+Changes to `lib/modules/hazards.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
 
 To add a whole new section rather than another hazard module, see "Adding a new `app/modules/`-style section" in `ADDITIONAL_INFO.md`.
 
@@ -165,7 +165,7 @@ Each hotspot can optionally link to a module, via its `moduleId`/`moduleSection`
 	Pick "None" to remove the link — this clears both fields together, since a hotspot's link must be fully set or fully empty, never half-set.
 	If you pick a section but haven't picked a module yet (or vice versa), **Save Changes** disables with a warning until you either finish picking a module or set the section back to "None".
 
-**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/hazardModules.ts`/`lib/guides.ts`'s bundled defaults.
+**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/modules/hazards.ts`/`lib/modules/guides.ts`'s bundled defaults.
 	If you've added a module to one of those files but haven't seeded a matching row in Supabase yet (see "Customising Module Content" above), it won't show up here yet — add the Supabase row first.
 
 You can still set or clear a link directly in Supabase if you prefer (set the `hazards` table's `module_section`/`module_id` columns for the relevant row, either both to a valid `(section, id)` pair from the `modules` table, or both to `null`) — the in-app editor is just the more convenient path for day-to-day use now.

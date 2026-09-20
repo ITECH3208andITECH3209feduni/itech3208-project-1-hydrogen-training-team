@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/adminAuth";
-import { hazardModules } from "@/lib/hazardModules";
+import { requireAdmin } from "@/lib/firebase/adminAuth";
+import { hazardModules } from "@/lib/modules/hazards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

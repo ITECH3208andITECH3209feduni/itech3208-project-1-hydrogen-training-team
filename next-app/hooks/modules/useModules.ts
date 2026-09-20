@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
-import { ModuleData, ModuleSection, getModuleById } from '@/lib/moduleTypes';
+import { ModuleData, ModuleSection, getModuleById } from '@/lib/modules/moduleTypes';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 

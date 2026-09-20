@@ -1,7 +1,7 @@
 // app/api/feedback/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/authUser";
+import { requireUser } from "@/lib/firebase/authUser";
 import { supabaseServer } from "@/lib/supabase";
 
 const VALID_CATEGORIES = [

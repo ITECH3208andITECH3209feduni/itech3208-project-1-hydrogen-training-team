@@ -1,4 +1,4 @@
-// lib/moduleTypes.ts
+// lib/modules/moduleTypes.ts
 // Shared shape for the listing+reader template used by every section under app/modules/ (e.g. app/modules/hazard-modules).
 // Each section has its own data file (e.g. lib/hazardModules.ts) built from ModuleData[], plus its own thin wrapper pages under app/modules/<section>/.
 /**

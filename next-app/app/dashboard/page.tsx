@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useModules } from "@/hooks/modules/useModules";
-import { hazardModules } from "@/lib/hazardModules";
+import { hazardModules } from "@/lib/modules/hazards";
 import "./dashboard.css";
 
 type QuizProgress = {

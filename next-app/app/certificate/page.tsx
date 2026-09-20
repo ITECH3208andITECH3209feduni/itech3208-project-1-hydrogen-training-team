@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { QUIZ_TITLE, QUIZ_SLUG } from '@/lib/questionhazards';
-import { hazardModules } from '@/lib/hazardModules';
+import { hazardModules } from '@/lib/modules/hazards';
 
 interface QuizRecord {
 	passed: boolean;

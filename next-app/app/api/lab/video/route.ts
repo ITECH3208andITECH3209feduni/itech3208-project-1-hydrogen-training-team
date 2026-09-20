@@ -4,8 +4,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/adminAuth";
-import { getYouTubeVideoId, getStoragePath, validateMp4File, safeFileName } from "@/lib/video";
+import { requireAdmin } from "@/lib/firebase/adminAuth";
+import { getYouTubeVideoId, getStoragePath, validateMp4File, safeFileName } from "@/lib/video/video";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

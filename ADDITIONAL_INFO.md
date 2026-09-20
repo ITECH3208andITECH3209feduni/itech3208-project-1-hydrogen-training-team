@@ -52,11 +52,11 @@ The `user_type` values `AuthContext.tsx`'s `UserProfile` type declares (`student
 ## Server-side auth guards
 
 Two helpers in `lib/` protect API routes using a Firebase ID token rather than the client-side `permissions` object above.
-	Both expect the request to carry `Authorization: Bearer <idToken>`, verify it server-side via `lib/firebaseAdmin.ts` (`adminAuth.verifyIdToken`), and `throw` a plain `Error` on failure — it's up to the calling route to catch that and respond with the appropriate status code:
-- **`requireUser(request)`** (`lib/authUser.ts`) — verifies the token and returns just the caller's `uid`. For routes that only need to know *who* is calling, not their role — it never queries Supabase at all, so it can't distinguish a `user` from a `staff` or `admin` account.
-- **`requireAdmin(request)`** (`lib/adminAuth.ts`) — verifies the token, then looks up the caller's row in Supabase's `profiles` table and throws unless `role === 'admin'`. Returns `{ uid, profile }` on success.
+	Both expect the request to carry `Authorization: Bearer <idToken>`, verify it server-side via `lib/firebase/firebaseAdmin.ts` (`adminAuth.verifyIdToken`), and `throw` a plain `Error` on failure — it's up to the calling route to catch that and respond with the appropriate status code:
+- **`requireUser(request)`** (`lib/firebase/authUser.ts`) — verifies the token and returns just the caller's `uid`. For routes that only need to know *who* is calling, not their role — it never queries Supabase at all, so it can't distinguish a `user` from a `staff` or `admin` account.
+- **`requireAdmin(request)`** (`lib/firebase/adminAuth.ts`) — verifies the token, then looks up the caller's row in Supabase's `profiles` table and throws unless `role === 'admin'`. Returns `{ uid, profile }` on success.
 
-`lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
+`lib/firebase/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase/firebase.ts`.
 
 **Route coverage:**
 - `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/lab/progress` (all methods), `/api/feedback` (`POST`)
@@ -112,11 +112,11 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 
 `app/modules/` is a directory holding every section built on a shared listing+reader template — it isn't a page itself (there's no `page.tsx` directly under `app/modules/`).
 	Currently there are two sections:
-- **Hazard Modules** (`/modules/hazard-modules`) — the hydrogen hazards content, defined in `lib/hazardModules.ts`.
+- **Hazard Modules** (`/modules/hazard-modules`) — the hydrogen hazards content, defined in `lib/modules/hazards.ts`.
 	Linked from the Navbar and the dashboard's Modules stat card.
-- **Guides** (`/modules/guides`) — an example second section demonstrating the pattern, defined in `lib/guides.ts`.
+- **Guides** (`/modules/guides`) — an example second section demonstrating the pattern, defined in `lib/modules/guides.ts`.
 	Not currently linked from navigation — it's a template section, kept unlinked deliberately so its placeholder content stays available as a reference rather than needing to look like real content.
-	It follows the same live-loading pattern as `hazard-modules`: `app/modules/guides/page.tsx`/`[id]/page.tsx` call `useModules`/`useModuleById` with `section: 'guides'`, merging over `lib/guides.ts` as `defaults`.
+	It follows the same live-loading pattern as `hazard-modules`: `app/modules/guides/page.tsx`/`[id]/page.tsx` call `useModules`/`useModuleById` with `section: 'guides'`, merging over `lib/modules/guides.ts` as `defaults`.
 
 The shared template lives in `app/modules/components/`:
 - `ModuleListingPage.tsx` — filter bar, grid, auth redirect
@@ -127,7 +127,7 @@ The shared template lives in `app/modules/components/`:
 	Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
 	A `callout` is rendered with a 💡 prefix added by this component.
 
-Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/moduleTypes.ts`.
+Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/modules/moduleTypes.ts`.
 	Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these section-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
@@ -147,7 +147,7 @@ Module content lives in Supabase, loaded per-section through `hooks/modules/useM
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
 - `videoUrl`/`videoType` fall back to `defaults` together.
 
-Each section's data file (e.g. `lib/hazardModules.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
+Each section's data file (e.g. `lib/modules/hazards.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
 
 For the `ModuleData` field reference and how to edit live module content, see `EDITING_GUIDE.md`.
@@ -177,7 +177,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 
 ### Adding a new `app/modules/`-style section
 
-1. Create a data file in `lib/` — e.g. `lib/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/moduleTypes.ts`):
+1. Create a data file in `lib/` — e.g. `lib/modules/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/modules/moduleTypes.ts`):
    ```ts
    import { ModuleData } from './moduleTypes';
 
@@ -192,7 +192,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
    import '../modules.css';
    import ModuleListingPage from '../components/ModuleListingPage';
    import { useModules } from '@/hooks/modules/useModules';
-   import { scenarios } from '@/lib/scenarios';
+   import { scenarios } from '@/lib/modules/scenarios';
 
    export default function ScenariosPage() {
    	const { modules } = useModules('scenarios', scenarios);
@@ -415,8 +415,8 @@ Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed ve
 
 **Where the dropdown options come from:** `hooks/lab/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
 	The hook groups the response client-side into one entry per section.
-	This intentionally bypasses `useModules`/`lib/` defaults entirely: since the FK requires a real Supabase row, a default-only id would just fail to save, so this route has no fallback — if it's unreachable, the dropdowns come back empty rather than silently offering something that wouldn't actually save.
-	Practically, this means a section only appears as a linkable option once it has real rows in `modules` — a `lib/`-only section (nothing seeded yet) won't show up at all.
+	This intentionally bypasses `useModules`/`lib/modules/` defaults entirely: since the FK requires a real Supabase row, a default-only id would just fail to save, so this route has no fallback — if it's unreachable, the dropdowns come back empty rather than silently offering something that wouldn't actually save.
+	Practically, this means a section only appears as a linkable option once it has real rows in `modules` — a `lib/modules/`-only section (nothing seeded yet) won't show up at all.
 	See `BUG_REPORT.md` for what that requires for `hazard-modules` on a fresh install.
 
 For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
@@ -452,7 +452,7 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 **Saving:** unlike a module's other fields or a hotspot's title/position, a video change is written to Supabase immediately when its own save/upload/remove button is clicked — not staged into the draft and sent along with the rest of a Save Changes click.
 	`PUT /api/modules/video` and `PUT /api/lab/video` (both `requireAdmin`-gated) handle a YouTube URL or an mp4 file upload; `DELETE` on each removes the video.
 	An mp4 upload goes to Supabase Storage (`module-videos` or `lab-videos`, one file per module/hotspot) and the route updates `video_url`/`video_type` afterwards; replacing or removing an existing mp4 deletes the old Storage object once the database write succeeds.
-	`lib/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
+	`lib/video/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
 
 Once a video is saved through either route, the hook managing that page (`useModuleEditor`'s inline handlers on `ModuleReaderPage.tsx`, or `useHazards.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo`) writes the returned `video_url`/`video_type` into local state, so the display component picks it up without a full page reload.
 
@@ -464,7 +464,7 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 
 ### What's covered
 
-- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video.ts`)
+- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video/video.ts`)
 - **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/lab/load-hazards`, `/api/lab/load-image`, `/api/lab/save-hazards`, `/api/lab/upload-image`, `/api/lab/video`;)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/lab/useHazards.ts` → `hooks/lab/useHazards.test.ts`). Vitest picks these up automatically.

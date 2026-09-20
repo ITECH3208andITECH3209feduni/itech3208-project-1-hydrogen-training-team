@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { ModuleData, ModuleSection } from '@/lib/moduleTypes';
+import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 

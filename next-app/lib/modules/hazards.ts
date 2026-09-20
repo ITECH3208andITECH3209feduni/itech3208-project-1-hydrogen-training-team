@@ -1,4 +1,4 @@
-// lib/hazardModules.ts
+// lib/modules/hazards.ts
 // Content for the "Hazard Modules" section (app/modules/hazard-modules/).
 // Types come from lib/moduleTypes.ts.
 

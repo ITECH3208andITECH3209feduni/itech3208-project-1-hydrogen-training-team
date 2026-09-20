@@ -1,7 +1,7 @@
 // app/modules/components/ModuleEditor.tsx
 // Edit panel for a module: top-level fields, then a two-column section list + section field editor
 
-import { ModuleData, ModuleSection } from '@/lib/moduleTypes';
+import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
 import VideoEditorPanel, { VideoType } from '@/components/VideoEditorPanel';
 

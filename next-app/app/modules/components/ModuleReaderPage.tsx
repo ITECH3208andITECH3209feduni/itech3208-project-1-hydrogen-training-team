@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { ModuleData, getModuleById } from "@/lib/moduleTypes";
+import { ModuleData, getModuleById } from "@/lib/modules/moduleTypes";
 import SectionBlock from "./SectionBlock";
 import ModuleVideo from "@/components/ModuleVideo";
 import ModuleEditor from "./ModuleEditor";
@@ -16,7 +16,7 @@ import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/modules/useModuleProgress";
 import { useModuleEditor } from "@/hooks/modules/useModuleEditor";
-import { MAX_MP4_BYTES } from "@/lib/video";
+import { MAX_MP4_BYTES } from "@/lib/video/video";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;

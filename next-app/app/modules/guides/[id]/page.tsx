@@ -8,7 +8,7 @@ import '../../modules.css';
 import { useParams } from 'next/navigation';
 import ModuleReaderPage from '../../components/ModuleReaderPage';
 import { useModuleById } from '@/hooks/modules/useModules';
-import { guides } from '@/lib/guides';
+import { guides } from '@/lib/modules/guides';
 
 export default function GuidePage() {
 	const params = useParams();

@@ -1,6 +1,7 @@
+// lib/firebase/adminAuth.ts
 import { NextRequest } from "next/server";
 import { adminAuth } from "./firebaseAdmin";
-import { supabaseServer } from "./supabase";
+import { supabaseServer } from "../supabase";
 
 export async function requireAdmin(request: NextRequest) {
   const authHeader = request.headers.get("Authorization");

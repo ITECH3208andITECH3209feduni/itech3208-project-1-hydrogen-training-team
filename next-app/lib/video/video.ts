@@ -1,4 +1,4 @@
-// lib/video.ts
+// lib/video/video.ts
 // Shared helpers for the modules and hazards video routes, plus the client-side upload paths that need the same MP4 size limit.
 
 export const MAX_MP4_BYTES = 50 * 1024 * 1024; // 50MB

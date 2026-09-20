@@ -1,5 +1,6 @@
+// lib/firebase/authUser.ts
 import { NextRequest } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { adminAuth } from "@/lib/firebase/firebaseAdmin";
 
 export async function requireUser(request: NextRequest): Promise<string> {
   const authHeader = request.headers.get("authorization");

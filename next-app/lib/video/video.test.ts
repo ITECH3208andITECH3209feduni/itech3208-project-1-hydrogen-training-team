@@ -1,4 +1,4 @@
-// lib/video.test.ts
+// lib/video/video.test.ts
 // Unit tests for the video helpers shared by the modules and lab video routes.
 import { describe, it, expect } from 'vitest';
 import {

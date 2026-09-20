@@ -198,17 +198,20 @@ hydrogen-lab/
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
 ├── lib/
 │   ├── hazards.ts						# Default hazard data + hotspot positions + module link + embedded video (fallback)
-│   ├── video.ts						# Shared video helpers (YouTube URL parsing, Storage path parsing, mp4 validation, 50MB size limit) — used by the modules and lab video routes
-│   ├── video.test.ts					# Unit tests for lib/video.ts
-│   ├── moduleTypes.ts					# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
-│   ├── hazardModules.ts				# Static content for the 5 hazard modules (bundled at build time)
-│   ├── guides.ts						# Example second section's data — not linked in nav
 │   ├── questionhazards.ts				# Hydrogen Hazards quiz: `questionhazards` question bank, `QuizQuestion` type, and `QUIZ_DEFAULTS`
 │   ├── supabase.ts						# Supabase client (anon key + server-side secret key)
-│   ├── firebase.ts						# Firebase client SDK init (auth + Firestore) — browser-side
-│   ├── firebaseAdmin.ts				# Firebase Admin SDK init — server-side, used to verify ID tokens
-│   ├── authUser.ts						# requireUser(request) — verifies a Bearer ID token, returns the caller's uid
-│   └── adminAuth.ts					# requireAdmin(request) — verifies a Bearer ID token + checks role='admin' in Supabase
+│   ├── firebase/						# Firebase client/Admin SDK init and the server-side auth guards built on them
+│   │   ├── firebase.ts					# Firebase client SDK init (auth + Firestore) — browser-side
+│   │   ├── firebaseAdmin.ts			# Firebase Admin SDK init — server-side, used to verify ID tokens
+│   │   ├── authUser.ts					# requireUser(request) — verifies a Bearer ID token, returns the caller's uid
+│   │   └── adminAuth.ts				# requireAdmin(request) — verifies a Bearer ID token + checks role='admin' in Supabase
+│   ├── modules/						# Bundled module content + shared types for the app/modules/ sections
+│   │   ├── moduleTypes.ts				# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
+│   │   ├── hazards.ts					# Static content for the 5 hazard modules (bundled at build time)
+│   │   └── guides.ts					# Example second section's data — not linked in nav
+│   └── video/							# Shared video helpers for the modules and lab video routes
+│       ├── video.ts					# YouTube URL parsing, Storage path parsing, mp4 validation, 50MB size limit
+│       └── video.test.ts				# Unit tests for lib/video/video.ts
 ├── public/
 │   ├── lab.jpg							# Default lab image (fallback)
 │   └── hydrogen-lab-bg.svg				# Decorative background graphic used on the landing/intro page

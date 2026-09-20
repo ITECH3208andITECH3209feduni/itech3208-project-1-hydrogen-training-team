@@ -1,4 +1,4 @@
-// lib/guides.ts
+// lib/modules/guides.ts
 // EXAMPLE data file for a new section built on the app/modules/ template.
 // Rename this file (and app/modules/guides/**) to whatever your new section
 // is actually called, then replace the sample entries below with your real

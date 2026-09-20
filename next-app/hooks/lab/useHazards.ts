@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { MAX_MP4_BYTES } from '@/lib/video';
+import { MAX_MP4_BYTES } from '@/lib/video/video';
 import {
 	HazardType,
 	hazardData as defaultHazardData,
