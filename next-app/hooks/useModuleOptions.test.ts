@@ -41,7 +41,7 @@ describe('1. load-module-options', () => {
   // Test if rows for the same section are grouped together even when not sorted together
   it('1.2 groups non-contiguous rows for the same section together', async () => {
     server.use(
-      http.get('/api/load-module-options', () => HttpResponse.json({
+      http.get('/api/lab/load-module-options', () => HttpResponse.json({
         ok: true,
         data: [
           { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
@@ -63,7 +63,7 @@ describe('1. load-module-options', () => {
   // Test if a null badge_num is kept as null rather than dropped or changed to 0/undefined
   it('1.3 preserves a null badgeNum rather than coercing or dropping it', async () => {
     server.use(
-      http.get('/api/load-module-options', () => HttpResponse.json({
+      http.get('/api/lab/load-module-options', () => HttpResponse.json({
         ok: true,
         data: [{ section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' }],
       }))
@@ -80,7 +80,7 @@ describe('1. load-module-options', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     server.use(
-      http.get('/api/load-module-options', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
+      http.get('/api/lab/load-module-options', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
     );
 
     const { result } = renderHook(() => useModuleOptions());
@@ -96,7 +96,7 @@ describe('1. load-module-options', () => {
   it('1.5 resolves to an empty array when the API returns no rows', async () => {
     let called = false;
     server.use(
-      http.get('/api/load-module-options', () => {
+      http.get('/api/lab/load-module-options', () => {
         called = true;
         return HttpResponse.json({ ok: true, data: [] });
       })
@@ -114,7 +114,7 @@ describe('1. load-module-options', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     server.use(
-      http.get('/api/load-module-options', () => HttpResponse.error())
+      http.get('/api/lab/load-module-options', () => HttpResponse.error())
     );
 
     const { result } = renderHook(() => useModuleOptions());
@@ -131,7 +131,7 @@ describe('1. load-module-options', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     server.use(
-      http.get('/api/load-module-options', () => new HttpResponse('Internal Server Error', { status: 500 }))
+      http.get('/api/lab/load-module-options', () => new HttpResponse('Internal Server Error', { status: 500 }))
     );
 
     const { result } = renderHook(() => useModuleOptions());

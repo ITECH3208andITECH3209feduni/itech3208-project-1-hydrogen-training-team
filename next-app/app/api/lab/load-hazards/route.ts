@@ -1,4 +1,4 @@
-// app/api/load-hazards/route.ts
+// app/api/lab/load-hazards/route.ts
 // Returns all hotspot + hazard data from Supabase.
 // Note: "left" is quoted because it is a reserved word.
 

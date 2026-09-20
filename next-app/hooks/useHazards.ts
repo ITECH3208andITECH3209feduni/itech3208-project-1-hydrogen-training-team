@@ -77,7 +77,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		async function loadHazards() {
 			try {
 				// Fetch hazards from Supabase
-				const res  = await fetch('/api/load-hazards', { cache: 'no-store' });
+				const res  = await fetch('/api/lab/load-hazards', { cache: 'no-store' });
 				const json = await res.json();
 				
 				// If fetch fails or table empty, use hazards.ts instead
@@ -133,7 +133,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	useEffect(() => {
 		async function loadImage() {
 			try {
-				const res = await fetch('/api/load-image', { cache: 'no-store' });
+				const res = await fetch('/api/lab/load-image', { cache: 'no-store' });
 				const json = await res.json();
 				if (json.ok && json.url) {
 					// Append timestamp to bust browser cache on each load
@@ -267,7 +267,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			const formData = new FormData();
 			formData.append('image', file);
 			
-			const res = await fetch('/api/upload-image', {
+			const res = await fetch('/api/lab/upload-image', {
 				method: 'POST',
 				body: formData,
 			});
@@ -415,7 +415,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		}
 		setSaveStatus('saving');	// Updated over course of function to show progress
 		try {
-			const res = await fetch('/api/save-hazards', {
+			const res = await fetch('/api/lab/save-hazards', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

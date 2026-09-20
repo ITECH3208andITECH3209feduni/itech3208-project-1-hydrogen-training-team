@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw';
 // Put a successful response in each route (for fail cases, override in test file)
 export const handlers = [
     // Lab page routes
-    http.get('/api/load-hazards', () => {
+    http.get('/api/lab/load-hazards', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -23,16 +23,16 @@ export const handlers = [
             ],
         });
     }),
-    http.get('/api/load-image', () => {
+    http.get('/api/lab/load-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/lab-photo.jpg' });
     }),
-    http.post('/api/save-hazards', () => {
+    http.post('/api/lab/save-hazards', () => {
         return HttpResponse.json({ ok: true });
     }),
-    http.post('/api/upload-image', () => {
+    http.post('/api/lab/upload-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/mock-image.jpg' });
     }),
-    http.get('/api/load-module-options', () => {
+    http.get('/api/lab/load-module-options', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -68,7 +68,7 @@ export const handlers = [
     }),
     
     // Module page routes
-    http.get('/api/load-modules', () => {
+    http.get('/api/modules/load-modules', () => {
         return HttpResponse.json({
             ok: true,  
             data: [

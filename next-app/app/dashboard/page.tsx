@@ -108,7 +108,7 @@ export default function Dashboard() {
 
                 const token = await user.getIdToken();
 
-                const response = await fetch("/api/hazards/progress", {
+                const response = await fetch("/api/lab/progress", {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,

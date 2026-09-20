@@ -1,4 +1,4 @@
-// app/api/load-module-options/route.ts
+// app/api/lab/load-module-options/route.ts
 // Returns a list of modules to connect to a hotspot for the lab page's edit-mode.
 // GET /api/load-module-options
 

@@ -79,7 +79,7 @@ export default function LabPage() {
         const token = await user.getIdToken();
 
         const response = await fetch(
-            "/api/hazards/progress",
+            "/api/lab/progress",
             {
                 method: "POST",
                 headers: {

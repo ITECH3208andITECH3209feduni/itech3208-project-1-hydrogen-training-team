@@ -59,10 +59,10 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 `lib/firebaseAdmin.ts` initialises the Firebase Admin SDK from a service-account credential (see `FIREBASE_ADMIN_*` in "Environment Variables"), separately from the browser-side Firebase SDK in `lib/firebase.ts`.
 
 **Route coverage:**
-- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/hazards/progress` (all methods), `/api/feedback` (`POST`)
+- `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/lab/progress` (all methods), `/api/feedback` (`POST`)
 - `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/admin/feedback` (`GET`), `/api/modules/save-module` (`POST`), `/api/modules/video` (`PUT`/`DELETE`), `/api/quizzes/save-quiz` (`POST`), `/api/lab/video` (`PUT`/`DELETE`)
-- No guard: `load-hazards`, `load-image`, `load-modules`, `load-module-options` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above).
-	`save-hazards` and `upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
+- No guard: `/api/lab/load-hazards`, `/api/lab/load-image`, `/api/lab/load-module-options`, `/api/modules/load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above).
+	`/api/lab/save-hazards` and `/api/lab/upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
 	`/api/profile/get` and `/api/profile/create` also take no steps to confirm the caller owns the `uid` they pass, so either route can be used to read or create a profile for an arbitrary uid — see `BUG_REPORT.md`.
 
 Status-code handling for a caught auth failure isn't perfectly uniform across `requireAdmin` routes:
@@ -81,14 +81,14 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 
 | Route                             | Method(s)       | Auth                         | Supabase tables / storage                                | Called from                                                                                                            |
 |-----------------------------------|-----------------|------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `/api/load-hazards`               | `GET`           | public                       | `hazards`                                                | `useHazards.ts` (`/lab`)                                                                                               |
-| `/api/save-hazards`               | `POST`          | public — see `BUG_REPORT.md` | `hazards` (delete-all, reinsert)                         | `useHazards.ts` (`/lab` editor save)                                                                                   |
-| `/api/load-image`                 | `GET`           | public                       | `lab-images` storage bucket                              | `useHazards.ts` (`/lab`)                                                                                               |
-| `/api/upload-image`               | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHazards.ts` (`/lab` editor image upload)                                                                           |
+| `/api/lab/load-hazards`           | `GET`           | public                       | `hazards`                                                | `useHazards.ts` (`/lab`)                                                                                               |
+| `/api/lab/save-hazards`           | `POST`          | public — see `BUG_REPORT.md` | `hazards` (delete-all, reinsert)                         | `useHazards.ts` (`/lab` editor save)                                                                                   |
+| `/api/lab/load-image`             | `GET`           | public                       | `lab-images` storage bucket                              | `useHazards.ts` (`/lab`)                                                                                               |
+| `/api/lab/upload-image`           | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHazards.ts` (`/lab` editor image upload)                                                                           |
+| `/api/lab/load-module-options`    | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/lab` editor's Linked Module dropdown)                                                         |
+| `/api/lab/progress`               | `GET`, `POST`   | `requireUser`                | `user_hazard_progress`, `hazards` (count)                | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Scenarios stat card)             |
 | `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hazards`, `lab-videos` storage bucket                   | `useHazards.ts` (`/lab` editor video panel)                                                                            |
-| `/api/hazards/progress`           | `GET`, `POST`   | `requireUser`                | `user_hazard_progress`, `hazards` (count)                | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Scenarios stat card)             |
-| `/api/load-modules`               | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
-| `/api/load-module-options`        | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/lab` editor's Linked Module dropdown)                                                         |
+| `/api/modules/load-modules`       | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
 | `/api/modules/video`              | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `ModuleReaderPage.tsx`'s in-app editor                                                                                 |
 | `/api/modules/progress`           | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress),                                               |
 | ^^^^^                             | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/dashboard/page.tsx` (Modules stat card, via `useModules`), `app/certificate/page.tsx` (module-completion check)   |
@@ -132,7 +132,7 @@ Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getM
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
 Module content lives in Supabase, loaded per-section through `hooks/useModules.ts`:
-- **`useModules(section, defaults)`** — fetches `GET /api/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
+- **`useModules(section, defaults)`** — fetches `GET /api/modules/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
 	A successful, non-empty response is authoritative for whatever it contains — any missing modules from the fallback version are considered purposefully deleted.
 	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the section hasn't been seeded yet (empty response).
 	`usingDefaults` is `true` in exactly those fallback cases (an error, an empty response, or a network failure), `false` on a verified live load.
@@ -405,7 +405,7 @@ Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed ve
 `HazardPopup.tsx` builds the Learn More link as `/modules/${moduleSection}/${moduleId}`, and only renders the button when both are non-null.
 
 **Where the values come from:** the `hazards` table's `module_section`/`module_id` columns are genuinely live from Supabase, treated the same as `title`/`text`.
-	`useHazards.ts` only falls back to the full set of local defaults (including their module links) if the `/api/load-hazards` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleSection`, even where they're `null`.
+	`useHazards.ts` only falls back to the full set of local defaults (including their module links) if the `/api/lab/load-hazards` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleSection`, even where they're `null`.
 
 **Both-or-neither:** the two columns form a matched pair enforced at the database level — the `hazards_module_fk` foreign key uses `match full`, so a row can have both `null` or both set to a valid `(section, id)` on `modules`, never just one. `addHotspot()` in `useHazards.ts` seeds new hotspots with both `null` accordingly.
 	Deleting the linked module (`on delete set null`) doesn't delete the hazard — it just resets both columns to `null`, so the Learn More button disappears rather than pointing at a dead link.
@@ -413,7 +413,7 @@ Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed ve
 **In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Section dropdown, and, once a section is picked, a Module dropdown scoped to that section. Picking "None" (or switching section) always clears the module id in the same update, via `useHazards.ts`'s `updateModuleLink(index, moduleSection, moduleId)`, which writes both fields together rather than as two separate state updates.
 	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHazards.ts`) flags any hotspot currently half-set (a section picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
 
-**Where the dropdown options come from:** `hooks/useModuleOptions.ts` fetches `GET /api/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
+**Where the dropdown options come from:** `hooks/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
 	The hook groups the response client-side into one entry per section.
 	This intentionally bypasses `useModules`/`lib/` defaults entirely: since the FK requires a real Supabase row, a default-only id would just fail to save, so this route has no fallback — if it's unreachable, the dropdowns come back empty rather than silently offering something that wouldn't actually save.
 	Practically, this means a section only appears as a linkable option once it has real rows in `modules` — a `lib/`-only section (nothing seeded yet) won't show up at all.
@@ -427,11 +427,11 @@ For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
 
 `user_hazard_progress` records the first time a signed-in user clicks each hotspot on `/lab`, outside edit mode — `scenario_id` defaults to `'interactive-lab'`, a forward-looking column for if a second interactive scenario is ever added, always that one value today.
 
-**`POST /api/hazards/progress`** (`requireUser`-gated): called from `recordHazardProgress` in `app/lab/page.tsx` on every hotspot click.
+**`POST /api/lab/progress`** (`requireUser`-gated): called from `recordHazardProgress` in `app/lab/page.tsx` on every hotspot click.
 	Confirms the hazard type exists in `hazards` first, then upserts onto `(uid, scenario_id, hazard_id)` with `ignoreDuplicates: true` — so only the first click on a given hotspot is ever recorded;
 	later clicks on the same hotspot are silent no-ops, and `first_clicked_at` reflects that first click specifically, not the most recent one.
 
-**`GET /api/hazards/progress`** (`requireUser`-gated): returns the signed-in user's recorded rows, `completedHazards` (their row count), and `totalHazards` (a live count of every row currently in `hazards`, not a fixed number). See `BUG_REPORT.md`.
+**`GET /api/lab/progress`** (`requireUser`-gated): returns the signed-in user's recorded rows, `completedHazards` (their row count), and `totalHazards` (a live count of every row currently in `hazards`, not a fixed number). See `BUG_REPORT.md`.
 
 ---
 
@@ -465,7 +465,7 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 ### What's covered
 
 - **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video.ts`)
-- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/load-hazards`, `/api/load-image`, `/api/save-hazards`, `/api/upload-image`, `/api/lab/video`;)
+- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/lab/load-hazards`, `/api/lab/load-image`, `/api/lab/save-hazards`, `/api/lab/upload-image`, `/api/lab/video`;)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/useHazards.ts` → `hooks/useHazards.test.ts`). Vitest picks these up automatically.
 

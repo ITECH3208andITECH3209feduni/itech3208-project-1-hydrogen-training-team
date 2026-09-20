@@ -1,4 +1,4 @@
-// app/api/hazards/progress/route.ts
+// app/api/lab/progress/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";

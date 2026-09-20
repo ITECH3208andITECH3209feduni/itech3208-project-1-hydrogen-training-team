@@ -7,7 +7,7 @@ import { ModuleData, ModuleSection, getModuleById } from '@/lib/moduleTypes';
 
 export type LoadStatus = 'loading' | 'ready' | 'error';
 
-// ─── Shapes returned by /api/load-modules ───────────────────────────────────────────────────────────────────
+// ─── Shapes returned by /api/modules/load-modules ───────────────────────────────────────────────────────────────────
 export interface SupabaseSectionRow {
 	num: string;
 	heading: string;
@@ -82,7 +82,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 
 		async function loadModules() {
 			try {
-				const res = await fetch(`/api/load-modules?section=${encodeURIComponent(section)}`, {
+				const res = await fetch(`/api/modules/load-modules?section=${encodeURIComponent(section)}`, {
 					cache: 'no-store',
 				});
 				const json = await res.json();

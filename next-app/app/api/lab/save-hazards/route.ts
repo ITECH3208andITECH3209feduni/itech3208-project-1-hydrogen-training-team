@@ -1,4 +1,4 @@
-// app/api/save-hazards/route.ts
+// app/api/lab/save-hazards/route.ts
 // Saves the current hotspot state to Supabase.
 // Deletes existing rows first, then recreates them from the current UI state.
 // Uses supabaseServer because this is a server-side write operation.

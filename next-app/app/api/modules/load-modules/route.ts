@@ -1,4 +1,4 @@
-// app/api/load-modules/route.ts
+// app/api/modules/load-modules/route.ts
 // Returns content (title, sections, key takeaway, etc.) for a given module (found in the modules folder) from Supabase
 // GET /api/load-modules?section=hazard-modules
 

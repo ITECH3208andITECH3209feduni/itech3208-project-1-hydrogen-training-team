@@ -1,4 +1,4 @@
-// app/api/upload-image/route.ts
+// app/api/lab/upload-image/route.ts
 // Accepts a multipart form upload and saves the image to Supabase Storage.
 // Always saves as 'lab.jpg' so the filename stays consistent.
 

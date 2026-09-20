@@ -118,19 +118,9 @@ hydrogen-lab/
 │   │   ├── feedback.css				# Feedback-page-specific styles
 │   │   └── page.tsx					# Feedback form (/feedback) — rating, category, message
 │   └── api/
-│       ├── load-hazards/
-│       │   └── route.ts				# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
-│       ├── save-hazards/
-│       │   └── route.ts				# POST — saves hazard data to Supabase (delete-all, then re-insert); no auth guard
-│       ├── load-image/
-│       │   └── route.ts				# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
-│       ├── upload-image/
-│       │   └── route.ts				# POST — uploads lab image to Supabase Storage, always as `lab.jpg` (overwrites); no auth guard
-│       ├── load-modules/
-│       │   └── route.ts				# GET — loads module content + sections from Supabase for a given section (public read)
-│       ├── load-module-options/
-│       │   └── route.ts				# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
 │       ├── modules/
+│       │   ├── load-modules/
+│       │   │   └── route.ts			# GET — loads module content + sections from Supabase for a given section (public read)
 │       │   ├── video/
 │       │   │   └── route.ts			# PUT/DELETE — sets, replaces, or removes a module's embedded video (`requireAdmin`-gated); backs the reader-page editor's Video panel
 │       │   ├── progress/
@@ -138,11 +128,20 @@ hydrogen-lab/
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
 │       ├── lab/
+│       │   ├── load-hazards/
+│       │   │   └── route.ts			# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
+│       │   ├── save-hazards/
+│       │   │   └── route.ts			# POST — saves hazard data to Supabase (delete-all, then re-insert); no auth guard
+│       │   ├── load-image/
+│       │   │   └── route.ts			# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
+│       │   ├── upload-image/
+│       │   │   └── route.ts			# POST — uploads lab image to Supabase Storage, always as `lab.jpg` (overwrites); no auth guard
+│       │   ├── load-module-options/
+│       │   │   └── route.ts			# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
+│       │   ├── progress/
+│       │   │   └── route.ts			# GET/POST — per-user hotspot-click progress for `/lab` (`requireUser`-gated)
 │       │   └── video/
 │       │       └── route.ts			# PUT/DELETE — sets, replaces, or removes a hotspot's embedded video (`requireAdmin`-gated); backs the hotspot editor's Video panel
-│       ├── hazards/
-│       │   └── progress/
-│       │       └── route.ts			# GET/POST — per-user hotspot-click progress for `/lab` (`requireUser`-gated)
 │       ├── admin/
 │       │   ├── users/
 │       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)

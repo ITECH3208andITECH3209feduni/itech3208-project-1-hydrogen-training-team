@@ -29,7 +29,7 @@ export function useModuleOptions(): ModuleSectionOptions[] {
 
 		async function load() {
 			try {
-				const res = await fetch('/api/load-module-options', { cache: 'no-store' });
+				const res = await fetch('/api/lab/load-module-options', { cache: 'no-store' });
 				const json = await res.json();
 				if (cancelled) return;
 

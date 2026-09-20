@@ -99,6 +99,8 @@ describe('2. mergeRow', () => {
 		key_takeaway: 'key takeaway',
 		prev_id: null,
 		next_id: '2',
+        video_url: null,
+        video_type: null,
 		module_sections: [
 			{
 				num: '01',
@@ -245,7 +247,7 @@ describe('4. load-modules', () => {
         
         // Override default response with fail case
         server.use(
-            http.get('/api/load-modules', () => HttpResponse.json({ ok: false, error: 'Missing required "section" query param' }))
+            http.get('/api/modules/load-modules', () => HttpResponse.json({ ok: false, error: 'Missing required "section" query param' }))
         );
 
         const { result } = renderHook(() => useModules("hazard-modules", testModules));
@@ -265,7 +267,7 @@ describe('4. load-modules', () => {
     // Test if uses default info when API returns empty
     it('4.3 fall back to defaults if API returns empty', async () => {
         server.use(
-            http.get('/api/load-modules', () => HttpResponse.json({ ok: true, data: [] }))
+            http.get('/api/modules/load-modules', () => HttpResponse.json({ ok: true, data: [] }))
         );
 
         const { result } = renderHook(() => useModules("hazard-modules", testModules));
@@ -281,7 +283,7 @@ describe('4. load-modules', () => {
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         
         server.use(
-            http.get('/api/load-modules', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
+            http.get('/api/modules/load-modules', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
         );
         
         const { result } = renderHook(() => useModules("hazard-modules", testModules));
@@ -299,7 +301,7 @@ describe('4. load-modules', () => {
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         server.use(
-            http.get('/api/load-modules', () => HttpResponse.error())
+            http.get('/api/modules/load-modules', () => HttpResponse.error())
         );
 
         const { result } = renderHook(() => useModules("hazard-modules", testModules));
@@ -317,7 +319,7 @@ describe('4. load-modules', () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		server.use(
-			http.get('/api/load-modules', () => new HttpResponse('Internal Server Error', { status: 500 }))
+			http.get('/api/modules/load-modules', () => new HttpResponse('Internal Server Error', { status: 500 }))
 		);
 
 		const { result } = renderHook(() => useModules('hazard-modules', testModules));

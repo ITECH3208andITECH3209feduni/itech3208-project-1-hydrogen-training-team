@@ -338,7 +338,7 @@ describe('10. load-hazards', () => {
   it('10.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
+      http.get('/api/lab/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -356,7 +356,7 @@ describe('10. load-hazards', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
+      http.get('/api/lab/load-hazards', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -375,7 +375,7 @@ describe('10. load-hazards', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.error())
+      http.get('/api/lab/load-hazards', () => HttpResponse.error())
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -390,7 +390,7 @@ describe('10. load-hazards', () => {
   // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
   it('10.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hazards', () => HttpResponse.json({
         ok: true,
         data: [
           {
@@ -431,7 +431,7 @@ describe('11. load-image', () => {
 
   // Test if uses default when API returns empty
   it('11.2 keeps the default image when no image exists in the API', async () => {
-    server.use(http.get('/api/load-image', () => HttpResponse.json({ ok: true, url: null })));
+    server.use(http.get('/api/lab/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -444,7 +444,7 @@ describe('11. load-image', () => {
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
   it('11.3 keeps the default image when API responds with an error', async () => {
     server.use(
-      http.get('/api/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
+      http.get('/api/lab/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -471,7 +471,7 @@ describe('12. save-hazards', () => {
   // Test a failed save
   it('12.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
-      http.post('/api/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
+      http.post('/api/lab/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -486,7 +486,7 @@ describe('12. save-hazards', () => {
   it('12.3 sends the full hotspots + hazardData payload', async () => {
     let capturedBody: any = null;
     server.use(
-      http.post('/api/save-hazards', async ({ request }) => {
+      http.post('/api/lab/save-hazards', async ({ request }) => {
         capturedBody = await request.json();
         return HttpResponse.json({ ok: true });
       })
@@ -520,7 +520,7 @@ describe('12. save-hazards', () => {
   it('12.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
-      http.post('/api/save-hazards', () => {
+      http.post('/api/lab/save-hazards', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
@@ -545,7 +545,7 @@ describe('12. save-hazards', () => {
   it('12.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
-      http.post('/api/save-hazards', () => {
+      http.post('/api/lab/save-hazards', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
@@ -590,7 +590,7 @@ describe('13. upload-image', () => {
   // Test a failed upload
   it('13.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
-      http.post('/api/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
+      http.post('/api/lab/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
 
     const ref = createRef<HTMLDivElement>();
@@ -706,7 +706,7 @@ describe('16. removeHotspotVideo', () => {
   it('16.1 clears the hotspot\'s video after confirming', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hazards', () => HttpResponse.json({
         ok: true,
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
@@ -754,7 +754,7 @@ describe('16. removeHotspotVideo', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
-      http.get('/api/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hazards', () => HttpResponse.json({
         ok: true,
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',

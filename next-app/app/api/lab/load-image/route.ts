@@ -1,4 +1,4 @@
-// app/api/load-image/route.ts
+// app/api/lab/load-image/route.ts
 // Returns the public URL of the lab image stored in Supabase Storage.
 // If no image has been uploaded yet, returns ok: true with no url, and the app falls back to the local /lab.jpg.
 
