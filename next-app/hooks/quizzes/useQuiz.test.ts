@@ -3,7 +3,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { mapQuestionRow, mapQuizRow, useQuiz, drawQuizPool, QuizData } from './useQuiz';
-import { server } from '../mocks/server';
+import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 
 // A mock default used in place of the /lib/questionhazards.ts file.

@@ -1,4 +1,4 @@
-// hooks/useHazards.ts
+// hooks/lab/useHazards.ts
 // Manages all hotspot state, Supabase load/save, drag logic, edit mode, lab image URL state and upload, and per-hotspot video embeds
 
 import { useState, useCallback, useEffect } from 'react';

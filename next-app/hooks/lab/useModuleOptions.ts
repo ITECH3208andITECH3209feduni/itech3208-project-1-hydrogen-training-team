@@ -1,4 +1,4 @@
-// hooks/useModuleOptions.ts
+// hooks/lab/useModuleOptions.ts
 // Supplies the "Linked Module" section/id dropdown options for HotspotEditor.tsx.
 
 import { useState, useEffect } from 'react';

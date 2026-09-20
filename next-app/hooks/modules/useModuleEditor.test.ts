@@ -1,9 +1,9 @@
-// hooks/useModuleEditor.test.ts
+// hooks/modules/useModuleEditor.test.ts
 // Unit + integration tests for functions in useModuleEditor.ts & related API calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { buildBlankSection, renumberSections, useModuleEditor } from './useModuleEditor';
-import { server } from '../mocks/server';
+import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 
 // Create mock user (defaults as logged-in, since editing requires an authenticated admin)

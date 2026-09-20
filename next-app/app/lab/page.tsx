@@ -12,8 +12,8 @@ import HazardPopup from './components/HazardPopup';
 import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
-import { useHazards } from '@/hooks/useHazards';
-import { useModuleOptions } from '@/hooks/useModuleOptions';
+import { useHazards } from '@/hooks/lab/useHazards';
+import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
 
 export default function LabPage() {
 	// Authentication

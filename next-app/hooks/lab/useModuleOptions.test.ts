@@ -1,9 +1,9 @@
-// hooks/useModuleOptions.test.ts
+// hooks/lab/useModuleOptions.test.ts
 // Unit & Integration tests for useModuleOptions.ts & its API call
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useModuleOptions } from './useModuleOptions';
-import { server } from '../mocks/server';
+import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 
 // ─── Unit Tests (test purely internal functions) ───────────────

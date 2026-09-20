@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { buildBlankQuestion, nextQuestionId, useQuizEditor } from './useQuizEditor';
 import { QuizData } from './useQuiz';
-import { server } from '../mocks/server';
+import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 
 // Shape of quiz questions (defined here rather than importing from fallback)

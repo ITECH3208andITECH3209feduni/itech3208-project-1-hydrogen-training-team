@@ -7,7 +7,7 @@
 import '../../modules.css';
 import { useParams } from 'next/navigation';
 import ModuleReaderPage from '../../components/ModuleReaderPage';
-import { useModuleById } from '@/hooks/useModules';
+import { useModuleById } from '@/hooks/modules/useModules';
 import { hazardModules } from '@/lib/hazardModules';
 
 export default function HazardModulePage() {

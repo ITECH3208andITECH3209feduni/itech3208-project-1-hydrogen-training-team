@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useModules } from "@/hooks/useModules";
+import { useModules } from "@/hooks/modules/useModules";
 import { hazardModules } from "@/lib/hazardModules";
 import "./dashboard.css";
 

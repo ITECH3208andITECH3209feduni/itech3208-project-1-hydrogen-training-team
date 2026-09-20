@@ -8,8 +8,8 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useQuiz, QuizData } from '@/hooks/useQuiz';
-import { useQuizEditor } from '@/hooks/useQuizEditor';
+import { useQuiz, QuizData } from '@/hooks/quizzes/useQuiz';
+import { useQuizEditor } from '@/hooks/quizzes/useQuizEditor';
 import { QUIZ_SLUG, QUIZ_DEFAULTS } from '@/lib/questionhazards';
 import SaveBar from '@/components/SaveBar';
 

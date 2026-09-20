@@ -6,7 +6,7 @@
 
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
-import { useModules } from '@/hooks/useModules';
+import { useModules } from '@/hooks/modules/useModules';
 import { hazardModules } from '@/lib/hazardModules';
 
 export default function HazardModulesPage() {

@@ -6,7 +6,7 @@
 
 import '../modules.css';
 import ModuleListingPage from '../components/ModuleListingPage';
-import { useModules } from '@/hooks/useModules';
+import { useModules } from '@/hooks/modules/useModules';
 import { guides } from '@/lib/guides';
 
 export default function GuidesPage() {

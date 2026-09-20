@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useQuiz } from '@/hooks/useQuiz';
+import { useQuiz } from '@/hooks/quizzes/useQuiz';
 import { QUIZ_SLUG, QUIZ_DEFAULTS } from '@/lib/questionhazards';
 
 export default function QuizzesPage() {

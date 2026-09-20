@@ -2,8 +2,8 @@
 // Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position editor on the right
 
 import { useRef } from 'react';
-import { EditableHotspot, UploadStatus } from '@/hooks/useHazards';
-import { ModuleSectionOptions } from '@/hooks/useModuleOptions';
+import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHazards';
+import { ModuleSectionOptions } from '@/hooks/lab/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
 import VideoEditorPanel from '@/components/VideoEditorPanel';

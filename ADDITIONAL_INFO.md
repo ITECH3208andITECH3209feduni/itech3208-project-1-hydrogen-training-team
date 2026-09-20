@@ -131,7 +131,7 @@ Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getM
 	Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these section-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
-Module content lives in Supabase, loaded per-section through `hooks/useModules.ts`:
+Module content lives in Supabase, loaded per-section through `hooks/modules/useModules.ts`:
 - **`useModules(section, defaults)`** — fetches `GET /api/modules/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
 	A successful, non-empty response is authoritative for whatever it contains — any missing modules from the fallback version are considered purposefully deleted.
 	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the section hasn't been seeded yet (empty response).
@@ -158,7 +158,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 	`components/SaveBar.tsx` is likewise shared between the two.
 	Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
 
-**State (`hooks/useModuleEditor.ts`):** takes the section name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
+**State (`hooks/modules/useModuleEditor.ts`):** takes the section name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
 - Toggling edit mode off does **not** discard unsaved changes — mirroring `useHazards`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
 - Navigating to a different module (the prev/next links, or the section listing) re-seeds the draft from the new module and forces edit mode off.
 	This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`.
@@ -191,7 +191,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 
    import '../modules.css';
    import ModuleListingPage from '../components/ModuleListingPage';
-   import { useModules } from '@/hooks/useModules';
+   import { useModules } from '@/hooks/modules/useModules';
    import { scenarios } from '@/lib/scenarios';
 
    export default function ScenariosPage() {
@@ -224,7 +224,7 @@ For a page unrelated to the modules template:
 
 ## Module Progress Tracking
 
-The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
+The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/modules/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
 	The listing page's cards now read from the same underlying data too (see above, `useModules`' progress merge) — but the two fetch and interpret `/api/modules/progress` independently of each other, so a momentary mismatch between a card's badge and the reader page's own progress bar is possible if one has fetched more recently than the other.
 	This applies to every section built on the shared template, including the unlinked `guides` example — each section passes its own `section` string into `ModuleReaderPage`/`useModuleProgress`/`useModules`, so progress stays correctly scoped per section even where module ids collide across sections.
 
@@ -256,7 +256,7 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/u
 
 ### Quiz content
 
-Quiz content lives in Supabase, loaded per-quiz through `hooks/useQuiz.ts`:
+Quiz content lives in Supabase, loaded per-quiz through `hooks/quizzes/useQuiz.ts`:
 - **`useQuiz(quizId, defaults)`** — fetches `GET /api/quizzes/load-quiz?quiz_id=...`, which joins the `quizzes` table (`title`, `description`, `pass_threshold`, `pool_size`) with its `quiz_questions` rows (FK'd on `quiz_id`, `on delete cascade`), and returns `{ quizData, loadStatus, usingDefaults }` where `quizData` is `{ title, description, passThreshold, poolSize, questions }`.
 - Unlike `useModules`, there's no per-field merge: a successful, non-empty load (a `quizzes` row that also has at least one `quiz_questions` row) is used **entirely** as-is.
 	Anything else — no matching `quizzes` row, a `quizzes` row with zero questions, a Supabase error, or a network failure — falls back to `defaults` **entirely**, never a mix of live and fallback fields within the same quiz.
@@ -278,7 +278,7 @@ Unlike the lab and module reader pages, this editor is a separate page rather th
 	This is deliberate: the attempt page shuffles question and option order per attempt, and the editor needs to work against the underlying, unshuffled question list rather than whatever order a given attempt happened to render in.
 	The entry point is a small ✏️ Edit tab attached to the bottom edge of a quiz's card on `/quizzes`, shown only when `permissions.canManageUsers` is true.
 
-**State (`hooks/useQuizEditor.ts`):** takes the `quizId`, the live `item` from `useQuiz`, and an optional `fallback` (the matching bundled `QUIZ_DEFAULTS`, looked up via a `quiz_id`-keyed map in the page component).
+**State (`hooks/quizzes/useQuizEditor.ts`):** takes the `quizId`, the live `item` from `useQuiz`, and an optional `fallback` (the matching bundled `QUIZ_DEFAULTS`, looked up via a `quiz_id`-keyed map in the page component).
 	It holds a `draft` copy of the quiz, seeded from `item`.
 - There's no `editMode` flag to gate on, unlike `useModuleEditor` — a `hasEditedRef`/`hasUnsavedChanges` pair tracks whether the draft has actually been touched instead, serving the same purpose `editModeRef` serves in the module editor:
 	a background refresh of `item` (e.g. the initial live fetch resolving) only overwrites `draft` while nothing's been edited yet.
@@ -398,7 +398,7 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 
 ## Linking Hotspots to Modules
 
-Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed version in `hooks/useHazards.ts`) has two fields that together point at a module:
+Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed version in `hooks/lab/useHazards.ts`) has two fields that together point at a module:
 - `moduleId: string | null`
 - `moduleSection: string | null`
 
@@ -413,7 +413,7 @@ Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed ve
 **In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Section dropdown, and, once a section is picked, a Module dropdown scoped to that section. Picking "None" (or switching section) always clears the module id in the same update, via `useHazards.ts`'s `updateModuleLink(index, moduleSection, moduleId)`, which writes both fields together rather than as two separate state updates.
 	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHazards.ts`) flags any hotspot currently half-set (a section picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
 
-**Where the dropdown options come from:** `hooks/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
+**Where the dropdown options come from:** `hooks/lab/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
 	The hook groups the response client-side into one entry per section.
 	This intentionally bypasses `useModules`/`lib/` defaults entirely: since the FK requires a real Supabase row, a default-only id would just fail to save, so this route has no fallback — if it's unreachable, the dropdowns come back empty rather than silently offering something that wouldn't actually save.
 	Practically, this means a section only appears as a linkable option once it has real rows in `modules` — a `lib/`-only section (nothing seeded yet) won't show up at all.
@@ -464,10 +464,10 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 
 ### What's covered
 
-- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video.ts`)
+- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHazards.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video.ts`)
 - **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHazards` loading, saving, and uploading via mocked `/api/lab/load-hazards`, `/api/lab/load-image`, `/api/lab/save-hazards`, `/api/lab/upload-image`, `/api/lab/video`;)
 
-Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/useHazards.ts` → `hooks/useHazards.test.ts`). Vitest picks these up automatically.
+Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/lab/useHazards.ts` → `hooks/lab/useHazards.test.ts`). Vitest picks these up automatically.
 
 ### Path aliases in test files
 

@@ -14,8 +14,8 @@ import ModuleVideo from "@/components/ModuleVideo";
 import ModuleEditor from "./ModuleEditor";
 import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
-import { useModuleProgress } from "@/hooks/useModuleProgress";
-import { useModuleEditor } from "@/hooks/useModuleEditor";
+import { useModuleProgress } from "@/hooks/modules/useModuleProgress";
+import { useModuleEditor } from "@/hooks/modules/useModuleEditor";
 import { MAX_MP4_BYTES } from "@/lib/video";
 
 interface ModuleReaderPageProps {

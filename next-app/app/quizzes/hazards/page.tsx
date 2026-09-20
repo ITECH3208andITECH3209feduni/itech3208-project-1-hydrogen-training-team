@@ -6,7 +6,7 @@ import '../quizzes.css';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useQuiz, drawQuizPool } from '@/hooks/useQuiz';
+import { useQuiz, drawQuizPool } from '@/hooks/quizzes/useQuiz';
 import {
     QUIZ_SLUG,
     QUIZ_DEFAULTS,
