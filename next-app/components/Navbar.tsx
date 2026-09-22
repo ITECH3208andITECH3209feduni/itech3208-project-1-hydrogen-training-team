@@ -68,7 +68,7 @@ export default function Navbar() {
                     <>
                         {/* Modules */}
                         <Link
-                            href="/modules/hazard-modules"
+                            href="/modules/hazards"
                             className={`nav-link ${
                                 pathname.startsWith("/modules")
                                     ? "active"

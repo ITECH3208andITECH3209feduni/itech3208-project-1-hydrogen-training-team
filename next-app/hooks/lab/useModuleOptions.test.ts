@@ -22,7 +22,7 @@ describe('1. load-module-options', () => {
 
     expect(result.current).toHaveLength(2);
 
-    const hazardTopic = result.current.find((s) => s.value === 'hazard-modules');
+    const hazardTopic = result.current.find((s) => s.value === 'hazards');
     const guidesTopic = result.current.find((s) => s.value === 'guides');
 
     expect(hazardTopic).toBeDefined();
@@ -44,9 +44,9 @@ describe('1. load-module-options', () => {
       http.get('/api/lab/load-module-options', () => HttpResponse.json({
         ok: true,
         data: [
-          { topic: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+          { topic: 'hazards', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
           { topic: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
-          { topic: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
+          { topic: 'hazards', id: '2', badge_num: 2, title: 'Ventilation System' },
         ],
       }))
     );
@@ -55,7 +55,7 @@ describe('1. load-module-options', () => {
 
     await waitFor(() => expect(result.current.length).toBeGreaterThan(0));
 
-    const hazardTopic = result.current.find((s) => s.value === 'hazard-modules');
+    const hazardTopic = result.current.find((s) => s.value === 'hazards');
     expect(hazardTopic!.options).toHaveLength(2);
     expect(hazardTopic!.options.map((o) => o.id)).toEqual(['1', '2']);
   });

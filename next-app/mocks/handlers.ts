@@ -15,7 +15,7 @@ export const handlers = [
                     left: '30.0%',
                     title: 'Loaded Title',
                     text: 'Loaded description text.',
-                    module_topic: 'hazard-modules',
+                    module_topic: 'hazards',
                     module_id: '1',
                     video_url: null,
                     video_type: null,
@@ -36,8 +36,8 @@ export const handlers = [
         return HttpResponse.json({
             ok: true,
             data: [
-                { topic: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
-                { topic: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
+                { topic: 'hazards', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+                { topic: 'hazards', id: '2', badge_num: 2, title: 'Ventilation System' },
                 { topic: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
                 { topic: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
             ],

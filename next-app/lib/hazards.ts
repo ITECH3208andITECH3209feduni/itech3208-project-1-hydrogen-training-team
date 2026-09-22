@@ -7,12 +7,12 @@ export type HazardType = 'gas' | 'ventilation' | 'cylinder' | 'chemical' | 'equi
 
 // Define hazard data
 export interface HazardInfo {
-	title: string;
-	text: string;
-	moduleId: string | null;		// Links to the corresponding page under /modules/[moduletopic]/[moduleId]
-	moduleTopic: string | null;	// Topic of app/modules/ the linked module lives under (e.g. 'hazard-modules')
-	videoUrl: string | null;
-	videoType: 'youtube' | 'mp4' | null;
+	title:       string;
+	text:        string;
+	moduleId:    string | null;   // Links to the corresponding page under /modules/[moduletopic]/[moduleId]
+	moduleTopic: string | null;   // Topic of app/modules/ the linked module lives under (e.g. 'hazards')
+	videoUrl:    string | null;
+	videoType:   'youtube' | 'mp4' | null;
 }
 
 // Hazard text
@@ -21,7 +21,7 @@ export const hazardData: Record<HazardType, HazardInfo> = {
 		title: '⚠️ Gas Leak Detection',
 		text: 'Hydrogen is highly flammable and difficult to detect. Sensors placed near the ceiling identify leaks early to prevent explosions.',
 		moduleId: '1',
-		moduleTopic: 'hazard-modules',
+		moduleTopic: 'hazards',
 		videoUrl: null,
 		videoType: null,
 	},
@@ -29,7 +29,7 @@ export const hazardData: Record<HazardType, HazardInfo> = {
 		title: '💨 Ventilation System',
 		text: 'Proper ventilation removes hydrogen buildup, reducing fire and explosion risks in the laboratory.',
 		moduleId: '2',
-		moduleTopic: 'hazard-modules',
+		moduleTopic: 'hazards',
 		videoUrl: null,
 		videoType: null,
 	},
@@ -37,7 +37,7 @@ export const hazardData: Record<HazardType, HazardInfo> = {
 		title: '🧯 Gas Cylinder Storage',
 		text: 'Cylinders must be secured upright and stored in ventilated areas away from heat and ignition sources.',
 		moduleId: '5',
-		moduleTopic: 'hazard-modules',
+		moduleTopic: 'hazards',
 		videoUrl: null,
 		videoType: null,
 	},
@@ -45,7 +45,7 @@ export const hazardData: Record<HazardType, HazardInfo> = {
 		title: '🧪 Chemical Storage',
 		text: 'Flammable chemicals should be stored in approved safety cabinets to prevent accidental ignition.',
 		moduleId: '4',
-		moduleTopic: 'hazard-modules',
+		moduleTopic: 'hazards',
 		videoUrl: null,
 		videoType: null,
 	},
@@ -53,7 +53,7 @@ export const hazardData: Record<HazardType, HazardInfo> = {
 		title: '🔧 Equipment & Leak Points',
 		text: 'Valves, joints, and fittings must be inspected regularly to prevent hydrogen leaks.',
 		moduleId: '3',
-		moduleTopic: 'hazard-modules',
+		moduleTopic: 'hazards',
 		videoUrl: null,
 		videoType: null,
 	},

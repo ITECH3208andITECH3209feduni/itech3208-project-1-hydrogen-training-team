@@ -83,14 +83,14 @@ describe('2. buildBlankSection', () => {
 describe('3. useModuleEditor draft state', () => {
 	it('3.1 seeds the draft from the live item', () => {
 		// Render the hook
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 		
 		// Check that the draft contains the live item's title
 		expect(result.current.draft?.title).toBe('Live Title');
 	});
 
 	it('3.2 toggling edit mode off does not discard unsaved field edits', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.toggleEditMode());                       // Enter edit mode
 		act(() => result.current.updateField('title', 'Edited Title'));   // Edit title
@@ -100,7 +100,7 @@ describe('3. useModuleEditor draft state', () => {
 	});
 
 	it('3.3 resetToDefaults reverts the draft to the bundled fallback, not the live item', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.updateField('title', 'Edited Title'));   // Edit title
 		act(() => result.current.resetToDefaults());                      // Reset to defaults
@@ -110,13 +110,13 @@ describe('3. useModuleEditor draft state', () => {
 	});
 
 	it('3.4 canReset is false when no fallback is provided', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, undefined));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, undefined));
 		expect(result.current.canReset).toBe(false);
 	});
 
 	it('3.5 switching to a different module id exits edit mode and re-seeds the draft', () => {
 		const { result, rerender } = renderHook(
-			({ item }) => useModuleEditor('hazard-modules', item, defaultItem),
+			({ item }) => useModuleEditor('hazards', item, defaultItem),
 			{ initialProps: { item: liveItem } }
 		);
 
@@ -133,7 +133,7 @@ describe('3. useModuleEditor draft state', () => {
 
 	it('3.6 a same-id refresh while not editing still resyncs the draft', () => {
 		const { result, rerender } = renderHook(
-			({ item }) => useModuleEditor('hazard-modules', item, defaultItem),
+			({ item }) => useModuleEditor('hazards', item, defaultItem),
 			{ initialProps: { item: liveItem } }
 		);
 
@@ -148,7 +148,7 @@ describe('3. useModuleEditor draft state', () => {
 // 4. Test section CRUD
 describe('4. section add/delete/move', () => {
 	it('4.1 addSection appends a renumbered section and selects it', async () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.addSection());                                // Add new section
 		expect(result.current.draft?.sections).toHaveLength(3);                // Check that sections length accounts for new section
@@ -158,7 +158,7 @@ describe('4. section add/delete/move', () => {
 	});
 
 	it('4.2 deleteSection removes a section and renumbers the remainder', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.deleteSection(0));                            // Delete 1st section
 
@@ -169,7 +169,7 @@ describe('4. section add/delete/move', () => {
 	});
 
 	it('4.3 moveSection swaps two sections and renumbers them', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.moveSection(1, 'up'));                                                     // Move 2nd section up
 
@@ -178,7 +178,7 @@ describe('4. section add/delete/move', () => {
 	});
 
 	it('4.4 moveSection is a no-op past the array bounds', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.moveSection(0, 'up'));   // Attempt to move first section up (no-op)
 		act(() => result.current.moveSection(1, 'down')); // Attempt to move last section down (no-op)
@@ -191,7 +191,7 @@ describe('4. section add/delete/move', () => {
 // 5. Test list-item editing within a section
 describe('5. section list items', () => {
 	it('5.1 addSectionItem appends a placeholder item', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.addSectionItem(0));                             // Add new item to 1st section
 
@@ -199,7 +199,7 @@ describe('5. section list items', () => {
 	});
 
 	it('5.2 updateSectionItem edits the item at the given index only', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		// Add new items to 1st section
 		act(() => result.current.addSectionItem(0));
@@ -212,7 +212,7 @@ describe('5. section list items', () => {
 	});
 
 	it('5.3 deleteSectionItem removes only the targeted item', () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		// Add new items to 1st section
 		act(() => result.current.addSectionItem(0));
@@ -230,7 +230,7 @@ describe('5. section list items', () => {
 // 6. Test save-module API call
 describe('6. save-module', () => {
 	it('6.1 sets saveStatus to saved on a successful save', async () => {
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		// Mock a successful save to Supabase
 		await act(async () => {
@@ -250,7 +250,7 @@ describe('6. save-module', () => {
 			)
 		);
 
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		await act(async () => {
 			await result.current.saveToSupabase();
@@ -266,7 +266,7 @@ describe('6. save-module', () => {
 
 		server.use(http.post('/api/modules/save-module', () => HttpResponse.error()));
 
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		await act(async () => {
 			await result.current.saveToSupabase();
@@ -279,7 +279,7 @@ describe('6. save-module', () => {
 	it('6.4 does nothing when there is no signed-in user', async () => {
 		mockUseAuth.mockReturnValue({ user: null, loading: false });   // Simulate user being signed out
 
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		await act(async () => {
 			await result.current.saveToSupabase();
@@ -299,7 +299,7 @@ describe('6. save-module', () => {
 			})
 		);
 
-		const { result } = renderHook(() => useModuleEditor('hazard-modules', liveItem, defaultItem));
+		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.updateField('title', 'Saved Title'));   // Edit the title before saving
 
@@ -309,7 +309,7 @@ describe('6. save-module', () => {
 
 		expect(result.current.saveStatus).toBe('saved');   // Check that saveStatus correctly set
 		// Check that sent module data matches what was edited
-		expect(capturedBody.topic).toBe('hazard-modules');
+		expect(capturedBody.topic).toBe('hazards');
 		expect(capturedBody.module.id).toBe('1');
 		expect(capturedBody.module.title).toBe('Saved Title');
 		expect(capturedBody.sections).toHaveLength(2);

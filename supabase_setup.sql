@@ -54,7 +54,7 @@ create table public.module_sections (
   callout     text null,
   sort_order  integer not null default 0,
   constraint module_sections_pkey primary key (topic, module_id, num),
-  constraint module_sections_topic_module_id_fkey foreign key (topic, module_id) references modules (topic, id) on delete cascade,
+  constraint module_sections_topic_module_id_fkey foreign key (topic, module_id) references modules (topic, id) on delete cascade on update cascade,
   constraint module_sections_list_type_check check ((list_type = any (array['ul'::text, 'ol'::text])))
 );
 
@@ -64,7 +64,8 @@ alter table public.hazards
   foreign key (module_topic, module_id)
   references public.modules (topic, id)
   match full
-  on delete set null;
+  on delete set null
+  on update cascade;
   
 -- quizzes / quiz_questions: per-quiz metadata + question bank.
 -- Distinguished by quiz_id (e.g. 'hazards') rather than a `topic` column, since quizzes aren't part of the app/modules/ listing+reader template.
@@ -126,7 +127,7 @@ create table public.user_module_progress (
   constraint user_module_progress_pkey primary key (id),
   constraint user_module_progress_uid_topic_module_id_key unique (uid, topic, module_id),
   constraint fk_user_progress foreign key (uid) references public.profiles (uid) on delete cascade,
-  constraint fk_user_progress_module foreign key (topic, module_id) references public.modules (topic, id) on delete restrict,
+  constraint fk_user_progress_module foreign key (topic, module_id) references public.modules (topic, id) on delete restrict on update cascade,
   constraint user_module_progress_status_check check (status in ('todo', 'progress', 'done')),
   constraint user_module_progress_progress_check check (progress >= 0 and progress <= 100)
 );

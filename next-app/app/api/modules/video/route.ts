@@ -11,7 +11,7 @@ import { getYouTubeVideoId, getStoragePath, validateMp4File, safeFileName } from
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_TOPIC = "hazard-modules";
+const ALLOWED_TOPIC = "hazards";
 const VIDEO_BUCKET = "module-videos";
 
 // PUT

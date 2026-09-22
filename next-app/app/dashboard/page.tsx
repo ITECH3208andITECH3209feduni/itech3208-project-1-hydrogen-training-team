@@ -24,7 +24,7 @@ export default function Dashboard() {
     const {
         modules,
         loadStatus,
-    } = useModules("hazard-modules", hazardModules);
+    } = useModules("hazards", hazardModules);
 
     const [quizProgress, setQuizProgress] =
         useState<QuizProgress | null>(null);
@@ -196,7 +196,7 @@ export default function Dashboard() {
             <div className="stat-cards">
                 {/* Modules */}
                 <Link
-                    href="/modules/hazard-modules"
+                    href="/modules/hazards"
                     className="stat-card"
                 >
                     <div className="stat-icon modules">&#128218;</div>
@@ -297,7 +297,7 @@ export default function Dashboard() {
                         </div>
 
                         <Link
-                            href="/modules/hazard-modules"
+                            href="/modules/hazards"
                             className="panel-link"
                         >
                             View Modules &rarr;
@@ -308,7 +308,7 @@ export default function Dashboard() {
                         {trainingTopics.length > 0 ? (trainingTopics.map((topic, index) => (
                                     <Link
                                         key={topic.id}
-                                        href={`/modules/hazard-modules/${topic.id}`}
+                                        href={`/modules/hazards/${topic.id}`}
                                         className="topic-item"
                                     >
                                         <span className="topic-number">{String(index + 1).padStart(2, "0")}</span>
@@ -322,7 +322,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="topics-footer">
-                        <Link href="/modules/hazard-modules">View all modules &rarr;</Link>
+                        <Link href="/modules/hazards">View all modules &rarr;</Link>
                     </div>
                 </section>
 

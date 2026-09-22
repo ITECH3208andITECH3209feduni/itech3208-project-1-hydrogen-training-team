@@ -1,4 +1,4 @@
-// app/modules/hazard-modules/[id]/page.tsx
+// app/modules/hazards/[id]/page.tsx
 // Hazard modules page
 // All layout/filter/auth logic lives in ModuleReaderPage component — this file supplies the data.
 
@@ -13,13 +13,13 @@ import { hazardModules } from '@/lib/modules/hazards';
 export default function HazardModulePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item, usingDefaults } = useModuleById('hazard-modules', hazardModules, id);
+	const { item, usingDefaults } = useModuleById('hazards', hazardModules, id);
 
 	return (
 		<ModuleReaderPage
 			item={item}
-			topic="hazard-modules"
-			basePath="/modules/hazard-modules"
+			topic="hazards"
+			basePath="/modules/hazards"
 			badgeLabel="⚠ Hazard"
 			backLabel="Hazard Modules"
 			heroHint="Read through all sections to complete this module. Then test your knowledge in the Quiz."

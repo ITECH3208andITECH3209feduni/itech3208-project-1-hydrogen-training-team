@@ -121,7 +121,7 @@ describe('5. updateModuleLink', () => {
     act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
 
     // index 1 should be untouched by an update targeting index 0
-    expect(result.current.hotspots[1].info.moduleTopic).toBe('hazard-modules');
+    expect(result.current.hotspots[1].info.moduleTopic).toBe('hazards');
     expect(result.current.hotspots[1].info.moduleId).toBe('2');
   });
 
@@ -155,7 +155,7 @@ describe('6. hasInvalidModuleLink', () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
-    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    act(() => { result.current.updateModuleLink(0, 'hazards', null); });
 
     expect(result.current.hasInvalidModuleLink).toBe(true);
   });
@@ -175,7 +175,7 @@ describe('6. hasInvalidModuleLink', () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
-    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    act(() => { result.current.updateModuleLink(0, 'hazards', null); });
     expect(result.current.hasInvalidModuleLink).toBe(true);
 
     act(() => { result.current.updateModuleLink(0, null, null); });
@@ -329,7 +329,7 @@ describe('10. load-hazards', () => {
     expect(loadedHotspot.info.title).toBe('Loaded Title');
     expect(loadedHotspot.info.text).toBe('Loaded description text.');
     expect(loadedHotspot.info.moduleId).toBe('1');
-    expect(loadedHotspot.info.moduleTopic).toBe('hazard-modules');
+    expect(loadedHotspot.info.moduleTopic).toBe('hazards');
     expect(loadedHotspot.info.videoUrl).toBeNull();
     expect(loadedHotspot.info.videoType).toBeNull();
   });
@@ -510,7 +510,7 @@ describe('12. save-hazards', () => {
       title: 'Loaded Title',
       text: 'Loaded description text.',
       moduleId: '1',
-      moduleTopic: 'hazard-modules',
+      moduleTopic: 'hazards',
       videoUrl: null,
       videoType: null,
     });
@@ -532,7 +532,7 @@ describe('12. save-hazards', () => {
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
     // Break validity: give the (only) loaded hotspot a topic but no id
-    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    act(() => { result.current.updateModuleLink(0, 'hazards', null); });
     expect(result.current.hasInvalidModuleLink).toBe(true);
     
     await act(async () => { await result.current.saveToSupabase(); });
@@ -556,7 +556,7 @@ describe('12. save-hazards', () => {
     
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
-    act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
+    act(() => { result.current.updateModuleLink(0, 'hazards', null); });
     expect(result.current.hasInvalidModuleLink).toBe(true);
 
     act(() => { result.current.updateModuleLink(0, null, null); });
@@ -711,7 +711,7 @@ describe('16. removeHotspotVideo', () => {
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
           title: 'Loaded Title', text: 'Loaded description text.',
-          module_topic: 'hazard-modules', module_id: '1',
+          module_topic: 'hazards', module_id: '1',
           video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
         }],
       }))
@@ -759,7 +759,7 @@ describe('16. removeHotspotVideo', () => {
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
           title: 'Loaded Title', text: 'Loaded description text.',
-          module_topic: 'hazard-modules', module_id: '1',
+          module_topic: 'hazards', module_id: '1',
           video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
         }],
       })),

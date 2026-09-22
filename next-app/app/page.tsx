@@ -38,7 +38,7 @@ export default function IntroPage() {
 					<Link href="/dashboard" className="intro-cta">
 						{ctaLabel} →
 					</Link>
-					<Link href="/modules/hazard-modules" className="intro-outline">
+					<Link href="/modules/hazards" className="intro-outline">
 						Learn the Basics
 					</Link>
 				</div>
