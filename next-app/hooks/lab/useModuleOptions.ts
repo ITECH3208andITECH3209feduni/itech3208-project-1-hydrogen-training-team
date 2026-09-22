@@ -1,5 +1,5 @@
 // hooks/lab/useModuleOptions.ts
-// Supplies the "Linked Module" section/id dropdown options for HotspotEditor.tsx.
+// Supplies the "Linked Module" topic/id dropdown options for HotspotEditor.tsx.
 
 import { useState, useEffect } from 'react';
 
@@ -9,20 +9,20 @@ export interface ModuleOption {
 	badgeNum?: number | null;	// badge number for modules that have one
 }
 
-export interface ModuleSectionOptions {
-	value: string;				// module's section name — the section dropdown value
+export interface ModuleTopicOptions {
+	value: string;				// module's topic name — the topic dropdown value
 	options: ModuleOption[];	// module ids and titles — the module dropdown values
 }
 
 interface ModuleOptionRow {
-	section: string;
+	topic: string;
 	id: string;
 	badge_num: number | null;
 	title: string;
 }
 
-export function useModuleOptions(): ModuleSectionOptions[] {
-	const [sections, setSections] = useState<ModuleSectionOptions[]>([]);
+export function useModuleOptions(): ModuleTopicOptions[] {
+	const [topics, setTopics] = useState<ModuleTopicOptions[]>([]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -35,25 +35,25 @@ export function useModuleOptions(): ModuleSectionOptions[] {
 
 				if (!json.ok) {
 					console.error('load-module-options API error:', json.error);
-					return;	// leave sections as [] — show dropdowns as empty
+					return;	// leave topics as [] — show dropdowns as empty
 				}
 
 				const rows: ModuleOptionRow[] = json.data ?? [];
 
-				// Group the data into entries by section (i.e. go from one section - one ID, to one section - many IDs)
-				const bySection = new Map<string, ModuleSectionOptions>();
+				// Group the data into entries by topic (i.e. go from one topic --> one ID, to one topic --> many IDs)
+				const byTopic = new Map<string, ModuleTopicOptions>();
 				for (const row of rows) {
-					if (!bySection.has(row.section)) {
-						bySection.set(row.section, { value: row.section, options: [] });
+					if (!byTopic.has(row.topic)) {
+						byTopic.set(row.topic, { value: row.topic, options: [] });
 					}
-					bySection.get(row.section)!.options.push({
+					byTopic.get(row.topic)!.options.push({
 						id: row.id,
 						title: row.title,
 						badgeNum: row.badge_num,
 					});
 				}
 
-				setSections(Array.from(bySection.values()));
+				setTopics(Array.from(byTopic.values()));
 			} catch {
 				if (!cancelled) {
 					console.error('Failed to load module options');
@@ -65,5 +65,5 @@ export function useModuleOptions(): ModuleSectionOptions[] {
 		return () => { cancelled = true; };
 	}, []);
 
-	return sections;
+	return topics;
 }

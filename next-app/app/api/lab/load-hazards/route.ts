@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
 	const { data, error } = await supabase
 		.from('hazards')
-		.select('type, title, text, top, "left", module_section, module_id, video_url, video_type, sort_order')
+		.select('type, title, text, top, "left", module_topic, module_id, video_url, video_type, sort_order')
 		.order('sort_order', { ascending: true });
 	
 	if (error) {

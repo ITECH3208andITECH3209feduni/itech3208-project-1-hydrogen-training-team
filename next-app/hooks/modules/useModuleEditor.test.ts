@@ -309,7 +309,7 @@ describe('6. save-module', () => {
 
 		expect(result.current.saveStatus).toBe('saved');   // Check that saveStatus correctly set
 		// Check that sent module data matches what was edited
-		expect(capturedBody.section).toBe('hazard-modules');
+		expect(capturedBody.topic).toBe('hazard-modules');
 		expect(capturedBody.module.id).toBe('1');
 		expect(capturedBody.module.title).toBe('Saved Title');
 		expect(capturedBody.sections).toHaveLength(2);

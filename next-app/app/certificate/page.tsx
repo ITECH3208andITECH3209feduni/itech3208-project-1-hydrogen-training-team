@@ -49,7 +49,7 @@ export default function CertificatePage() {
                                 };
 
                                 const [moduleResponse, quizResponse] = await Promise.all([
-                                        fetch("/api/modules/progress?section=hazard-modules", {
+                                        fetch("/api/modules/progress?topic=hazard-modules", {
                                                 method: "GET",
                                                 headers,
                                                 cache: "no-store",

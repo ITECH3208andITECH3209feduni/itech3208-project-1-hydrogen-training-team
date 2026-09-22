@@ -47,9 +47,9 @@ export default function HazardPopup({ info, onClose }: HazardPopupProps) {
 				<ModuleVideo videoUrl={info.videoUrl} videoType={info.videoType} />
 
 				{/* Learn More button (only renders if connected to a module) */}
-				{info.moduleSection && info.moduleId && (
+				{info.moduleTopic && info.moduleId && (
 					<Link
-						href={`/modules/${info.moduleSection}/${info.moduleId}`}
+						href={`/modules/${info.moduleTopic}/${info.moduleId}`}
 						className="popup-module-link"
 						onClick={onClose}
 					>

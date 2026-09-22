@@ -41,13 +41,13 @@ export async function POST(req: NextRequest) {
 
 	try {
 		const body = await req.json();
-		const section = body.section as string;
+		const topic = body.topic as string;
 		const moduleInput = body.module as ModuleInput;
 		const sections = (body.sections ?? []) as SectionInput[];
 
-		if (!section || !moduleInput?.id) {
+		if (!topic || !moduleInput?.id) {
 			return NextResponse.json(
-				{ ok: false, error: 'Missing required "section" or "module.id"' },
+				{ ok: false, error: 'Missing required "topic" or "module.id"' },
 				{ status: 400 }
 			);
 		}
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 		// Step 1 — update the 'modules' table.
 		const { error: upsertError } = await supabaseServer.from('modules').upsert(
 			{
-				section,
+				topic,
 				id: moduleInput.id,
 				slug: moduleInput.slug,
 				badge_num: Number.isFinite(badgeNum) ? badgeNum : null,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 				prev_id: moduleInput.prevId,
 				next_id: moduleInput.nextId,
 			},
-			{ onConflict: 'section,id' }
+			{ onConflict: 'topic,id' }
 		);
 
 		if (upsertError) throw upsertError;
@@ -79,14 +79,14 @@ export async function POST(req: NextRequest) {
 		const { error: deleteError } = await supabaseServer
 			.from('module_sections')
 			.delete()
-			.eq('section', section)
+			.eq('topic', topic)
 			.eq('module_id', moduleInput.id);
 
 		if (deleteError) throw deleteError;
 
 		if (sections.length > 0) {
 			const rows = sections.map((s, index) => ({
-				section,
+				topic,
 				module_id: moduleInput.id,
 				num: s.num,
 				heading: s.heading,

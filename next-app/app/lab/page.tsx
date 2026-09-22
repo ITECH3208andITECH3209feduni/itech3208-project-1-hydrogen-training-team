@@ -209,7 +209,7 @@ export default function LabPage() {
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
 					saveDisabled={hasInvalidModuleLink}
-					saveDisabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
+					saveDisabledReason="One or more hotspots have a module topic without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
 				/>
 			)}
 			

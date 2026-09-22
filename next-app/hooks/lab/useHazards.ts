@@ -100,7 +100,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 						left:           string;
 						title:          string;
 						text:           string;
-						module_section: string | null;
+						module_topic:   string | null;
 						module_id:      string | null;
 						video_url:      string | null;
 						video_type:     string | null;
@@ -112,7 +112,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 							title:         row.title,
 							text:          row.text,
 							moduleId:      row.module_id,
-							moduleSection: row.module_section,
+							moduleTopic:   row.module_topic,
 							videoUrl:      row.video_url,
 							videoType:     row.video_type as VideoType | null,
 						},
@@ -223,9 +223,9 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 
 	// Updates the linked modules for a chosen hotspot in state (i.e. not yet saved to Supabase).
 	const updateModuleLink = useCallback(
-		(index: number, moduleSection: string | null, moduleId: string | null) => {
+		(index: number, moduleTopic: string | null, moduleId: string | null) => {
 			setHotspots((prev) =>
-				prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, moduleSection, moduleId } } : hs))
+				prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, moduleTopic, moduleId } } : hs))
 			);
 		},
 		[]
@@ -242,7 +242,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 					title: '⚠️ New Hazard',
 					text:  'Describe this hazard here.',
 					moduleId: null,
-					moduleSection: null,
+					moduleTopic: null,
 					videoUrl: null,
 					videoType: null,
 				},
@@ -399,9 +399,9 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	}, [user, selected, hotspots, updateInfo]);
 
 	// ── Linked-module validity ───────────────────────────────────────────────────
-	// Hotspots must have both a section and module set, or neither.
+	// Hotspots must have both a topic and module set, or neither.
 	const hasInvalidModuleLink = hotspots.some(
-		(hs) => (hs.info.moduleSection === null) !== (hs.info.moduleId === null)
+		(hs) => (hs.info.moduleTopic === null) !== (hs.info.moduleId === null)
 	);
 
 	// ── Save hazards to Supabase ────────────────────────────────────────────────────

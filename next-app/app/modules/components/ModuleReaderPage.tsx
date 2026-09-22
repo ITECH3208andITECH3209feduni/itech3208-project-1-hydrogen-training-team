@@ -20,7 +20,7 @@ import { MAX_MP4_BYTES } from "@/lib/video/video";
 
 interface ModuleReaderPageProps {
     item: ModuleData | undefined;
-    section: string;
+    topic: string;
     basePath: string;
     badgeLabel?: string;
     heroHint: string;
@@ -31,7 +31,7 @@ interface ModuleReaderPageProps {
 
 export default function ModuleReaderPage({
     item,
-    section,
+    topic,
     basePath,
     badgeLabel,
     heroHint,
@@ -56,7 +56,7 @@ export default function ModuleReaderPage({
         restartModule,
     } = useModuleProgress({
         moduleId: item?.id ?? "",
-        section,
+        topic,
         sectionCount: item?.sections.length ?? 0,
         user,
         loading,
@@ -82,7 +82,7 @@ export default function ModuleReaderPage({
         saveToSupabase,
         resetToDefaults,
         canReset,
-    } = useModuleEditor(section, item, fallbackItem);
+    } = useModuleEditor(topic, item, fallbackItem);
 
     // Keep video controls in sync with the current module
     useEffect(() => {
@@ -108,7 +108,7 @@ export default function ModuleReaderPage({
             const formData = new FormData();
 
             formData.append("moduleId", draft.id);
-            formData.append("section", section);
+            formData.append("topic", topic);
             formData.append("videoType", "youtube");
             formData.append("videoUrl", youtubeUrl.trim());
 
@@ -152,7 +152,7 @@ export default function ModuleReaderPage({
             const formData = new FormData();
 
             formData.append("moduleId", draft.id);
-            formData.append("section", section);
+            formData.append("topic", topic);
             formData.append("videoType", "mp4");
             formData.append("file", selectedVideoFile);
 
@@ -209,7 +209,7 @@ export default function ModuleReaderPage({
                 },
                 body: JSON.stringify({
                     moduleId: draft.id,
-                    section,
+                    topic,
                 }),
             });
 

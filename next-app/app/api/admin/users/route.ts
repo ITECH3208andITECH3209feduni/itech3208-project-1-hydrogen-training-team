@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     } = await supabaseServer
       .from("user_module_progress")
       .select("uid, module_id, progress, status")
-      .eq("section", "hazard-modules"); // Scoped to hazard-modules
+      .eq("topic", "hazard-modules"); // Scoped to hazard-modules
 
     if (progressError) {
       console.error(

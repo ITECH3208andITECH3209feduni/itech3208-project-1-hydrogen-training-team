@@ -8,8 +8,8 @@ import { supabase } from '@/lib/supabase';
 export async function GET() {
 	const { data, error } = await supabase
 		.from('modules')
-		.select('section, id, badge_num, title')
-		.order('section', { ascending: true })
+		.select('topic, id, badge_num, title')
+		.order('topic', { ascending: true })
 		.order('sort_order', { ascending: true });
 
 	if (error) {

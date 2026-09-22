@@ -10,23 +10,23 @@
 
 -- hazards: hotspot positions/text for the interactive lab.
 -- "left" must be quoted as it is a reserved word in SQL.
--- module_section/module_id link a hotspot to a module; left nullable here because the modules table (referenced by the FK below) doesn't exist yet.
+-- module_topic/module_id link a hotspot to a module; left nullable here because the modules table (referenced by the FK below) doesn't exist yet.
 create table public.hazards (
 	type            text primary key,
 	title           text not null,
 	text            text not null,
 	top             text not null,
 	"left"          text not null,
-	module_section  text null,
+	module_topic  text null,
 	module_id       text null,
 	video_url       text null,
 	video_type      text null,
 	sort_order      int  not null default 0
 );
 
--- modules / module_sections: content shared by every section under app/modules/ (distinguished by the `section` column, e.g. 'hazard-modules').
+-- modules / module_sections: content shared by every topic under app/modules/ (distinguished by the `topic` column, e.g. 'hazard-modules').
 create table public.modules (
-  section       text not null,
+  topic       text not null,
   id            text not null,
   slug          text null,
   badge_num     integer null,
@@ -40,11 +40,11 @@ create table public.modules (
   video_url     text null,
   video_type    text null,
   sort_order    integer not null default 0,
-  constraint modules_pkey primary key (section, id)
+  constraint modules_pkey primary key (topic, id)
 );
 
 create table public.module_sections (
-  section     text not null,
+  topic     text not null,
   module_id   text not null,
   num         text not null,
   heading     text not null,
@@ -53,21 +53,21 @@ create table public.module_sections (
   items       jsonb null,
   callout     text null,
   sort_order  integer not null default 0,
-  constraint module_sections_pkey primary key (section, module_id, num),
-  constraint module_sections_section_module_id_fkey foreign key (section, module_id) references modules (section, id) on delete cascade,
+  constraint module_sections_pkey primary key (topic, module_id, num),
+  constraint module_sections_topic_module_id_fkey foreign key (topic, module_id) references modules (topic, id) on delete cascade,
   constraint module_sections_list_type_check check ((list_type = any (array['ul'::text, 'ol'::text])))
 );
 
 -- Now that modules exists, add the FK deferred from hazards above.
 alter table public.hazards
   add constraint hazards_module_fk
-  foreign key (module_section, module_id)
-  references public.modules (section, id)
+  foreign key (module_topic, module_id)
+  references public.modules (topic, id)
   match full
   on delete set null;
   
 -- quizzes / quiz_questions: per-quiz metadata + question bank.
--- Distinguished by quiz_id (e.g. 'hazards') rather than a `section` column, since quizzes aren't part of the app/modules/ listing+reader template.
+-- Distinguished by quiz_id (e.g. 'hazards') rather than a `topic` column, since quizzes aren't part of the app/modules/ listing+reader template.
 create table public.quizzes (
 	quiz_id        text primary key,
 	title          text    not null,
@@ -112,7 +112,7 @@ create table public.profiles (
 create table public.user_module_progress (
   id              uuid not null default gen_random_uuid(),
   uid             text not null,
-  section         text not null,
+  topic         text not null,
   module_id       text not null,
   status          text not null default 'todo',
   progress        integer not null default 0,
@@ -124,9 +124,9 @@ create table public.user_module_progress (
   created_at      timestamptz null default now(),
   updated_at      timestamptz null default now(),
   constraint user_module_progress_pkey primary key (id),
-  constraint user_module_progress_uid_section_module_id_key unique (uid, section, module_id),
+  constraint user_module_progress_uid_topic_module_id_key unique (uid, topic, module_id),
   constraint fk_user_progress foreign key (uid) references public.profiles (uid) on delete cascade,
-  constraint fk_user_progress_module foreign key (section, module_id) references public.modules (section, id) on delete restrict,
+  constraint fk_user_progress_module foreign key (topic, module_id) references public.modules (topic, id) on delete restrict,
   constraint user_module_progress_status_check check (status in ('todo', 'progress', 'done')),
   constraint user_module_progress_progress_check check (progress >= 0 and progress <= 100)
 );

@@ -10,7 +10,7 @@ type HazardDataEntry = {
     title:         string;
     text:          string;
     moduleId:      string | null;
-    moduleSection: string | null;
+    moduleTopic: string | null;
     videoUrl:      string | null;
     videoType:     string | null;
 };
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
                     left: hotspot.left,
                     title: info?.title ?? "",
                     text: info?.text ?? "",
-                    module_section: info?.moduleSection ?? null,
+                    module_topic: info?.moduleTopic ?? null,
                     module_id: info?.moduleId ?? null,
                     video_url: info?.videoUrl ?? null,
                     video_type: info?.videoType ?? null,

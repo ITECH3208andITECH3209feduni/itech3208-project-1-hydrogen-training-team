@@ -19,7 +19,7 @@ type SaveRequest = {
 
 interface UseModuleProgressProps {
     moduleId: string;
-    section: string;
+    topic: string;
     sectionCount: number;
     user: User | null;
     loading: boolean;
@@ -35,7 +35,7 @@ interface UseModuleProgressResult {
 
 export function useModuleProgress({
     moduleId,
-    section,
+    topic,
     sectionCount,
     user,
     loading,
@@ -104,7 +104,7 @@ export function useModuleProgress({
 
         const currentUser = user;
         const currentModuleId = moduleId;
-        const currentSection = section;
+        const currentTopic = topic;
 
         cancelled.current = false;
 
@@ -122,7 +122,7 @@ export function useModuleProgress({
                         },
                         body: JSON.stringify({
                             module_id: currentModuleId,
-                            section: currentSection,
+                            topic: currentTopic,
                         }),
                     }
                 );
@@ -135,9 +135,9 @@ export function useModuleProgress({
                     );
                 }
 
-                // Load all progress records for the user, scoped to section.
+                // Load all progress records for the user, scoped to topic.
                 const response = await fetch(
-                    `/api/modules/progress?section=${encodeURIComponent(currentSection)}`,
+                    `/api/modules/progress?topic=${encodeURIComponent(currentTopic)}`,
                     {
                         method: "GET",
                         headers: {
@@ -241,13 +241,7 @@ export function useModuleProgress({
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("pagehide", handlePageHide);
         };
-    }, [
-        loading,
-        user,
-        moduleId,
-        section,
-        sectionCount,
-    ]);
+    }, [loading, user, moduleId, topic, sectionCount,]);
 
     // ---------------------------------------------------------
     // Persist progress/time
@@ -260,7 +254,7 @@ export function useModuleProgress({
 
         const currentUser = user;
         const currentModuleId = moduleId;
-        const currentSection = section;
+        const currentTopic = topic;
 
         async function persist(request: SaveRequest = {}) {
             if (cancelled.current) {
@@ -321,7 +315,7 @@ export function useModuleProgress({
                     },
                     body: JSON.stringify({
                         module_id: currentModuleId,
-                        section: currentSection,
+                        topic: currentTopic,
                         progress: nextProgress,
                         time_spent: totalMinutes,
                     }),
@@ -360,7 +354,7 @@ export function useModuleProgress({
         }
 
         persistRef.current = persist;
-    }, [loading, user, moduleId, section]);
+    }, [loading, user, moduleId, topic]);
 
     // ---------------------------------------------------------
     // Section progress tracking
@@ -504,7 +498,7 @@ export function useModuleProgress({
                 },
                 body: JSON.stringify({
                     module_id: moduleId,
-                    section: section,
+                    topic: topic,
                     action: "restart",
                 }),
             });
@@ -543,7 +537,7 @@ export function useModuleProgress({
     }, [
         user,
         moduleId,
-        section,
+        topic,
         currentProgress,
         restarting,
     ]);

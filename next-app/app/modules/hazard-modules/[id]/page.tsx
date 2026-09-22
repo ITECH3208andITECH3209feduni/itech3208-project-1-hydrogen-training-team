@@ -18,7 +18,7 @@ export default function HazardModulePage() {
 	return (
 		<ModuleReaderPage
 			item={item}
-			section="hazard-modules"
+			topic="hazard-modules"
 			basePath="/modules/hazard-modules"
 			badgeLabel="⚠ Hazard"
 			backLabel="Hazard Modules"

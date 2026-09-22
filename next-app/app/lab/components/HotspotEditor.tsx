@@ -1,9 +1,9 @@
 // app/lab/components/HotspotEditor.tsx
-// Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position editor on the right
+// Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position/video editor on the right
 
 import { useRef } from 'react';
 import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHazards';
-import { ModuleSectionOptions } from '@/hooks/lab/useModuleOptions';
+import { ModuleTopicOptions } from '@/hooks/lab/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
 import VideoEditorPanel from '@/components/VideoEditorPanel';
@@ -12,11 +12,11 @@ interface HotspotEditorProps {
 	hotspots:           EditableHotspot[];
 	selected:           number | null;
 	uploadStatus:       UploadStatus;
-	moduleOptions:      ModuleSectionOptions[];
+	moduleOptions:      ModuleTopicOptions[];
 	onSelect:           (index: number) => void;
 	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string | null) => void;
 	onUpdatePosition:   (index: number, field: 'top' | 'left', value: string) => void;
-	onUpdateModuleLink: (index: number, moduleSection: string | null, moduleId: string | null) => void;
+	onUpdateModuleLink: (index: number, moduleTopic: string | null, moduleId: string | null) => void;
 	onAdd:              () => void;
 	onDelete:           (index: number) => void;
 	onUploadImage:      (file: File) => void;
@@ -204,20 +204,20 @@ export default function HotspotEditor({
 										<select
 											className="linked-module-select"
 											style={inputStyle}
-											value={hotspots[selected].info.moduleSection ?? ''}
+											value={hotspots[selected].info.moduleTopic ?? ''}
 											onChange={(e) =>
 												onUpdateModuleLink(selected, e.target.value || null, null)
 											}
 										>
 											<option value="">None</option>
-											{moduleOptions.map((section) => (
-												<option key={section.value} value={section.value}>
-													{section.value}
+											{moduleOptions.map((topic) => (
+												<option key={topic.value} value={topic.value}>
+													{topic.value}
 												</option>
 											))}
 										</select>
 										
-										{hotspots[selected].info.moduleSection && (
+										{hotspots[selected].info.moduleTopic && (
 											<select
 												className="linked-module-select"
 												style={inputStyle}
@@ -225,14 +225,14 @@ export default function HotspotEditor({
 												onChange={(e) =>
 													onUpdateModuleLink(
 														selected,
-														hotspots[selected].info.moduleSection,
+														hotspots[selected].info.moduleTopic,
 														e.target.value || null
 													)
 												}
 											>
 												<option value="">Select a module…</option>
 												{moduleOptions
-													.find((section) => section.value === hotspots[selected].info.moduleSection)
+													.find((topic) => topic.value === hotspots[selected].info.moduleTopic)
 													?.options.map((mod) => (
 														<option key={mod.id} value={mod.id}>
 															{mod.badgeNum != null ? `${mod.badgeNum}. ${mod.title}` : mod.title}
@@ -242,7 +242,7 @@ export default function HotspotEditor({
 										)}
 									</div>
 									<p className="field-hint">
-										{hotspots[selected].info.moduleSection && !hotspots[selected].info.moduleId
+										{hotspots[selected].info.moduleTopic && !hotspots[selected].info.moduleId
 											? '⚠️ Select a module, or set this back to "None" — saving is disabled until then.'
 											: 'Powers the "Learn More" button in this hazard\u2019s popup. Set to "None" to hide it.'}
 									</p>

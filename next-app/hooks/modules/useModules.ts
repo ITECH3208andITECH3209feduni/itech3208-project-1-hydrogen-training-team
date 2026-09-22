@@ -1,5 +1,5 @@
 ﻿// hooks/useModules.ts
-// Loads module content from Supabase for a given section, merged over the defaults.
+// Loads module content from Supabase for a given topic, merged over the defaults.
 
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
@@ -69,9 +69,9 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────────────────────────────────────
-// section: Identifies set of modules to load.
+// topic: Identifies set of modules to load.
 // defaults: Static version of modules kept in application.
-export function useModules(section: string, defaults: ModuleData[]) {
+export function useModules(topic: string, defaults: ModuleData[]) {
 	const [modules, setModules] = useState<ModuleData[]>(defaults);
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
 	const [usingDefaults, setUsingDefaults] = useState(false);	// For if using defaults and showing inaccurate progress
@@ -82,7 +82,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 
 		async function loadModules() {
 			try {
-				const res = await fetch(`/api/modules/load-modules?section=${encodeURIComponent(section)}`, {
+				const res = await fetch(`/api/modules/load-modules?topic=${encodeURIComponent(topic)}`, {
 					cache: 'no-store',
 				});
 				const json = await res.json();
@@ -119,7 +119,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				        const token = await user.getIdToken();
 
 				        const progressResponse = await fetch(
-				            `/api/modules/progress?section=${encodeURIComponent(section)}`,
+				            `/api/modules/progress?topic=${encodeURIComponent(topic)}`,
 				            {
 				                method: "GET",
 				                headers: {
@@ -181,7 +181,7 @@ export function useModules(section: string, defaults: ModuleData[]) {
 				setLoadStatus('ready');
 			} catch {
 				if (!cancelled) {
-					console.error(`Failed to load "${section}" modules from Supabase — using defaults`);
+					console.error(`Failed to load "${topic}" modules from Supabase — using defaults`);
 					setUsingDefaults(true);
 					setLoadStatus('error');
 				}
@@ -192,14 +192,14 @@ export function useModules(section: string, defaults: ModuleData[]) {
 		return () => {
 			cancelled = true;
 		};
-	}, [section, defaults, user, authLoading]);
+	}, [topic, defaults, user, authLoading]);
 
 	return { modules, loadStatus, usingDefaults };
 }
 
 // Convenience wrapper for reader pages that just need one module by id.
-export function useModuleById(section: string, defaults: ModuleData[], id: string | undefined) {
-	const { modules, loadStatus, usingDefaults } = useModules(section, defaults);
+export function useModuleById(topic: string, defaults: ModuleData[], id: string | undefined) {
+	const { modules, loadStatus, usingDefaults } = useModules(topic, defaults);
 	const item = id ? getModuleById(modules, id) : undefined;
 	return { item, loadStatus, usingDefaults };
 }

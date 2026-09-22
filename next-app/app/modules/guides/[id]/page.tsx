@@ -1,6 +1,6 @@
 // app/modules/guides/[id]/page.tsx
-// EXAMPLE section reusing the app/modules/ template. Rename the folder and
-// adjust copy/basePath below to match your real section.
+// EXAMPLE page reusing the app/modules/ template. Rename the folder and
+// adjust copy/basePath below to match your real page.
 
 'use client';
 
@@ -18,11 +18,11 @@ export default function GuidePage() {
 	return (
 		<ModuleReaderPage
 			item={item}
-			section="guides"
+			topic="guides"
 			basePath="/modules/guides"
 			// No badgeLabel — these items have no badgeNum, so no badge is shown.
 			backLabel="Guides"
-			heroHint="Replace with a short hero hint for this section."
+			heroHint="Replace with a short hero hint for this page."
 			usingDefaults={usingDefaults}
 			defaults={guides}
 		/>

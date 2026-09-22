@@ -247,7 +247,7 @@ describe('4. load-modules', () => {
         
         // Override default response with fail case
         server.use(
-            http.get('/api/modules/load-modules', () => HttpResponse.json({ ok: false, error: 'Missing required "section" query param' }))
+            http.get('/api/modules/load-modules', () => HttpResponse.json({ ok: false, error: 'Missing required "topic" query param' }))
         );
 
         const { result } = renderHook(() => useModules("hazard-modules", testModules));
@@ -257,7 +257,7 @@ describe('4. load-modules', () => {
         expect(result.current.modules.length).toBeGreaterThan(0);
         expect(result.current.modules).toEqual(testModules);
         // Check that error was logged to console (ensures error handling works)
-        expect(consoleSpy).toHaveBeenCalledWith('load-modules API error:', 'Missing required "section" query param');
+        expect(consoleSpy).toHaveBeenCalledWith('load-modules API error:', 'Missing required "topic" query param');
         // Should be flagged as showing fallback content, not verified live content
         expect(result.current.usingDefaults).toBe(true);
         // Restore console error to normal (prevents leaking to other tests)

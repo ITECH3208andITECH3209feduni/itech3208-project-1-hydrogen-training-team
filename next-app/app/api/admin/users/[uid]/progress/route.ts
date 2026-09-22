@@ -64,7 +64,7 @@ export async function GET(
             .from("user_module_progress")
             .select("*")
             .eq("uid", uid)
-            .eq("section", "hazard-modules")    // Scoped to hazard-modules
+            .eq("topic", "hazard-modules")    // Scoped to hazard-modules
             .order("module_id");
 
         if (moduleProgressError) {

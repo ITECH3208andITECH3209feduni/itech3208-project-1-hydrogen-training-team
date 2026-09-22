@@ -23,10 +23,10 @@ export function buildBlankSection(existingCount: number): ModuleSection {
 }
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
-// section: which app/modules/ section this module belongs to (e.g. 'hazard-modules')
+// topic: which app/modules/ topic this module belongs to (e.g. 'hazard-modules')
 // item: the live (Supabase-merged) module, from useModuleById — seeds the draft
 // fallback: the bundled lib/ entry for this same id — what "Reset to Defaults" reverts to
-export function useModuleEditor(section: string, item: ModuleData | undefined, fallback: ModuleData | undefined) {
+export function useModuleEditor(topic: string, item: ModuleData | undefined, fallback: ModuleData | undefined) {
 	const { user } = useAuth();
 
 	const [editMode, setEditMode] = useState(false);
@@ -163,7 +163,7 @@ export function useModuleEditor(section: string, item: ModuleData | undefined, f
 					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
-					section,
+					topic,
 					module: {
 						id: draft.id,
 						slug: draft.slug ?? null,
@@ -188,7 +188,7 @@ export function useModuleEditor(section: string, item: ModuleData | undefined, f
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [draft, section, user]);
+	}, [draft, topic, user]);
 
 	return {
 		editMode,

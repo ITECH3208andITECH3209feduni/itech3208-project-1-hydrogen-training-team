@@ -13,8 +13,8 @@ import { http, HttpResponse } from 'msw';
 
 // 1. Test load-module-options API call
 describe('1. load-module-options', () => {
-  // Test if loads successfully and groups the flat row list into one entry per section (i.e. go from one section - one ID, to one section - many IDs)
-  it('1.1 groups rows into one ModuleSectionOptions entry per section', async () => {
+  // Test if loads successfully and groups the flat row list into one entry per topic (i.e. go from one topic --> one ID, to one topic --> many IDs)
+  it('1.1 groups rows into one ModuleTopicOptions entry per topic', async () => {
     const { result } = renderHook(() => useModuleOptions());
 
     // Hook exposes no loadStatus — wait on the grouped result itself settling
@@ -22,31 +22,31 @@ describe('1. load-module-options', () => {
 
     expect(result.current).toHaveLength(2);
 
-    const hazardSection = result.current.find((s) => s.value === 'hazard-modules');
-    const guidesSection = result.current.find((s) => s.value === 'guides');
+    const hazardTopic = result.current.find((s) => s.value === 'hazard-modules');
+    const guidesTopic = result.current.find((s) => s.value === 'guides');
 
-    expect(hazardSection).toBeDefined();
-    expect(guidesSection).toBeDefined();
+    expect(hazardTopic).toBeDefined();
+    expect(guidesTopic).toBeDefined();
 
-    expect(hazardSection!.options).toEqual([
+    expect(hazardTopic!.options).toEqual([
       { id: '1', title: 'Gas Leak Detection', badgeNum: 1 },
       { id: '2', title: 'Ventilation System', badgeNum: 2 },
     ]);
-    expect(guidesSection!.options).toEqual([
+    expect(guidesTopic!.options).toEqual([
       { id: '1', title: 'Sample Guide One', badgeNum: null },
       { id: '2', title: 'Sample Guide Two', badgeNum: null },
     ]);
   });
 
-  // Test if rows for the same section are grouped together even when not sorted together
-  it('1.2 groups non-contiguous rows for the same section together', async () => {
+  // Test if rows for the same topic are grouped together even when not sorted together
+  it('1.2 groups non-contiguous rows for the same topic together', async () => {
     server.use(
       http.get('/api/lab/load-module-options', () => HttpResponse.json({
         ok: true,
         data: [
-          { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
-          { section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
-          { section: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
+          { topic: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+          { topic: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
+          { topic: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
         ],
       }))
     );
@@ -55,9 +55,9 @@ describe('1. load-module-options', () => {
 
     await waitFor(() => expect(result.current.length).toBeGreaterThan(0));
 
-    const hazardSection = result.current.find((s) => s.value === 'hazard-modules');
-    expect(hazardSection!.options).toHaveLength(2);
-    expect(hazardSection!.options.map((o) => o.id)).toEqual(['1', '2']);
+    const hazardTopic = result.current.find((s) => s.value === 'hazard-modules');
+    expect(hazardTopic!.options).toHaveLength(2);
+    expect(hazardTopic!.options.map((o) => o.id)).toEqual(['1', '2']);
   });
 
   // Test if a null badge_num is kept as null rather than dropped or changed to 0/undefined
@@ -65,7 +65,7 @@ describe('1. load-module-options', () => {
     server.use(
       http.get('/api/lab/load-module-options', () => HttpResponse.json({
         ok: true,
-        data: [{ section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' }],
+        data: [{ topic: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' }],
       }))
     );
 

@@ -1,6 +1,6 @@
 // app/modules/guides/page.tsx
-// EXAMPLE section reusing the app/modules/ template. Rename the folder and
-// adjust the copy/basePath below to match your real section.
+// EXAMPLE pagw reusing the app/modules/ template. Rename the folder and
+// adjust the copy/basePath below to match your real page.
 
 'use client';
 
@@ -17,7 +17,7 @@ export default function GuidesPage() {
 			items={modules}
 			basePath="/modules/guides"
 			heading="Guides"
-			subheading="Replace with a short subheading for this section."
+			subheading="Replace with a short subheading for this page."
 			usingDefaults={usingDefaults}
 		/>
 	);

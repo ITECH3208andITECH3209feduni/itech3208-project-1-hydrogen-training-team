@@ -95,21 +95,21 @@ describe('4. addHotspot', () => {
     const newHotspot = result.current.hotspots[result.current.hotspots.length - 1];
     expect(newHotspot.info.title).toBe('⚠️ New Hazard');
     expect(newHotspot.info.moduleId).toBeNull();
-    expect(newHotspot.info.moduleSection).toBeNull();
+    expect(newHotspot.info.moduleTopic).toBeNull();
   });
 });
 
 // 5. Test updateModuleLink
 // Note: same as addHotspot above — calls APIs but doesn't test them.
 describe('5. updateModuleLink', () => {
-  // Test if section and id are both written together onto the target hotspot
-  it('5.1 sets moduleSection and moduleId together on the target hotspot', async () => {
+  // Test if topic and id are both written together onto the target hotspot
+  it('5.1 sets moduleTopic and moduleId together on the target hotspot', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
     act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
 
-    expect(result.current.hotspots[0].info.moduleSection).toBe('guides');
+    expect(result.current.hotspots[0].info.moduleTopic).toBe('guides');
     expect(result.current.hotspots[0].info.moduleId).toBe('2');
   });
 
@@ -121,7 +121,7 @@ describe('5. updateModuleLink', () => {
     act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
 
     // index 1 should be untouched by an update targeting index 0
-    expect(result.current.hotspots[1].info.moduleSection).toBe('hazard-modules');
+    expect(result.current.hotspots[1].info.moduleTopic).toBe('hazard-modules');
     expect(result.current.hotspots[1].info.moduleId).toBe('2');
   });
 
@@ -131,11 +131,11 @@ describe('5. updateModuleLink', () => {
     const { result } = renderHook(() => useHazards(ref));
 
     // Default hotspots start linked (see lib/hazards.ts)
-    expect(result.current.hotspots[0].info.moduleSection).not.toBeNull();
+    expect(result.current.hotspots[0].info.moduleTopic).not.toBeNull();
 
     act(() => { result.current.updateModuleLink(0, null, null); });
 
-    expect(result.current.hotspots[0].info.moduleSection).toBeNull();
+    expect(result.current.hotspots[0].info.moduleTopic).toBeNull();
     expect(result.current.hotspots[0].info.moduleId).toBeNull();
   });
 });
@@ -150,8 +150,8 @@ describe('6. hasInvalidModuleLink', () => {
     expect(result.current.hasInvalidModuleLink).toBe(false);
   });
 
-  // Test if true when have a section but no ID (mid-edit in the UI)
-  it('6.2 becomes true when a hotspot has only moduleSection set', async () => {
+  // Test if true when have a topic but no ID (mid-edit in the UI)
+  it('6.2 becomes true when a hotspot has only moduleTopic set', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
 
@@ -160,7 +160,7 @@ describe('6. hasInvalidModuleLink', () => {
     expect(result.current.hasInvalidModuleLink).toBe(true);
   });
 
-  // Test if true when have an ID but no section (not reachable via the UI)
+  // Test if true when have an ID but no topic (not reachable via the UI)
   it('6.3 becomes true when a hotspot has only moduleId set', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHazards(ref));
@@ -329,7 +329,7 @@ describe('10. load-hazards', () => {
     expect(loadedHotspot.info.title).toBe('Loaded Title');
     expect(loadedHotspot.info.text).toBe('Loaded description text.');
     expect(loadedHotspot.info.moduleId).toBe('1');
-    expect(loadedHotspot.info.moduleSection).toBe('hazard-modules');
+    expect(loadedHotspot.info.moduleTopic).toBe('hazard-modules');
     expect(loadedHotspot.info.videoUrl).toBeNull();
     expect(loadedHotspot.info.videoType).toBeNull();
   });
@@ -387,8 +387,8 @@ describe('10. load-hazards', () => {
     consoleSpy.mockRestore();
   });
 
-  // Test if a hotspot with no linked module doesn't show values for module_section/module_id (doesn't use default values from hazards.ts)
-  it('10.5 passes through module_section/module_id as null when the hotspot has no linked module', async () => {
+  // Test if a hotspot with no linked module doesn't show values for module_topic/module_id (doesn't use default values from hazards.ts)
+  it('10.5 passes through module_topic/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/lab/load-hazards', () => HttpResponse.json({
         ok: true,
@@ -399,7 +399,7 @@ describe('10. load-hazards', () => {
             left: '35.0%',
             title: 'Unlinked Hazard',
             text: 'No module linked to this one.',
-            module_section: null,
+            module_topic: null,
             module_id: null,
             video_url: null,
             video_type: null,
@@ -415,7 +415,7 @@ describe('10. load-hazards', () => {
 
     const loadedHotspot = result.current.hotspots[0];
     expect(loadedHotspot.info.moduleId).toBeNull();
-    expect(loadedHotspot.info.moduleSection).toBeNull();
+    expect(loadedHotspot.info.moduleTopic).toBeNull();
   });
 });
 
@@ -510,7 +510,7 @@ describe('12. save-hazards', () => {
       title: 'Loaded Title',
       text: 'Loaded description text.',
       moduleId: '1',
-      moduleSection: 'hazard-modules',
+      moduleTopic: 'hazard-modules',
       videoUrl: null,
       videoType: null,
     });
@@ -531,7 +531,7 @@ describe('12. save-hazards', () => {
     
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
-    // Break validity: give the (only) loaded hotspot a section but no id
+    // Break validity: give the (only) loaded hotspot a topic but no id
     act(() => { result.current.updateModuleLink(0, 'hazard-modules', null); });
     expect(result.current.hasInvalidModuleLink).toBe(true);
     
@@ -711,7 +711,7 @@ describe('16. removeHotspotVideo', () => {
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
           title: 'Loaded Title', text: 'Loaded description text.',
-          module_section: 'hazard-modules', module_id: '1',
+          module_topic: 'hazard-modules', module_id: '1',
           video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
         }],
       }))
@@ -759,7 +759,7 @@ describe('16. removeHotspotVideo', () => {
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
           title: 'Loaded Title', text: 'Loaded description text.',
-          module_section: 'hazard-modules', module_id: '1',
+          module_topic: 'hazard-modules', module_id: '1',
           video_url: 'https://www.youtube.com/watch?v=abc', video_type: 'youtube',
         }],
       })),

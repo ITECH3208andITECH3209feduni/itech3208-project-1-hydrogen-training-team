@@ -1,6 +1,6 @@
 // app/api/modules/video/route.ts
 // Admin-only API for adding, replacing and removing videos from the Hydrogen Safety Modules.
-// IMPORTANT: Modules are identified by BOTH section and id. This prevents two modules with different sections but the same id from being confused with each other.
+// IMPORTANT: Modules are identified by BOTH topic and id. This prevents two modules with different topics but the same id from being confused with each other.
 // Shares logic with app/api/modules/video/route.ts via lib/video.ts.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -11,7 +11,7 @@ import { getYouTubeVideoId, getStoragePath, validateMp4File, safeFileName } from
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_SECTION = "hazard-modules";
+const ALLOWED_TOPIC = "hazard-modules";
 const VIDEO_BUCKET = "module-videos";
 
 // PUT
@@ -21,14 +21,14 @@ export async function PUT(request: NextRequest) {
 
         const formData = await request.formData();
         const moduleId = String(formData.get("moduleId") ?? "").trim();
-        const section = String(formData.get("section") ?? "").trim();
+        const topic = String(formData.get("topic") ?? "").trim();
         const videoType = String(formData.get("videoType") ?? "").trim();
 
         if (!moduleId) {
             return NextResponse.json({ ok: false, error: "Module ID is required." }, { status: 400 });
         }
-        if (section !== ALLOWED_SECTION) {
-            return NextResponse.json({ ok: false, error: "Invalid module section." }, { status: 400 });
+        if (topic !== ALLOWED_TOPIC) {
+            return NextResponse.json({ ok: false, error: "Invalid module topic." }, { status: 400 });
         }
         if (videoType !== "youtube" && videoType !== "mp4") {
             return NextResponse.json({ ok: false, error: "Video type must be youtube or mp4." }, { status: 400 });
@@ -36,8 +36,8 @@ export async function PUT(request: NextRequest) {
 
         const { data: module, error: moduleError } = await supabaseServer
             .from("modules")
-            .select("id, section, title, video_url, video_type")
-            .eq("section", section)
+            .select("id, topic, title, video_url, video_type")
+            .eq("topic", topic)
             .eq("id", moduleId)
             .single();
 
@@ -60,9 +60,9 @@ export async function PUT(request: NextRequest) {
             const { data, error } = await supabaseServer
                 .from("modules")
                 .update({ video_url: videoUrl, video_type: "youtube" })
-                .eq("section", section)
+                .eq("topic", topic)
                 .eq("id", moduleId)
-                .select("id, section, title, video_url, video_type")
+                .select("id, topic, title, video_url, video_type")
                 .single();
 
             if (error) {
@@ -95,7 +95,7 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
         }
 
-        const storagePath = `${section}/${moduleId}/${Date.now()}-${safeFileName(file.name)}`;
+        const storagePath = `${topic}/${moduleId}/${Date.now()}-${safeFileName(file.name)}`;
 
         const { error: uploadError } = await supabaseServer.storage
             .from(VIDEO_BUCKET)
@@ -112,9 +112,9 @@ export async function PUT(request: NextRequest) {
         const { data, error } = await supabaseServer
             .from("modules")
             .update({ video_url: videoUrl, video_type: "mp4" })
-            .eq("section", section)
+            .eq("topic", topic)
             .eq("id", moduleId)
-            .select("id, section, title, video_url, video_type")
+            .select("id, topic, title, video_url, video_type")
             .single();
 
         if (error) {
@@ -150,19 +150,19 @@ export async function DELETE(request: NextRequest) {
         await requireAdmin(request);
         const body = await request.json();
         const moduleId = String(body.moduleId ?? "").trim();
-        const section = String(body.section ?? "").trim();
+        const topic = String(body.topic ?? "").trim();
 
         if (!moduleId) {
             return NextResponse.json({ ok: false, error: "Module ID is required." }, { status: 400 });
         }
-        if (section !== ALLOWED_SECTION) {
-            return NextResponse.json({ ok: false, error: "Invalid module section." }, { status: 400 });
+        if (topic !== ALLOWED_TOPIC) {
+            return NextResponse.json({ ok: false, error: "Invalid module topic." }, { status: 400 });
         }
 
         const { data: existingModule, error: findError } = await supabaseServer
             .from("modules")
-            .select("id, section, title, video_url, video_type")
-            .eq("section", section)
+            .select("id, topic, title, video_url, video_type")
+            .eq("topic", topic)
             .eq("id", moduleId)
             .single();
 
@@ -176,9 +176,9 @@ export async function DELETE(request: NextRequest) {
         const { data, error } = await supabaseServer
             .from("modules")
             .update({ video_url: null, video_type: null })
-            .eq("section", section)
+            .eq("topic", topic)
             .eq("id", moduleId)
-            .select("id, section, title, video_url, video_type")
+            .select("id, topic, title, video_url, video_type")
             .single();
 
         if (error) {
