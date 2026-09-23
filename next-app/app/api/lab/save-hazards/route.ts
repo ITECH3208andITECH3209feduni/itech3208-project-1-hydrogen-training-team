@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
         // Step 1 — delete existing rows
         const { error: deleteError } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .delete()
             .neq("type", "");   // .neq with an always-true condition deletes all rows
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
             });
 
             const { error: insertError } = await supabaseServer
-                .from("hazards")
+                .from("hotspots")
                 .insert(rows);
 
             if (insertError) {

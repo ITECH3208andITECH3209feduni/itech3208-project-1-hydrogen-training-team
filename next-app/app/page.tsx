@@ -89,7 +89,7 @@ export default function IntroPage() {
 						<div className="intro-card-icon">📝</div>
 						<p className="intro-card-title">Knowledge Quizzes</p>
 						<p className="intro-card-text">
-							Test understanding at every stage with scenario-based quizzes and instant feedback.
+							Test understanding at every stage with topic-based quizzes and instant feedback.
 						</p>
 					</div>
 					<div className="intro-card">

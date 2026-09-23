@@ -194,6 +194,36 @@ export default function Dashboard() {
 
             {/* Top Stat Cards */}
             <div className="stat-cards">
+                {/* Simulations */}
+                <Link
+                    href="/lab"
+                    className="stat-card"
+                >
+                    <div className="stat-icon simulations">&#128300;</div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Simulations
+                        </div>
+
+                        <div className="count">
+                            {hazardLoading
+                                ? "—"
+                                : `${hazardProgress?.completedHazards ?? 0}/${hazardProgress?.totalHazards ?? 0}`
+                            }
+                        </div>
+
+                        <div className="sub">
+                            {hazardLoading
+                                ? "Loading..."
+                                : `${hazardProgress?.completedHazards ?? 0} hazards identified`
+                            }
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">&#8594;</div>
+                </Link>
+                
                 {/* Modules */}
                 <Link
                     href="/modules/hazards"
@@ -220,35 +250,6 @@ export default function Dashboard() {
                     </div>
 
                     <div className="stat-arrow">&rarr;</div>
-                </Link>
-                {/* Scenarios / Simulation */}
-                <Link
-                    href="/lab"
-                    className="stat-card"
-                >
-                    <div className="stat-icon scenarios">&#128300;</div>
-
-                    <div className="stat-info">
-                        <div className="label">
-                            Scenarios / Simulation
-                        </div>
-
-                        <div className="count">
-                            {hazardLoading
-                                ? "—"
-                                : `${hazardProgress?.completedHazards ?? 0}/${hazardProgress?.totalHazards ?? 0}`
-                            }
-                        </div>
-
-                        <div className="sub">
-                            {hazardLoading
-                                ? "Loading..."
-                                : `${hazardProgress?.completedHazards ?? 0} hazards identified`
-                            }
-                        </div>
-                    </div>
-
-                    <div className="stat-arrow">&#8594;</div>
                 </Link>
 
                 {/* Quizzes */}

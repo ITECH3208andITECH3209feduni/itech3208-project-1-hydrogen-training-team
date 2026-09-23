@@ -8,25 +8,9 @@
 -- 1. TABLES
 -- ---------------------------------------------------------------------
 
--- hazards: hotspot positions/text for the interactive lab.
--- "left" must be quoted as it is a reserved word in SQL.
--- module_topic/module_id link a hotspot to a module; left nullable here because the modules table (referenced by the FK below) doesn't exist yet.
-create table public.hazards (
-	type            text primary key,
-	title           text not null,
-	text            text not null,
-	top             text not null,
-	"left"          text not null,
-	module_topic  text null,
-	module_id       text null,
-	video_url       text null,
-	video_type      text null,
-	sort_order      int  not null default 0
-);
-
--- modules / module_sections: content shared by every topic under app/modules/ (distinguished by the `topic` column, e.g. 'hazard-modules').
+-- modules / module_sections: content shared by every topic under app/modules/ (distinguished by the `topic` column, e.g. 'hazards').
 create table public.modules (
-  topic       text not null,
+  topic         text not null,
   id            text not null,
   slug          text null,
   badge_num     integer null,
@@ -44,7 +28,7 @@ create table public.modules (
 );
 
 create table public.module_sections (
-  topic     text not null,
+  topic       text not null,
   module_id   text not null,
   num         text not null,
   heading     text not null,
@@ -58,14 +42,27 @@ create table public.module_sections (
   constraint module_sections_list_type_check check ((list_type = any (array['ul'::text, 'ol'::text])))
 );
 
--- Now that modules exists, add the FK deferred from hazards above.
-alter table public.hazards
-  add constraint hazards_module_fk
-  foreign key (module_topic, module_id)
-  references public.modules (topic, id)
-  match full
-  on delete set null
-  on update cascade;
+-- hotspots: hotspot positions/text for the interactive lab.
+-- "left" must be quoted as it is a reserved word in SQL.
+-- module_topic/module_id link a hotspot to a module; modules already exists by this point, so the FK is declared inline rather than added after the fact.
+create table public.hotspots (
+	type            text primary key,
+	title           text not null,
+	text            text not null,
+	top             text not null,
+	"left"          text not null,
+	module_topic    text null,
+	module_id       text null,
+	video_url       text null,
+	video_type      text null,
+	sort_order      int  not null default 0,
+	constraint hotspots_module_fk
+		foreign key (module_topic, module_id)
+		references public.modules (topic, id)
+		match full
+		on delete set null
+		on update cascade
+);
   
 -- quizzes / quiz_questions: per-quiz metadata + question bank.
 -- Distinguished by quiz_id (e.g. 'hazards') rather than a `topic` column, since quizzes aren't part of the app/modules/ listing+reader template.
@@ -91,7 +88,7 @@ create table public.quiz_questions (
 	constraint quiz_questions_quiz_id_fkey foreign key (quiz_id) references public.quizzes (quiz_id) on delete cascade
 );
 
--- profiles / user_module_progress / user_quiz_progress / user_hazard_progress / feedback:
+-- profiles / user_module_progress / user_quiz_progress / user_lab_progress / feedback:
 -- accounts, per-user training progress, and submitted feedback.
 create table public.profiles (
   uid           text not null,
@@ -113,7 +110,7 @@ create table public.profiles (
 create table public.user_module_progress (
   id              uuid not null default gen_random_uuid(),
   uid             text not null,
-  topic         text not null,
+  topic           text not null,
   module_id       text not null,
   status          text not null default 'todo',
   progress        integer not null default 0,
@@ -146,14 +143,14 @@ create table public.user_quiz_progress (
   constraint user_quiz_progress_uid_quiz_unique unique (uid, quiz_id)
 );
 
-create table public.user_hazard_progress (
+create table public.user_lab_progress (
   id                uuid not null default gen_random_uuid(),
   uid               text not null,
-  hazard_id         text not null,
+  hotspot_id        text not null,
   scenario_id       text not null default 'interactive-lab',
   first_clicked_at  timestamptz not null default now(),
-  constraint user_hazard_progress_pkey primary key (id),
-  constraint user_hazard_progress_unique unique (uid, scenario_id, hazard_id)
+  constraint user_lab_progress_pkey primary key (id),
+  constraint user_lab_progress_unique unique (uid, scenario_id, hotspot_id)
 );
 
 create table public.feedback (
@@ -176,7 +173,7 @@ create table public.feedback (
 insert into storage.buckets (id, name, public)
 values ('lab-images', 'lab-images', true);
 
--- module-videos: one embedded video file per hazard module
+-- module-videos: one embedded video file per module
 -- (mp4 uploads only — YouTube links are stored as plain URLs and never touch this bucket).
 insert into storage.buckets (id, name, public)
 values ('module-videos', 'module-videos', true);
@@ -196,27 +193,27 @@ values ('lab-videos', 'lab-videos', true);
 -- The "Allow service role write" policies below (and the equivalent ones on storage.objects) are written for explicitness rather than necessity, matching how every write path in this app already uses the service-role client for exactly that reason.
 -- ---------------------------------------------------------------------
 
--- hazards: public read, service-role read/write.
+-- hotspots: public read, service-role read/write.
 -- service_role needs `select` granted here (and on modules/module_sections and /quizzes/quiz_questions below), not just insert/update/delete:
 -- PostgREST constructs its response after every write via a read-back that requires select privilege on the table, regardless of which DML statement is used.
-alter table public.hazards enable row level security;
+alter table public.hotspots enable row level security;
 
 create policy "Allow public read"
-on public.hazards
+on public.hotspots
 for select
 to anon
 using (true);
 
 create policy "Allow service role write"
-on public.hazards
+on public.hotspots
 for all
 to service_role
 using (true)
 with check (true);
 
-grant select on public.hazards to anon;
-grant select on public.hazards to service_role;
-grant insert, update, delete on public.hazards to service_role;
+grant select on public.hotspots to anon;
+grant select on public.hotspots to service_role;
+grant insert, update, delete on public.hotspots to service_role;
 
 -- modules / module_sections: public read, service-role read/write.
 alter table public.modules enable row level security;
@@ -351,11 +348,11 @@ for delete
 to service_role
 using (bucket_id = 'lab-videos');
 
--- profiles / user_module_progress / user_quiz_progress / feedback:
--- Every route touching these four tables uses the service-role client (which bypasses RLS) behind requireUser/requireAdmin, rather than the browser-side anon client used for hazards/modules/module_sections/ quizzes/quiz_questions.
+-- profiles / user_module_progress / user_quiz_progress / user_lab_progress / feedback:
+-- Every route touching these four tables uses the service-role client (which bypasses RLS) behind requireUser/requireAdmin, rather than the browser-side anon client used for hotspots/modules/module_sections/ quizzes/quiz_questions.
 -- So there's no anon select policy or grant here — enabling RLS with no anon policies at all keeps them inaccessible to anything but the service role.
 alter table public.profiles enable row level security;
 alter table public.user_module_progress enable row level security;
 alter table public.user_quiz_progress enable row level security;
-alter table public.user_hazard_progress enable row level security;
+alter table public.user_lab_progress enable row level security;
 alter table public.feedback enable row level security;

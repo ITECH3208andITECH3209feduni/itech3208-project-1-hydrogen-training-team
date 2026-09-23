@@ -66,6 +66,18 @@ export default function Navbar() {
                 {/* Authenticated users only */}
                 {user && (
                     <>
+                        {/* Simulations */}
+                        <Link
+                            href="/lab"
+                            className={`nav-link ${
+                                pathname === "/lab"
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Simulations
+                        </Link>
+                        
                         {/* Modules */}
                         <Link
                             href="/modules/hazards"
@@ -76,18 +88,6 @@ export default function Navbar() {
                             }`}
                         >
                             Modules
-                        </Link>
-
-                        {/* Scenarios */}
-                        <Link
-                            href="/lab"
-                            className={`nav-link ${
-                                pathname === "/lab"
-                                    ? "active"
-                                    : ""
-                            }`}
-                        >
-                            Scenarios
                         </Link>
 
                         {/* Quizzes */}

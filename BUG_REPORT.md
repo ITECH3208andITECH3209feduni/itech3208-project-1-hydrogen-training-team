@@ -7,7 +7,7 @@ Known bugs and inconsistencies in the Hydrogen Lab Safety app. This is a working
 ## Security / access control
 
 ### `save-hazards` and `upload-image` have no server-side auth guard
-The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/lab/save-hazards` and `POST /api/lab/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hazard data or lab image, regardless of the caller's permissions.
+The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/lab/save-hazards` and `POST /api/lab/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hotspot data or lab image, regardless of the caller's permissions.
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
 ### `/api/profile/get` and `/api/profile/create` have no auth guard and no ownership check
@@ -18,7 +18,7 @@ Both routes take `uid` as a plain request parameter (query string on `GET`, body
 Every other `requireAdmin` route maps `"Access denied"`/`"Missing authorization token"`/`"User profile not found"` to `403`. `GET /api/admin/feedback` instead maps `"Missing authorization token"` to `401` and doesn't special-case `"User profile not found"` at all, falling through to a generic `500`. Functionally similar (an unauthorized caller still gets rejected), but the exact status code returned for the same underlying failure differs depending on which admin route you hit.
 
 ### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
-`GET /api/lab/load-module-options` (added to populate the lab editor's Linked Module dropdowns) was deliberately left public, on the reasoning that it returns a subset of data — `section`, `id`, `title`, `badge_num` — already exposed publicly per-section via `GET /api/modules/load-modules`, so gating it wouldn't reduce any real exposure. That reasoning holds on its own.
+`GET /api/lab/load-module-options` (added to populate the lab editor's Linked Module dropdowns) was deliberately left public, on the reasoning that it returns a subset of data — `topic`, `id`, `title`, `badge_num` — already exposed publicly per-topic via `GET /api/modules/load-modules`, so gating it wouldn't reduce any real exposure. That reasoning holds on its own.
 But it was evaluated in a context where the write endpoint it feeds into, `POST /api/lab/save-hazards`, has no auth guard either (see above) — so "is this data already effectively public" was judged against a write surface that itself shouldn't be reachable unauthenticated. Once `save-hazards`/`upload-image` get proper guards, it's worth re-confirming `load-module-options`'s public status still makes sense on its own terms, rather than carrying forward a conclusion reached alongside an open gap.
 
 ### `/admin/users/[uid]/progress` client-side gate is weaker than its parent page
@@ -84,9 +84,9 @@ The real `/certificate` page's actual rule is `allModulesCompleted && quizPassed
 Separately, none of the three account for lab/scenario progress (`GET /api/lab/progress`) at all — only module completion and the quiz factor into "eligible" anywhere in the app today, even though the lab is one of the three tracked activities. If lab completion is ever meant to count toward certificate eligibility, all three of these computations would need to change together, not just one.
 **Fix:** compute eligibility once (e.g. as a shared helper or a single API field) and have the admin list page, the per-user progress page, and `/certificate` itself all read from it.
 
-### Admin progress views only account for `hazard-modules`, not `guides`
-`GET /api/admin/users` and `GET /api/admin/users/{uid}/progress` both scope their `user_module_progress` queries to `section = "hazard-modules"`, and `totalModules` is `hazardModules.length` in both routes. A learner's progress in any other `app/modules/` section (currently just `guides`) never appears anywhere in the admin panel — not in the dashboard statistics, the per-user progress page, or certificate eligibility. `guides` is a template section not linked in navigation, so this is low-priority today, but the admin routes would need to generalize before any future real second section could get admin visibility.
-**Fix:** generalize the admin routes' section scoping (aggregate across sections, or accept a section list) if/when a second section needs admin visibility, rather than hardcoding `hazard-modules`.
+### Admin progress views only account for `hazards`, not `guides`
+`GET /api/admin/users` and `GET /api/admin/users/{uid}/progress` both scope their `user_module_progress` queries to `topic = "hazards"`, and `totalModules` is `hazardModules.length` in both routes. A learner's progress in any other `app/modules/` topic (currently just `guides`) never appears anywhere in the admin panel — not in the dashboard statistics, the per-user progress page, or certificate eligibility. `guides` is a template topic not linked in navigation, so this is low-priority today, but the admin routes would need to generalize before any future real second topic could get admin visibility.
+**Fix:** generalize the admin routes' topic scoping (aggregate across topics, or accept a topic list) if/when a second topic needs admin visibility, rather than hardcoding `hazards`.
 
 ### Certificate pass-threshold is hardcoded separately from the real threshold — in `/certificate`, and independently again in the dashboard
 `/quizzes/hazards` (the actual quiz attempt page) gets this right: it computes `passed = percentage >= passThreshold`, where `passThreshold` is the quiz's live, admin-editable `pass_threshold` from Supabase (`lib/questionhazards.ts`'s `PASS_THRESHOLD` is only the fallback default, used when live content isn't available), and POSTs the correctly-computed `passed` to `/api/quizzes/progress`, which stores it as-is.
@@ -100,15 +100,15 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 **Fix:** clear the flag in `handleLogout` itself once its own `router.replace('/')` fires (rather than relying solely on `/login` to consume it), or use a one-shot mechanism that doesn't depend on `/login` being the next page visited.
 
 ### `save-hazards` does a full delete-then-reinsert, not a diff
-`/api/lab/save-hazards` deletes every row in the `hazards` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
+`/api/lab/save-hazards` deletes every row in the `hotspots` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
 
 ### Several tables store a `uid` (or other cross-table reference) with no foreign key enforcing it
-`user_module_progress` does this correctly — `fk_user_progress` ties its `uid` to `profiles.uid`, and `fk_user_progress_module` ties `(section, module_id)` to `modules`. Nothing else follows that pattern:
+`user_module_progress` does this correctly — `fk_user_progress` ties its `uid` to `profiles.uid`, and `fk_user_progress_module` ties `(topic, module_id)` to `modules`. Nothing else follows that pattern:
 - `user_quiz_progress.uid` has no FK to `profiles.uid`; `quiz_id` has no FK to `quizzes.quiz_id`.
 - `feedback.user_id` has no FK to `profiles.uid`.
-- `user_hazard_progress.uid` has no FK to `profiles.uid`; `hazard_id` has no FK to `hazards.type`.
+- `user_lab_progress.uid` has no FK to `profiles.uid`; `hotspot_id` has no FK to `hotspots.type`.
 
-Application code checks referential validity in some of these cases (e.g. `POST /api/lab/progress` looks up the hazard before inserting), but the database itself doesn't enforce it — a row could be inserted directly, or by a future code path that skips the check, referencing a `uid`/`hazard_id`/`quiz_id` that doesn't exist.
+Application code checks referential validity in some of these cases (e.g. `POST /api/lab/progress` looks up the hazard before inserting), but the database itself doesn't enforce it — a row could be inserted directly, or by a future code path that skips the check, referencing a `uid`/`hotspot_id`/`quiz_id` that doesn't exist. A straightforward FK from `user_lab_progress.hotspot_id` to `hotspots.type` also has to account for `save-hazards`' delete-then-reinsert pattern (above): as a plain FK it would either block a hotspot save that has any recorded progress (`on delete restrict`) or wipe all lab progress on every hotspot save (`on delete cascade`), so `save-hazards` becoming diff-and-update is a prerequisite for adding that particular FK safely.
 **Fix:** add the missing foreign keys, following `user_module_progress`'s existing pattern.
 
 ---
@@ -153,7 +153,7 @@ See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-a
 ## Architecture / structure
 
 ### The lab's edit mode lives entirely in `app/lab/page.tsx` + `useHazards.ts` — worth revisiting if a third editable page appears
-The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple sections and (eventually) both listing and reader pages. `useHazards.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHazards.ts` preemptively for a pattern used by only one page today.
+The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple topics and (eventually) both listing and reader pages. `useHazards.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHazards.ts` preemptively for a pattern used by only one page today.
 
 ### The quiz editor has an "unsaved changes" warning that the lab and module editors don't
 `app/quizzes/[quizId]/edit/page.tsx` warns before an admin loses in-progress edits — on tab close/refresh, on any in-app link click while a change is unsaved, and on the page's own "Back to Quizzes" link (see `ADDITIONAL_INFO.md`, "Quiz Content Editor"). Neither `/lab`'s edit mode nor the module reader pages' editors have any equivalent — navigating away from either with unsaved hotspot/module edits loses them silently, with no prompt. Worth deciding whether the other two should get the same treatment for consistency, or whether the quiz editor's separate-page structure (as opposed to the other two's in-place edit-mode toggle) makes the warning more necessary there specifically.

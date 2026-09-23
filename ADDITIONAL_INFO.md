@@ -18,7 +18,7 @@ Exceptions:
 - `/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` — each checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/dashboard` rather than `/login`.
 
 `Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`. Its site-title logo links to `/` (the landing page), its "Home" nav link goes to `/dashboard`.
-	Its Modules/Scenarios/Quizzes links only render while a user is signed in; the Administration link only renders while `permissions.canManageUsers` (i.e. `isAdmin`) is true, and points at `/admin`.
+	Its Simulations/Modules/Quizzes links only render while a user is signed in; the Administration link only renders while `permissions.canManageUsers` (i.e. `isAdmin`) is true, and points at `/admin`.
 
 **Logout** (`handleLogout` in `Navbar.tsx`) sets a `sessionStorage` flag (`logoutRedirect: "true"`), awaits Firebase `logout()`, then `router.replace('/')` — logging out now lands on the home page, not `/login`.
 	The flag exists to suppress a flash of the login form: during `await logout()`, the currently-mounted protected page's own redirect-to-`/login` effect (the pattern described above) can fire before the navbar's own `replace('/')` does, briefly navigating to `/login` first.
@@ -81,13 +81,13 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 
 | Route                             | Method(s)       | Auth                         | Supabase tables / storage                                | Called from                                                                                                            |
 |-----------------------------------|-----------------|------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| `/api/lab/load-hazards`           | `GET`           | public                       | `hazards`                                                | `useHazards.ts` (`/lab`)                                                                                               |
-| `/api/lab/save-hazards`           | `POST`          | public — see `BUG_REPORT.md` | `hazards` (delete-all, reinsert)                         | `useHazards.ts` (`/lab` editor save)                                                                                   |
+| `/api/lab/load-hazards`           | `GET`           | public                       | `hotspots`                                               | `useHazards.ts` (`/lab`)                                                                                               |
+| `/api/lab/save-hazards`           | `POST`          | public — see `BUG_REPORT.md` | `hotspots` (delete-all, reinsert)                        | `useHazards.ts` (`/lab` editor save)                                                                                   |
 | `/api/lab/load-image`             | `GET`           | public                       | `lab-images` storage bucket                              | `useHazards.ts` (`/lab`)                                                                                               |
 | `/api/lab/upload-image`           | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHazards.ts` (`/lab` editor image upload)                                                                           |
 | `/api/lab/load-module-options`    | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/lab` editor's Linked Module dropdown)                                                         |
-| `/api/lab/progress`               | `GET`, `POST`   | `requireUser`                | `user_hazard_progress`, `hazards` (count)                | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Scenarios stat card)             |
-| `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hazards`, `lab-videos` storage bucket                   | `useHazards.ts` (`/lab` editor video panel)                                                                            |
+| `/api/lab/progress`               | `GET`, `POST`   | `requireUser`                | `user_lab_progress`, `hotspots` (count)                  | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Simulations stat card)             |
+| `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hotspots`, `lab-videos` storage bucket                  | `useHazards.ts` (`/lab` editor video panel)                                                                            |
 | `/api/modules/load-modules`       | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
 | `/api/modules/video`              | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `ModuleReaderPage.tsx`'s in-app editor                                                                                 |
 | `/api/modules/progress`           | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress),                                               |
@@ -110,44 +110,44 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 
 ## Modules system
 
-`app/modules/` is a directory holding every section built on a shared listing+reader template — it isn't a page itself (there's no `page.tsx` directly under `app/modules/`).
-	Currently there are two sections:
-- **Hazard Modules** (`/modules/hazard-modules`) — the hydrogen hazards content, defined in `lib/modules/hazards.ts`.
+`app/modules/` is a directory holding every topic built on a shared listing+reader template — it isn't a page itself (there's no `page.tsx` directly under `app/modules/`).
+	Currently there are two topics:
+- **Hazard Modules** (`/modules/hazards`) — the hydrogen hazards content, defined in `lib/modules/hazards.ts`.
 	Linked from the Navbar and the dashboard's Modules stat card.
-- **Guides** (`/modules/guides`) — an example second section demonstrating the pattern, defined in `lib/modules/guides.ts`.
-	Not currently linked from navigation — it's a template section, kept unlinked deliberately so its placeholder content stays available as a reference rather than needing to look like real content.
-	It follows the same live-loading pattern as `hazard-modules`: `app/modules/guides/page.tsx`/`[id]/page.tsx` call `useModules`/`useModuleById` with `section: 'guides'`, merging over `lib/modules/guides.ts` as `defaults`.
+- **Guides** (`/modules/guides`) — an example second topic demonstrating the pattern, defined in `lib/modules/guides.ts`.
+	Not currently linked from navigation — it's a template topic, kept unlinked deliberately so its placeholder content stays available as a reference rather than needing to look like real content.
+	It follows the same live-loading pattern as `modules/hazards`: `app/modules/guides/page.tsx`/`[id]/page.tsx` call `useModules`/`useModuleById` with `topic: 'guides'`, merging over `lib/modules/guides.ts` as `defaults`.
 
 The shared template lives in `app/modules/components/`:
 - `ModuleListingPage.tsx` — filter bar, grid, auth redirect
 - `ModuleReaderPage.tsx`  — breadcrumb, hero, sections, key takeaway, prev/next nav, and the progress UI described under "Module Progress Tracking" below
 - `ModuleEditor.tsx`      — edit panel for a module's fields and sections, rendered by `ModuleReaderPage` while its edit mode is on
-- `ModuleCard.tsx`        — card shown in the listing page, used for every section
+- `ModuleCard.tsx`        — card shown in the listing page, used for every topic
 - `SectionBlock.tsx`      — renders a single numbered section.
 	Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
 	A `callout` is rendered with a 💡 prefix added by this component.
 
 Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/modules/moduleTypes.ts`.
-	Each section's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these section-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
+	Each topic's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these topic-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
-Module content lives in Supabase, loaded per-section through `hooks/modules/useModules.ts`:
-- **`useModules(section, defaults)`** — fetches `GET /api/modules/load-modules?section=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
+Module content lives in Supabase, loaded per-topic through `hooks/modules/useModules.ts`:
+- **`useModules(topic, defaults)`** — fetches `GET /api/modules/load-modules?topic=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
 	A successful, non-empty response is authoritative for whatever it contains — any missing modules from the fallback version are considered purposefully deleted.
-	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the section hasn't been seeded yet (empty response).
+	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the topic hasn't been seeded yet (empty response).
 	`usingDefaults` is `true` in exactly those fallback cases (an error, an empty response, or a network failure), `false` on a verified live load.
-- **`useModuleById(section, defaults, id)`** — the same, narrowed to a single module by id; returns `{ item, loadStatus, usingDefaults }`.
-	This is what reader pages use in place of a section's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
+- **`useModuleById(topic, defaults, id)`** — the same, narrowed to a single module by id; returns `{ item, loadStatus, usingDefaults }`.
+	This is what reader pages use in place of a topic's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
 - **`mergeRow`/`mapSection`** (exported from `useModules.ts`) do the field-name translation between Supabase's snake_case row shape (`badge_num`, `icon_bg`, …) and the app's camelCase `ModuleData`/`ModuleSection` shape.
 - `status`/`progress` are never present in the Supabase `modules` row itself — they're deliberately not columns on `modules`; they're tracked per-user in `user_module_progress` instead.
-	`useModules` merges live per-user progress into module content: after merging content, it fetches `GET /api/modules/progress?section=...` (when a user is signed in) and overwrites each module's `status`/`progress` with the matching per-user record — `"done"` if the record's `status` is `"done"` or its `progress >= 100`, `"progress"` if `> 0`, else `"todo"`.
-	The `?section=` query param scopes the fetch to the current section, so a `module_id` shared across two sections (e.g. `hazard-modules` and `guides` both using `"1"`) can't have its progress conflated.
+	`useModules` merges live per-user progress into module content: after merging content, it fetches `GET /api/modules/progress?topic=...` (when a user is signed in) and overwrites each module's `status`/`progress` with the matching per-user record — `"done"` if the record's `status` is `"done"` or its `progress >= 100`, `"progress"` if `> 0`, else `"todo"`.
+	The `?topic=` query param scopes the fetch to the current topic, so a `module_id` shared across two topics (e.g. `hazards` and `guides` both using `"1"`) can't have its progress conflated.
 	If there's no signed-in user, or no matching record for a given module, that module's `status`/`progress` are left as whatever `mergeRow` already set from `defaults`.
 - `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link.
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
 - `videoUrl`/`videoType` fall back to `defaults` together.
 
-Each section's data file (e.g. `lib/modules/hazards.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
+Each topic's data file (e.g. `lib/modules/hazards.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
 
 For the `ModuleData` field reference and how to edit live module content, see `EDITING_GUIDE.md`.
@@ -158,24 +158,24 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 	`components/SaveBar.tsx` is likewise shared between the two.
 	Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
 
-**State (`hooks/modules/useModuleEditor.ts`):** takes the section name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
+**State (`hooks/modules/useModuleEditor.ts`):** takes the topic name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
 - Toggling edit mode off does **not** discard unsaved changes — mirroring `useHazards`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
-- Navigating to a different module (the prev/next links, or the section listing) re-seeds the draft from the new module and forces edit mode off.
+- Navigating to a different module (the prev/next links, or the listing page) re-seeds the draft from the new module and forces edit mode off.
 	This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`.
 	A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving) but only while not currently editing, so a background refresh can't overwrite an in-progress edit.
 - **`resetToDefaults`** replaces the whole draft with `fallback` — reverting to the bundled `lib/` entry, the same semantics as `/lab`'s Reset to Defaults reverting to `lib/hazards.ts` rather than to whatever Supabase last returned.
-	Disabled (`canReset: false`) when no `fallback` was supplied — a section whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
+	Disabled (`canReset: false`) when no `fallback` was supplied — a topic whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
 - While edit mode is on, `ModuleReaderPage` renders the whole reading view (hero, sections, key takeaway, prev/next links) from `draft` instead of `item`, so edits appear live above the editor panel.
 
 **Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields.
 	Sections can be added, deleted, reordered (↑/↓), and each edited for `heading`, `body`, `listType` (none/bulleted/numbered), `items`, and `callout`.
 	A section's `num` is not directly editable — `renumberSections` (in `useModuleEditor.ts`) recomputes it from array position on every add/delete/move, since `num` is what `ModuleReaderPage` renders as `data-section-number`, which `useModuleProgress`'s `IntersectionObserver` reads positionally (see "Module Progress Tracking" below) — an out-of-sequence `num` would throw that off.
 
-**Saving:** `POST /api/modules/save-module` (`requireAdmin`-gated) takes `{ section, module, sections }` and:
-1. Upserts the `modules` row (`onConflict: 'section,id'`) — this also means saving works the first time even if the module previously only existed as `lib/` fallback content, with no Supabase row yet. `sort_order` (the module's position in its section's listing) is deliberately left untouched — reordering modules within a listing is out of scope for this editor.
-2. Deletes and reinserts that module's `module_sections` rows, scoped to `(section, module_id)` — not the whole table. This mirrors `save-hazards`' delete-then-reinsert approach for the same reason: `module_sections` is a variable-length list keyed by an editable field (`num`), addable/removable/reorderable in the editor, with nothing else referencing its rows directly.
+**Saving:** `POST /api/modules/save-module` (`requireAdmin`-gated) takes `{ topic, module, sections }` and:
+1. Upserts the `modules` row (`onConflict: 'topic,id'`) — this also means saving works the first time even if the module previously only existed as `lib/` fallback content, with no Supabase row yet. `sort_order` (the module's position in its topic's listing) is deliberately left untouched — reordering modules within a listing is out of scope for this editor.
+2. Deletes and reinserts that module's `module_sections` rows, scoped to `(topic, module_id)` — not the whole table. This mirrors `save-hazards`' delete-then-reinsert approach for the same reason: `module_sections` is a variable-length list keyed by an editable field (`num`), addable/removable/reorderable in the editor, with nothing else referencing its rows directly.
 
-### Adding a new `app/modules/`-style section
+### Adding a new `app/modules/`-style topic
 
 1. Create a data file in `lib/` — e.g. `lib/modules/scenarios.ts` — with an array typed `ModuleData[]` (import `ModuleData` from `lib/modules/moduleTypes.ts`):
    ```ts
@@ -183,7 +183,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 
    export const scenarios: ModuleData[] = [ /* ... */ ];
    ```
-2. Seed a matching set of rows in the `modules`/`module_sections` Supabase tables with `section = 'scenarios'`.
+2. Seed a matching set of rows in the `modules`/`module_sections` Supabase tables with `topic = 'scenarios'`.
 	Either directly via the Supabase dashboard/SQL Editor, or, once step 4 below is done, by visiting each reader page as an admin, turning on Edit Mode, and clicking Save Changes without changing anything (see "Module Content Editor" above and `EDITING_GUIDE.md`).
 3. Create `app/modules/scenarios/page.tsx`, a thin wrapper around `ModuleListingPage`, pulling live data via `useModules`:
    ```tsx
@@ -207,9 +207,9 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
    	);
    }
    ```
-4. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, using `useModuleById` in place of a static per-section lookup — see `app/modules/hazard-modules/[id]/page.tsx` for the current pattern.
-	Pass `defaults={scenarios}` into `ModuleReaderPage` alongside `item`/`section`/`basePath` — this is what the in-app editor's Reset to Defaults button reverts to; omitting it leaves Reset disabled for this section.
-5. If the section should appear in navigation, add a link in `Navbar.tsx`.
+4. Create `app/modules/scenarios/[id]/page.tsx`, a thin wrapper around `ModuleReaderPage`, using `useModuleById` in place of a static per-topic lookup — see `app/modules/hazards/[id]/page.tsx` for the current pattern.
+	Pass `defaults={scenarios}` into `ModuleReaderPage` alongside `item`/`topic`/`basePath` — this is what the in-app editor's Reset to Defaults button reverts to; omitting it leaves Reset disabled for this topic.
+5. If the topic should appear in navigation, add a link in `Navbar.tsx`.
 
 ### Adding a standalone page
 
@@ -226,16 +226,16 @@ For a page unrelated to the modules template:
 
 The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/modules/useModuleProgress.ts`), consumed by `ModuleReaderPage.tsx`.
 	The listing page's cards now read from the same underlying data too (see above, `useModules`' progress merge) — but the two fetch and interpret `/api/modules/progress` independently of each other, so a momentary mismatch between a card's badge and the reader page's own progress bar is possible if one has fetched more recently than the other.
-	This applies to every section built on the shared template, including the unlinked `guides` example — each section passes its own `section` string into `ModuleReaderPage`/`useModuleProgress`/`useModules`, so progress stays correctly scoped per section even where module ids collide across sections.
+	This applies to every topic built on the shared template, including the unlinked `guides` example — each topic passes its own `topic` string into `ModuleReaderPage`/`useModuleProgress`/`useModules`, so progress stays correctly scoped per topic even where module ids collide across topics.
 
 `/api/modules/progress` (`requireUser`-gated) backs the hook:
-- **`POST`** — body `{ module_id, section }`. If a `(uid, section, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now.
+- **`POST`** — body `{ module_id, topic }`. If a `(uid, topic, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now.
 	If one exists, it's a no-op (`{ ok: true, message: "Progress already exists" }`) — it never resets an existing row.
-- **`GET`** — returns every progress row for the caller (`{ ok, progress: ModuleProgress[] }`), optionally scoped to one section via a `?section=` query param; the hook finds the one matching the current `moduleId`.
-- **`PATCH`** — body `{ module_id, section, progress?, status?, attempts?, time_spent?, action? }`, all optional except `module_id`/`section`.
+- **`GET`** — returns every progress row for the caller (`{ ok, progress: ModuleProgress[] }`), optionally scoped to one topic via a `?topic=` query param; the hook finds the one matching the current `moduleId`.
+- **`PATCH`** — body `{ module_id, topic, progress?, status?, attempts?, time_spent?, action? }`, all optional except `module_id`/`topic`.
 	Setting `progress` also auto-derives `status` (`>= 100` → `"done"` + stamps `completed_at`; `> 0` → `"progress"`) unless `status` is passed explicitly, in which case that wins and setting it to `"done"` directly forces `progress` to `100` too.
 	`action: "restart"` ignores every other field, looks the row up first (404s if it doesn't exist), and resets it: `progress: 0`, `status: "progress"`, `completed_at: null`, `time_spent: 0`, `attempts` incremented, `started_at`/`last_accessed` refreshed.
-	`useModuleProgress` itself always sends `module_id`/`section`, and otherwise only ever sends `progress`/`time_spent` (or `action: "restart"`) — it never touches `status` or `attempts` directly, even though the route accepts both.
+	`useModuleProgress` itself always sends `module_id`/`topic`, and otherwise only ever sends `progress`/`time_spent` (or `action: "restart"`) — it never touches `status` or `attempts` directly, even though the route accepts both.
 
 **How progress is derived:** each section in `ModuleReaderPage` is wrapped in a `div` with `data-module-section` and `data-section-number`.
 	An `IntersectionObserver` (50% visibility threshold) watches these and, the first time a new-highest section scrolls into view, computes `progress = round(highestSectionReached / sectionCount * 100)` (capped at 99% until the last section is reached, which sets 100%).
@@ -336,13 +336,13 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 ### Certificate gating
 
 `app/certificate/page.tsx` no longer reads `localStorage` at all — despite `handleContinue` in the hazards quiz page still writing a passing record there (see above), that write is now dead code.
-	Instead, on mount the certificate page fetches both `GET /api/modules/progress?section=hazard-modules` and `GET /api/quizzes/progress` (both `requireUser`-gated) and computes eligibility itself:
+	Instead, on mount the certificate page fetches both `GET /api/modules/progress?topic=hazards` and `GET /api/quizzes/progress` (both `requireUser`-gated) and computes eligibility itself:
 - **`allModulesCompleted`** — every row in the fetched `moduleProgress` array must have `status === "done"` or `progress >= 100`, checked against `hazardModules.length` as the total.
-	The `?section=hazard-modules` scoping keeps a `guides` progress row from being counted toward this.
+	The `?topic=hazards` scoping keeps a `guides` progress row from being counted toward this.
 - **`quizPassed`** — `record.score >= 70`, a hardcoded threshold independent of `PASS_THRESHOLD` (`lib/questionhazards.ts`) and independent of the `passed` boolean already computed and stored by `/api/quizzes/progress` itself. See `BUG_REPORT.md`.
 - **`certificateEligible`** — both of the above must be true.
 
-**Blocked state:** if not eligible, `/certificate` shows a "No certificate yet" panel with messaging that distinguishes three cases — modules incomplete, quiz not passed, or both — each with its own explanatory text and a link to whichever is missing (`/modules/hazard-modules` and/or `/quizzes/hazards`).
+**Blocked state:** if not eligible, `/certificate` shows a "No certificate yet" panel with messaging that distinguishes three cases — modules incomplete, quiz not passed, or both — each with its own explanatory text and a link to whichever is missing (`/modules/hazards` and/or `/quizzes/hazards`).
 
 **The certificate itself** is drawn client-side onto an HTML `<canvas>` (`drawCertificate()` in `app/certificate/page.tsx`) — title, "Certificate of Achievement", the learner's Firebase `displayName` or `email`, `QUIZ_TITLE`, score, and a formatted date — and downloaded as a PNG via `canvas.toDataURL('image/png')`.
 	There's no server-generated file and no PDF; "printable certificate" (per the About page's copy) means printing this downloaded PNG yourself, not an in-app print/PDF flow.
@@ -351,7 +351,7 @@ The page itself (`app/quizzes/leaderboard/page.tsx`) shows a podium for the top 
 
 ## Feedback
 
-`/feedback` (`app/feedback/page.tsx`, styled by `feedback.css`) is a form for submitting a 1–5 star rating, a category (one of a fixed six-item list — `Training Modules`, `Scenarios / Simulations`, `Quizzes`, `Website / Navigation`, `Technical Issue`, `Other`, duplicated as `VALID_CATEGORIES` in the route below), and a free-text message (up to 5000 characters).
+`/feedback` (`app/feedback/page.tsx`, styled by `feedback.css`) is a form for submitting a 1–5 star rating, a category (one of a fixed six-item list — `Training Modules`, `Simulations`, `Quizzes`, `Website / Navigation`, `Technical Issue`, `Other`, duplicated as `VALID_CATEGORIES` in the route below), and a free-text message (up to 5000 characters).
 	All three fields are required before the Submit button enables.
 
 **Submitting** — `POST /api/feedback` (`requireUser`-gated) validates the rating (integer 1–5), category (must be one of `VALID_CATEGORIES`), and message (non-empty, ≤5000 characters after trimming), looks up the caller's `email` from their `profiles` row, then inserts `{ user_id, email, rating, category, message }` into the `feedback` table.
@@ -384,7 +384,7 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 
 - **Module data is static here, not live** — unlike the student-facing reader (`useModuleById`, live from Supabase), this page maps over the bundled `hazardModules` array directly and merges each with the matching `moduleProgress` record (by `module_id`).
 	A module that exists only in Supabase wouldn't appear here, even though it'd show up for students.
-	The underlying `user_module_progress` query (in both this route and `GET /api/admin/users`) is scoped to `section = "hazard-modules"`, so a learner's progress in any other section (currently just `guides`) never appears anywhere in the admin panel — see `BUG_REPORT.md`.
+	The underlying `user_module_progress` query (in both this route and `GET /api/admin/users`) is scoped to `topic = "hazards"`, so a learner's progress in any other topic (currently just `guides`) never appears anywhere in the admin panel — see `BUG_REPORT.md`.
 - **`ModuleProgress`** — one row per module the user has touched, straight from `user_module_progress`: `uid`, `module_id`, `status`, `progress`, `attempts`, `time_spent`, `started_at`, `last_accessed`, `completed_at`.
 - **`QuizProgress`** — one row per quiz, from `user_quiz_progress`: `uid`, `quiz_id`, `score`, `attempts`, `passed`, `last_attempted_at`, and now `leaderboard_visible` (the route selects `*`, so it comes through automatically).
 	This page's Quiz panel only ever reads `quizProgress[0]`; there's only one quiz today, even though the schema (`quiz_id` as part of a composite key) supports more.
@@ -400,24 +400,24 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 
 Each hazard's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed version in `hooks/lab/useHazards.ts`) has two fields that together point at a module:
 - `moduleId: string | null`
-- `moduleSection: string | null`
+- `moduleTopic: string | null`
 
-`HazardPopup.tsx` builds the Learn More link as `/modules/${moduleSection}/${moduleId}`, and only renders the button when both are non-null.
+`HazardPopup.tsx` builds the Learn More link as `/modules/${moduleTopic}/${moduleId}`, and only renders the button when both are non-null.
 
-**Where the values come from:** the `hazards` table's `module_section`/`module_id` columns are genuinely live from Supabase, treated the same as `title`/`text`.
-	`useHazards.ts` only falls back to the full set of local defaults (including their module links) if the `/api/lab/load-hazards` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleSection`, even where they're `null`.
+**Where the values come from:** the `hotspots` table's `module_topic`/`module_id` columns are genuinely live from Supabase, treated the same as `title`/`text`.
+	`useHazards.ts` only falls back to the full set of local defaults (including their module links) if the `/api/lab/load-hazards` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleTopic`, even where they're `null`.
 
-**Both-or-neither:** the two columns form a matched pair enforced at the database level — the `hazards_module_fk` foreign key uses `match full`, so a row can have both `null` or both set to a valid `(section, id)` on `modules`, never just one. `addHotspot()` in `useHazards.ts` seeds new hotspots with both `null` accordingly.
+**Both-or-neither:** the two columns form a matched pair enforced at the database level — the `hotspots_module_fk` foreign key uses `match full`, so a row can have both `null` or both set to a valid `(topic, id)` on `modules`, never just one. `addHotspot()` in `useHazards.ts` seeds new hotspots with both `null` accordingly.
 	Deleting the linked module (`on delete set null`) doesn't delete the hazard — it just resets both columns to `null`, so the Learn More button disappears rather than pointing at a dead link.
 
-**In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Section dropdown, and, once a section is picked, a Module dropdown scoped to that section. Picking "None" (or switching section) always clears the module id in the same update, via `useHazards.ts`'s `updateModuleLink(index, moduleSection, moduleId)`, which writes both fields together rather than as two separate state updates.
-	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHazards.ts`) flags any hotspot currently half-set (a section picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
+**In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Topic dropdown, and, once a topic is picked, a Module dropdown scoped to that topic. Picking "None" (or switching topic) always clears the module id in the same update, via `useHazards.ts`'s `updateModuleLink(index, moduleTopic, moduleId)`, which writes both fields together rather than as two separate state updates.
+	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHazards.ts`) flags any hotspot currently half-set (a topic picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
 
-**Where the dropdown options come from:** `hooks/lab/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(section, id, title, badge_num)` row across all sections, flat, ordered by `section, sort_order`.
-	The hook groups the response client-side into one entry per section.
+**Where the dropdown options come from:** `hooks/lab/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(topic, id, title, badge_num)` row across all topics, flat, ordered by `topic, sort_order`.
+	The hook groups the response client-side into one entry per topic.
 	This intentionally bypasses `useModules`/`lib/modules/` defaults entirely: since the FK requires a real Supabase row, a default-only id would just fail to save, so this route has no fallback — if it's unreachable, the dropdowns come back empty rather than silently offering something that wouldn't actually save.
-	Practically, this means a section only appears as a linkable option once it has real rows in `modules` — a `lib/modules/`-only section (nothing seeded yet) won't show up at all.
-	See `BUG_REPORT.md` for what that requires for `hazard-modules` on a fresh install.
+	Practically, this means a topic only appears as a linkable option once it has real rows in `modules` — a `lib/modules/`-only topic (nothing seeded yet) won't show up at all.
+	See `BUG_REPORT.md` for what that requires for `hazards` on a fresh install.
 
 For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
 
@@ -425,20 +425,20 @@ For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
 
 ## Lab Progress Tracking
 
-`user_hazard_progress` records the first time a signed-in user clicks each hotspot on `/lab`, outside edit mode — `scenario_id` defaults to `'interactive-lab'`, a forward-looking column for if a second interactive scenario is ever added, always that one value today.
+`user_lab_progress` records the first time a signed-in user clicks each hotspot on `/lab`, outside edit mode — `scenario_id` defaults to `'interactive-lab'`, a forward-looking column for if a second interactive simulation is ever added, always that one value today.
 
 **`POST /api/lab/progress`** (`requireUser`-gated): called from `recordHazardProgress` in `app/lab/page.tsx` on every hotspot click.
-	Confirms the hazard type exists in `hazards` first, then upserts onto `(uid, scenario_id, hazard_id)` with `ignoreDuplicates: true` — so only the first click on a given hotspot is ever recorded;
+	Confirms the hazard type exists in `hotspots` first, then upserts onto `(uid, scenario_id, hotspot_id)` with `ignoreDuplicates: true` — so only the first click on a given hotspot is ever recorded;
 	later clicks on the same hotspot are silent no-ops, and `first_clicked_at` reflects that first click specifically, not the most recent one.
 
-**`GET /api/lab/progress`** (`requireUser`-gated): returns the signed-in user's recorded rows, `completedHazards` (their row count), and `totalHazards` (a live count of every row currently in `hazards`, not a fixed number). See `BUG_REPORT.md`.
+**`GET /api/lab/progress`** (`requireUser`-gated): returns the signed-in user's recorded rows, `completedHazards` (their row count), and `totalHazards` (a live count of every row currently in `hotspots`, not a fixed number). See `BUG_REPORT.md`.
 
 ---
 
 ## Embedded Videos
 
 Both module reader pages and lab hotspots can have one embedded video — a YouTube link or an uploaded mp4 (50MB limit, the ceiling Supabase Storage enforces on the free tier).
-	`modules.video_url`/`modules.video_type` and `hazards.video_url`/`hazards.video_type` store it;
+	`modules.video_url`/`modules.video_type` and `hotspots.video_url`/`hotspots.video_type` store it;
 	`video_type` is `'youtube'`, `'mp4'`, or `null`.
 
 **Display (`components/ModuleVideo.tsx`):** a shared, stateless component taking `videoUrl`/`videoType` and rendering nothing when both are absent.

@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET() {
 	const { data, error } = await supabase
-		.from('hazards')
+		.from('hotspots')
 		.select('type, title, text, top, "left", module_topic, module_id, video_url, video_type, sort_order')
 		.order('sort_order', { ascending: true });
 	

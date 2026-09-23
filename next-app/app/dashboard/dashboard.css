@@ -73,7 +73,7 @@
 	font-size: 1.6rem;
 }
 .stat-icon.modules   { background: rgba(0,180,216,0.15); }
-.stat-icon.scenarios { background: rgba(0,229,160,0.12); }
+.stat-icon.simulations { background: rgba(0,229,160,0.12); }
 .stat-icon.quizzes   { background: rgba(255,190,80,0.12); }
 
 .stat-info { flex: 1; }

@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest) {
         }
 
         const { data: hazard, error: hazardError } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .select("type, title, video_url, video_type")
             .eq("type", hazardType)
             .single();
@@ -51,14 +51,14 @@ export async function PUT(request: NextRequest) {
             }
 
             const { data, error } = await supabaseServer
-                .from("hazards")
+                .from("hotspots")
                 .update({ video_url: videoUrl, video_type: "youtube" })
                 .eq("type", hazardType)
                 .select("type, title, video_url, video_type")
                 .single();
 
             if (error) {
-                console.error("HAZARD YOUTUBE VIDEO UPDATE ERROR:", error);
+                console.error("HOTSPOT YOUTUBE VIDEO UPDATE ERROR:", error);
                 return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
             }
 
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
                     try {
                         await supabaseServer.storage.from(VIDEO_BUCKET).remove([oldPath]);
                     } catch (cleanupError) {
-                        console.error("OLD HAZARD VIDEO CLEANUP ERROR:", cleanupError);
+                        console.error("OLD HOTSPOT VIDEO CLEANUP ERROR:", cleanupError);
                     }
                 }
             }
@@ -102,7 +102,7 @@ export async function PUT(request: NextRequest) {
         const videoUrl = publicUrlData.publicUrl;
 
         const { data, error } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .update({ video_url: videoUrl, video_type: "mp4" })
             .eq("type", hazardType)
             .select("type, title, video_url, video_type")
@@ -120,14 +120,14 @@ export async function PUT(request: NextRequest) {
                 try {
                     await supabaseServer.storage.from(VIDEO_BUCKET).remove([oldPath]);
                 } catch (cleanupError) {
-                    console.error("OLD HAZARD VIDEO CLEANUP ERROR:", cleanupError);
+                    console.error("OLD HOTSPOT VIDEO CLEANUP ERROR:", cleanupError);
                 }
             }
         }
 
         return NextResponse.json({ ok: true, hazard: data });
     } catch (err) {
-        console.error("HAZARD VIDEO API FAILED:", err);
+        console.error("HOTSPOT VIDEO API FAILED:", err);
         return NextResponse.json(
             { ok: false, error: err instanceof Error ? err.message : String(err) },
             { status: 500 }
@@ -147,7 +147,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         const { data: existingHazard, error: findError } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .select("type, title, video_url, video_type")
             .eq("type", hazardType)
             .single();
@@ -160,14 +160,14 @@ export async function DELETE(request: NextRequest) {
         }
 
         const { data, error } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .update({ video_url: null, video_type: null })
             .eq("type", hazardType)
             .select("type, title, video_url, video_type")
             .single();
 
         if (error) {
-            console.error("HAZARD VIDEO REMOVE ERROR:", error);
+            console.error("HOTSPOT VIDEO REMOVE ERROR:", error);
             return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
         }
 
@@ -177,7 +177,7 @@ export async function DELETE(request: NextRequest) {
                 try {
                     await supabaseServer.storage.from(VIDEO_BUCKET).remove([oldPath]);
                 } catch (cleanupError) {
-                    console.error("HAZARD VIDEO STORAGE CLEANUP ERROR:", cleanupError);
+                    console.error("HOTSPOT VIDEO STORAGE CLEANUP ERROR:", cleanupError);
                 }
             }
         }

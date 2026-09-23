@@ -10,20 +10,19 @@ export const dynamic = "force-dynamic";
 const SCENARIO_ID = "interactive-lab";
 
 /* ---------------- GET ---------------- */
-
 export async function GET(request: NextRequest) {
     try {
         const uid = await requireUser(request);
 
         const { data, error } = await supabaseServer
-            .from("user_hazard_progress")
-            .select("hazard_id, first_clicked_at")
+            .from("user_lab_progress")
+            .select("hotspot_id, first_clicked_at")
             .eq("uid", uid)
             .eq("scenario_id", SCENARIO_ID);
 
         if (error) {
             console.error(
-                "GET hazard progress error:",
+                "GET lab progress error:",
                 error
             );
 
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 
         const { count: totalHazards, error: countError } =
             await supabaseServer
-                .from("hazards")
+                .from("hotspots")
                 .select("*", {
                     count: "exact",
                     head: true,
@@ -46,7 +45,7 @@ export async function GET(request: NextRequest) {
 
         if (countError) {
             console.error(
-                "GET hazard count error:",
+                "GET hotspot count error:",
                 countError
             );
 
@@ -67,7 +66,7 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error(
-            "GET hazard progress exception:",
+            "GET hotspot progress exception:",
             error
         );
 
@@ -108,13 +107,13 @@ export async function POST(request: NextRequest) {
         }
 
         /*
-         * Confirm that this hazard actually exists.
+         * Confirm that this hotspot actually exists.
          */
         const {
             data: hazard,
             error: hazardError,
         } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .select("type")
             .eq("type", hazardId)
             .maybeSingle();
@@ -145,16 +144,16 @@ export async function POST(request: NextRequest) {
         }
 
         const { error } = await supabaseServer
-            .from("user_hazard_progress")
+            .from("user_lab_progress")
             .upsert(
                 {
                     uid,
-                    hazard_id: hazardId,
+                    hotspot_id: hazardId,
                     scenario_id: SCENARIO_ID,
                 },
                 {
                     onConflict:
-                        "uid,scenario_id,hazard_id",
+                        "uid,scenario_id,hotspot_id",
                     ignoreDuplicates: true,
                 }
             );
