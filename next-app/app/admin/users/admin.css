@@ -337,3 +337,20 @@
     color:var(--teal);
     font-weight:600;
 }
+
+.delete-btn{
+    border:none;
+    background:#dc2626;
+    color:white;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:600;
+    transition:.25s;
+}
+
+.delete-btn:hover{
+    background:#b91c1c;
+    transform:translateY(-2px);
+}

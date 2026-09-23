@@ -141,6 +141,55 @@ export default function AdminUsersPage() {
     setSelectedUser(updatedUser);
   }
 
+  async function handleDeleteUser(user: UserProfile) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${user.display_name ?? user.email}?
+
+This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      const response = await fetch(`/api/admin/users/${user.uid}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Unable to delete user.");
+      }
+
+      setUsers((prevUsers) =>
+        prevUsers.filter((existingUser) => existingUser.uid !== user.uid)
+      );
+
+      alert("User deleted successfully.");
+    } catch (error) {
+      console.error("DELETE USER FAILED:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Unable to delete user.";
+
+      alert(message);
+    }
+  }
+
   const filteredUsers = useMemo(() => {
     const term = searchTerm.toLowerCase();
 
@@ -291,6 +340,15 @@ export default function AdminUsersPage() {
                       >
                         Progress
                       </Link>
+
+                      {user.uid !== profile.uid && (
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteUser(user)}
+                      >
+                        Delete
+                      </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -309,4 +367,3 @@ export default function AdminUsersPage() {
     </main>
   );
 }
-
