@@ -46,6 +46,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="logo">
                 <span>Hydrogen Lab Safety</span>
+                <img src="/logo/Hydrogen_Training_Logo_Navy_NoBackground.png" alt="Hydrogen Training Logo" className="logo-img" />
             </Link>
 
             <div className="nav-links">
