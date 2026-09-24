@@ -14,6 +14,13 @@
 	--teal:        #00B4D8;
 	--teal-dark:   #0077A8;
 	--teal-glow:   rgba(0,180,216,0.18);
+	/* Contrasting accent (orange) — sub-headings, links, hover effects.
+	   To try another colour, change these five lines only. */
+	--accent:        #FB923C;
+	--accent-hover:  #FDBA74;
+	--accent-glow:   rgba(251,146,60,0.12);
+	--accent-border: rgba(251,146,60,0.45);
+	--accent-shadow: rgba(251,146,60,0.35);
 	--navy:        #03045E;
 	--navy-mid:    #0D1B4B;
 	--white:       #F0F8FF;
@@ -26,15 +33,22 @@
 	--radius:      14px;
 	--border-rule: 1px solid var(--border);
 	--radius-pill: 99px;
+
+	/* Fonts — --font-inter / --font-exo2 are set by next/font in layout.tsx.
+	   Use these two tokens in every stylesheet; never write the family names directly,
+	   because next/font gives the real fonts generated names. */
+	--font-body:    var(--font-inter), system-ui, sans-serif;
+	--font-heading: var(--font-exo2), system-ui, sans-serif;
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
 body {
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-body);
 	background: var(--navy);
 	color: var(--text);
 	min-height: 100vh;
 	overflow-x: hidden;
+	font-size: 1.05rem;
 }
 
 /* Atmospheric background */
@@ -89,9 +103,9 @@ body::after {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	font-family: 'Exo 2', sans-serif;
+	font-family: var(--font-heading);
 	font-weight: 800;
-	font-size: 1.35rem;
+	font-size: 1.45rem;
 	color: var(--white);
 	letter-spacing: 0.5px;
 	text-decoration: none;
@@ -104,7 +118,7 @@ body::after {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 1rem;
+	font-size: 1.1rem;
 	font-weight: 900;
 	color: white;
 	box-shadow: 0 0 16px rgba(0,180,216,0.5);
@@ -117,21 +131,25 @@ body::after {
 }
 .nav-link {
 	text-decoration: none;
-	font-size: 0.88rem;
+	font-size: 0.98rem;
 	font-weight: 500;
 	color: var(--muted);
-	padding: 7px 18px;
+	padding: 7px 16px;
 	border-radius: 8px;
 	transition: all 0.2s;
 	border: 1px solid transparent;
 }
-.nav-link:hover,
+.nav-link:hover {
+	color: var(--accent);
+	background: var(--accent-glow);
+	border-color: var(--accent-border);
+}
+/* Declared after :hover so the current page stays teal even while hovered */
 .nav-link.active {
-	color: var(--white);
+	color: var(--teal);
 	background: var(--teal-glow);
 	border-color: var(--border);
 }
-.nav-link.active { color: var(--teal); }
 
 .nav-right {
 	display: flex;
@@ -147,14 +165,14 @@ body::after {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 1rem;
+	font-size: 1.05rem;
 	font-weight: 700;
 	color: white;
 	cursor: pointer;
 	border: 2px solid var(--border);
 	transition: box-shadow 0.2s;
 }
-.avatar:hover { box-shadow: 0 0 14px rgba(0,180,216,0.5); }
+.avatar:hover { box-shadow: 0 0 14px var(--accent-shadow); }
 
 .btn-logout {
 	margin-left: 12px;
@@ -163,6 +181,7 @@ body::after {
 	border: none;
 	cursor: pointer;
 	font-weight: 600;
+	font-size: 0.95rem;
 }
 
 /* Public Login button */
@@ -181,11 +200,12 @@ body::after {
     text-decoration: none;
     font-weight: 600;
     transition: 0.2s ease;
+    font-size: 0.98rem;
 }
 
 .btn-login:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 180, 216, 0.35);
+    box-shadow: 0 6px 18px var(--accent-shadow);
 }
 
 /* ─── Main container ─────────────────────────────────────────────────────── */
@@ -210,10 +230,10 @@ body::after {
 	padding: 16px 22px;
 	background: rgba(0,180,216,0.08);
 	border-bottom: var(--border-rule);
-	font-family: 'Exo 2', sans-serif;
-	font-size: 0.95rem;
+	font-family: var(--font-heading);
+	font-size: 1.08rem;
 	font-weight: 600;
-	color: var(--teal);
+	color: var(--accent);
 }
 
 .panel-body { padding: 26px 22px; }
@@ -226,7 +246,7 @@ body::after {
 	justify-content: space-between;
 }
 .field-hint {
-	font-size: 0.72rem;
+	font-size: 0.85rem;
 	color: var(--muted);
 	margin-top: 4px;
 }
@@ -272,7 +292,7 @@ body::after {
 	flex-shrink: 0;
 }
 .edit-mode-toggle-label {
-	font-size: 0.78rem;
+	font-size: 0.85rem;
 	color: var(--muted);
 	font-weight: 600;
 	text-transform: uppercase;
@@ -309,12 +329,12 @@ body::after {
 }
 .edit-banner-title {
 	color: #facc15;
-	font-size: 0.88rem;
+	font-size: 0.98rem;
 	font-weight: 600;
 }
 .edit-banner-hint {
 	color: rgba(250,204,21,0.55);
-	font-size: 0.78rem;
+	font-size: 0.88rem;
 }
 
 /* ─── Save bar ──────────────────────────────────────────────────────────── */
@@ -327,7 +347,7 @@ body::after {
 .save-bar-warning {
 	text-align: center;
 	color: #ef4444;
-	font-size: 0.8rem;
+	font-size: 0.92rem;
 	margin: 0 0 10px;
 }
 
@@ -345,14 +365,14 @@ body::after {
 }
 
 .module-video-heading span {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
 }
 
 .module-video-heading h2 {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1.1rem;
+	font-family: var(--font-heading);
+	font-size: 1.25rem;
 	font-weight: 700;
-	color: var(--white);
+	color: var(--accent);
 	margin: 0;
 }
 
@@ -385,8 +405,8 @@ body::after {
 
 .module-video-launcher:hover {
 	transform: translateY(-2px);
-	border-color: var(--teal);
-	box-shadow: 0 8px 28px rgba(0,180,216,0.12);
+	border-color: var(--accent);
+	box-shadow: 0 8px 28px var(--accent-shadow);
 	
 	background: linear-gradient(
 		135deg,
@@ -412,7 +432,7 @@ body::after {
 	background: rgba(0,180,216,0.14);
 	border: 1px solid rgba(0,180,216,0.45);
 	color: var(--teal);
-	font-size: 1.2rem;
+	font-size: 1.3rem;
 	padding-left: 3px;
 
 	transition:
@@ -434,21 +454,21 @@ body::after {
 }
 
 .module-video-launcher-text strong {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1rem;
+	font-family: var(--font-heading);
+	font-size: 1.1rem;
 	font-weight: 700;
 	color: var(--white);
 }
 
 .module-video-launcher-text span {
-	font-size: 0.82rem;
+	font-size: 0.95rem;
 	color: var(--muted);
 }
 
 /* Arrow */
 .module-video-launch-arrow {
 	color: var(--teal);
-	font-size: 1.3rem;
+	font-size: 1.4rem;
 	opacity: 0.7;
 
 	transition:
@@ -457,6 +477,7 @@ body::after {
 }
 
 .module-video-launcher:hover .module-video-launch-arrow {
+	color: var(--accent);
 	opacity: 1;
 	transform: translateX(4px);
 }
@@ -554,12 +575,12 @@ body::after {
 	align-items: center;
 	gap: 10px;
 }
-.module-video-modal-title span { font-size: 1.2rem; }
+.module-video-modal-title span { font-size: 1.3rem; }
 
 .module-video-modal-title h2 {
 	margin: 0;
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1rem;
+	font-family: var(--font-heading);
+	font-size: 1.1rem;
 	font-weight: 700;
 	color: var(--white);
 }
@@ -640,7 +661,7 @@ body::after {
 	.module-video-play {
 		width: 46px;
 		height: 46px;
-		font-size: 1rem;
+		font-size: 1.1rem;
 	}
 	.module-video-modal { padding: 14px; }
 	.module-video-modal-frame {

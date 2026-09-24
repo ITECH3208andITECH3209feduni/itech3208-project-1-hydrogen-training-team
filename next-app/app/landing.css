@@ -1,12 +1,13 @@
-/* app/intro.css
-   Styles for the landing/introduction to hydrogen page (app/page.tsx, the landing page) only.
+/* app/landing.css  (renamed from intro.css)
+   Styles for the landing/introduction to hydrogen page (app/page.tsx) only.
    Not part of globals.css — imported directly by this page.
+   Colours use the tokens from globals.css (--teal, --navy, --accent, …).
 */
 
 .intro-page {
-	background: #03045E;
-	color: #C9E8F4;
-	font-family: 'Inter', sans-serif;
+	background: var(--navy);
+	color: var(--text);
+	font-family: var(--font-body);
 	position: relative;
 	overflow: hidden;
 }
@@ -27,11 +28,11 @@
 	left: 0;
 	width: 100%;
 	height: 520px;
-	background: linear-gradient(to bottom, rgba(3,4,94,0.7) 0%, rgba(3,4,94,0.85) 60%, #03045E 100%);
+	background: linear-gradient(to bottom, rgba(3,4,94,0.7) 0%, rgba(3,4,94,0.85) 60%, var(--navy) 100%);
 	z-index: 1;
 }
 
-.intro-teal { color: #00B4D8; }
+.intro-teal { color: var(--teal); }
 
 /* ─── Hero ───────────────────────────────────────────────────────────────── */
 .intro-hero {
@@ -45,26 +46,26 @@
 	display: inline-block;
 	padding: 4px 12px;
 	border-radius: 99px;
-	background: rgba(0,180,216,0.15);
-	border: 1px solid rgba(0,180,216,0.35);
-	font-size: 0.72rem;
-	color: #00B4D8;
+	background: var(--accent-glow);
+	border: 1px solid var(--accent-border);
+	font-size: 0.85rem;
+	color: var(--accent);
 	margin-bottom: 18px;
 }
 
 .intro-hero h1 {
-	font-size: 2.2rem;
+	font-size: 2.5rem;
 	font-weight: 800;
-	color: #F0F8FF;
+	color: var(--white);
 	line-height: 1.2;
 	margin: 0 0 14px;
 	text-shadow: 0 2px 20px rgba(0,0,0,0.5);
 }
 
 .intro-hero p {
-	font-size: 0.88rem;
+	font-size: 1.05rem;
 	color: #A8D4E8;
-	max-width: 500px;
+	max-width: 580px;
 	margin: 0 auto 26px;
 	line-height: 1.8;
 }
@@ -79,26 +80,41 @@
 .intro-cta {
 	padding: 10px 24px;
 	border-radius: 8px;
-	background: #00B4D8;
+	background: var(--teal);
 	color: white;
-	font-size: 0.88rem;
+	font-size: 1rem;
 	font-weight: 600;
 	border: none;
 	cursor: pointer;
 	text-decoration: none;
 	display: inline-block;
+	transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .intro-outline {
 	padding: 10px 24px;
 	border-radius: 8px;
 	border: 1px solid rgba(0,180,216,0.4);
-	color: #00B4D8;
-	font-size: 0.88rem;
+	color: var(--teal);
+	font-size: 1rem;
 	background: transparent;
 	cursor: pointer;
 	text-decoration: none;
 	display: inline-block;
+	transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+/* Hover effects (accent) */
+.intro-cta:hover {
+	background: var(--accent);
+	color: var(--navy);
+	box-shadow: 0 6px 18px var(--accent-shadow);
+	transform: translateY(-2px);
+}
+.intro-outline:hover {
+	color: var(--accent);
+	border-color: var(--accent-border);
+	background: var(--accent-glow);
 }
 
 /* ─── Quick facts ────────────────────────────────────────────────────────── */
@@ -109,7 +125,7 @@
 	grid-template-columns: repeat(4, 1fr);
 	gap: 12px;
 	padding: 0 28px 40px;
-	max-width: 900px;
+	max-width: 960px;
 	margin: 0 auto;
 }
 
@@ -122,14 +138,14 @@
 }
 
 .intro-fact-num {
-	font-size: 1.4rem;
+	font-size: 1.6rem;
 	font-weight: 800;
-	color: #00B4D8;
+	color: var(--teal);
 }
 
 .intro-fact-label {
-	font-size: 0.72rem;
-	color: #7AAFCA;
+	font-size: 0.88rem;
+	color: var(--muted);
 	margin-top: 4px;
 	line-height: 1.4;
 }
@@ -148,18 +164,18 @@
 }
 
 .intro-section-title {
-	font-size: 1.4rem;
+	font-size: 1.6rem;
 	font-weight: 700;
-	color: #F0F8FF;
+	color: var(--accent);
 	text-align: center;
 	margin: 0 0 8px;
 }
 
 .intro-section-sub {
-	font-size: 0.82rem;
-	color: #7AAFCA;
+	font-size: 1rem;
+	color: var(--muted);
 	text-align: center;
-	max-width: 500px;
+	max-width: 580px;
 	margin: 0 auto 28px;
 	line-height: 1.7;
 }
@@ -168,7 +184,7 @@
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 14px;
-	max-width: 860px;
+	max-width: 960px;
 	margin: 0 auto;
 }
 
@@ -176,7 +192,7 @@
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
 	gap: 12px;
-	max-width: 860px;
+	max-width: 960px;
 	margin: 0 auto;
 }
 
@@ -188,20 +204,20 @@
 }
 
 .intro-card-icon {
-	font-size: 1.5rem;
+	font-size: 1.6rem;
 	margin-bottom: 8px;
 }
 
 .intro-card-title {
-	font-size: 0.85rem;
+	font-size: 1rem;
 	font-weight: 700;
-	color: #F0F8FF;
+	color: var(--white);
 	margin: 0 0 6px;
 }
 
 .intro-card-text {
-	font-size: 0.75rem;
-	color: #7AAFCA;
+	font-size: 0.92rem;
+	color: var(--muted);
 	line-height: 1.6;
 	margin: 0;
 }
@@ -215,21 +231,21 @@
 }
 
 .intro-aud-icon {
-	font-size: 1.6rem;
+	font-size: 1.7rem;
 	display: block;
 	margin-bottom: 6px;
 }
 
 .intro-aud-title {
-	font-size: 0.82rem;
+	font-size: 0.98rem;
 	font-weight: 700;
-	color: #F0F8FF;
+	color: var(--white);
 	margin: 0 0 5px;
 }
 
 .intro-aud-text {
-	font-size: 0.72rem;
-	color: #7AAFCA;
+	font-size: 0.9rem;
+	color: var(--muted);
 	line-height: 1.5;
 	margin: 0;
 }
@@ -248,18 +264,18 @@
 	margin-bottom: 8px;
 }
 
-.intro-fund-icon { font-size: 1.2rem; }
+.intro-fund-icon { font-size: 1.3rem; }
 
 .intro-fund-title {
-	font-size: 0.82rem;
+	font-size: 0.98rem;
 	font-weight: 700;
-	color: #F0F8FF;
+	color: var(--white);
 	margin: 0;
 }
 
 .intro-fund-text {
-	font-size: 0.73rem;
-	color: #7AAFCA;
+	font-size: 0.92rem;
+	color: var(--muted);
 	line-height: 1.6;
 	margin: 0;
 }
@@ -268,20 +284,20 @@
 .intro-cta-section {
 	padding: 44px 24px;
 	text-align: center;
-	background: #03045E;
+	background: var(--navy);
 	border-top: 1px solid rgba(0,180,216,0.15);
 }
 
 .intro-cta-title {
-	font-size: 1.4rem;
+	font-size: 1.6rem;
 	font-weight: 700;
-	color: #F0F8FF;
+	color: var(--accent);
 	margin: 0 0 8px;
 }
 
 .intro-cta-sub {
-	font-size: 0.82rem;
-	color: #7AAFCA;
+	font-size: 1rem;
+	color: var(--muted);
 	margin: 0 0 22px;
 }
 
@@ -295,5 +311,5 @@
 @media (max-width: 560px) {
 	.intro-grid4 { grid-template-columns: 1fr; }
 	.intro-facts { grid-template-columns: 1fr; }
-	.intro-hero h1 { font-size: 1.7rem; }
+	.intro-hero h1 { font-size: 1.9rem; }
 }

@@ -388,15 +388,8 @@ export default function AboutPage() {
               Hydrogen Training Team throughout the project.
             </p>
           </div>
-
         </section>
-
       </main>
-
-      <footer className="about-footer">
-        © 2026 Hydrogen Training Team
-      </footer>
-
     </>
   );
 }

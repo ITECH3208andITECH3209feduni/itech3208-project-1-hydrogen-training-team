@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { useAuth } from "@/context/AuthContext";
-import "./intro.css";
+import "./landing.css";
 
 export default function IntroPage() {
 	// Authentication (swaps CTA wording for returning users; visitors aren't required to log in to view this page)

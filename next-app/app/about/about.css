@@ -1,4 +1,4 @@
-/* app/about/abouts.css */
+/* app/about/about.css */
 
 /* About page header */
 .about-header{
@@ -11,9 +11,9 @@
 /* Main page title */
 .about-header h1{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
-    font-size:2.8rem;
+    font-size: 3rem;
 
     color:white;
 
@@ -23,13 +23,14 @@
 /* Page introduction */
 .about-header p{
 
-    max-width:700px;
+    max-width: 760px;
 
     margin:auto;
 
     color:var(--muted);
 
     line-height:1.7;
+    font-size: 1.1rem;
 }
 
 /* Generic section spacing */
@@ -46,11 +47,11 @@
 
 .section-title h2{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
-    color:white;
+    color: var(--accent);
 
-    font-size:1.8rem;
+    font-size: 1.95rem;
 }
 
 /* Standard information card */
@@ -73,6 +74,7 @@
     line-height:1.9;
 
     margin-bottom:18px;
+    font-size: 1.05rem;
 }
 
 .about-card p:last-child{
@@ -84,11 +86,27 @@
 
     color:var(--muted);
 
-    max-width:750px;
+    max-width: 800px;
 
     line-height:1.7;
 
     margin-top:10px;
+    font-size: 1.05rem;
+}
+
+/* Shared card hover effect — used by every hoverable card on this page.
+   (Previously copy-pasted per card with slightly different shadows; tech-card had none.) */
+.info-card:hover,
+.feature-card:hover,
+.tech-card:hover,
+.leadership-card:hover,
+.developer-card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:var(--accent);
+
+    box-shadow:0 12px 24px var(--accent-shadow);
 }
 
 /* Information card grid */
@@ -117,16 +135,6 @@
     transition:.25s;
 }
 
-/* Card hover animation */
-.info-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--teal);
-
-    box-shadow:0 12px 24px rgba(0,180,216,.12);
-}
-
 /* Icon at top of each card */
 .info-icon{
 
@@ -142,7 +150,7 @@
 
     justify-content:center;
 
-    font-size:1.8rem;
+    font-size: 1.9rem;
 
     background:rgba(0,180,216,.12);
 
@@ -154,9 +162,10 @@
 
     color:white;
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     margin-bottom:14px;
+    font-size: 1.25rem;
 }
 
 /* Card text */
@@ -165,6 +174,7 @@
     color:var(--muted);
 
     line-height:1.7;
+    font-size: 1rem;
 }
 /* Platform feature grid */
 .feature-grid{
@@ -192,16 +202,6 @@
     transition:.25s;
 }
 
-/* Card hover effect */
-.feature-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--teal);
-
-    box-shadow:0 12px 24px rgba(0,180,216,.15);
-}
-
 /* Feature icon */
 .feature-icon{
 
@@ -217,7 +217,7 @@
 
     align-items:center;
 
-    font-size:1.8rem;
+    font-size: 1.9rem;
 
     background:rgba(0,180,216,.12);
 
@@ -227,11 +227,12 @@
 /* Feature title */
 .feature-card h3{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     color:white;
 
     margin-bottom:12px;
+    font-size: 1.25rem;
 }
 
 /* Feature description */
@@ -240,6 +241,7 @@
     color:var(--muted);
 
     line-height:1.7;
+    font-size: 1rem;
 }
 /* Technology grid */
 .tech-grid{
@@ -269,18 +271,10 @@
     transition:.25s;
 }
 
-/* Technology card hover effect */
-.tech-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--teal);
-}
-
 /* Technology icon */
 .tech-icon{
 
-    font-size:2.2rem;
+    font-size: 2.3rem;
 
     margin-bottom:18px;
 }
@@ -290,9 +284,10 @@
 
     color:white;
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     margin-bottom:10px;
+    font-size: 1.15rem;
 }
 
 /* Technology description */
@@ -301,25 +296,7 @@
     color:var(--muted);
 
     line-height:1.6;
-}
-/* About page footer */
-.about-footer{
-
-    margin-top:80px;
-
-    padding:30px 0;
-
-    border-top:var(--border-rule);
-
-    text-align:center;
-}
-
-/* Copyright text */
-.about-footer p{
-
-    color:var(--muted);
-
-    font-size:.9rem;
+    font-size: 0.95rem;
 }
 /* Contributors section */
 .contributor-group{
@@ -353,7 +330,7 @@
 
     justify-content:center;
 
-    font-size:1.4rem;
+    font-size: 1.5rem;
 
     background:rgba(0,180,216,.12);
 
@@ -362,11 +339,12 @@
 
 .contributor-group-heading h3{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     color:white;
 
     margin-bottom:6px;
+    font-size: 1.25rem;
 }
 
 .contributor-group-heading p{
@@ -374,6 +352,7 @@
     color:var(--muted);
 
     line-height:1.6;
+    font-size: 1rem;
 }
 
 
@@ -406,15 +385,6 @@
     transition:.25s;
 }
 
-.leadership-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--teal);
-
-    box-shadow:0 12px 24px rgba(0,180,216,.12);
-}
-
 
 /* Contributor avatar */
 .contributor-avatar{
@@ -433,7 +403,7 @@
 
     flex-shrink:0;
 
-    font-size:1.7rem;
+    font-size: 1.8rem;
 
     background:rgba(0,180,216,.12);
 }
@@ -447,22 +417,23 @@
 
 .leadership-card h3{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     color:white;
 
     margin-bottom:6px;
+    font-size: 1.2rem;
 }
 
 
 /* Contributor role */
 .contributor-role{
 
-    color:var(--teal);
+    color: var(--accent);
 
     font-weight:600;
 
-    font-size:.9rem;
+    font-size: 1rem;
 }
 
 
@@ -477,6 +448,7 @@
     padding-top:16px;
 
     border-top:var(--border-rule);
+    font-size: 1rem;
 }
 
 
@@ -507,15 +479,6 @@
     transition:.25s;
 }
 
-.developer-card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--teal);
-
-    box-shadow:0 12px 24px rgba(0,180,216,.12);
-}
-
 
 .developer-card .contributor-avatar{
 
@@ -525,11 +488,12 @@
 
 .developer-card h3{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     color:white;
 
     margin-bottom:6px;
+    font-size: 1.15rem;
 }
 
 
@@ -542,6 +506,7 @@
     padding-top:16px;
 
     border-top:var(--border-rule);
+    font-size: 0.95rem;
 }
 
 
@@ -582,7 +547,7 @@
 
     flex-shrink:0;
 
-    font-size:1.6rem;
+    font-size: 1.7rem;
 
     background:rgba(0,180,216,.12);
 }
@@ -590,11 +555,12 @@
 
 .contributor-thanks h3{
 
-    font-family:"Exo 2",sans-serif;
+    font-family: var(--font-heading);
 
     color:white;
 
     margin-bottom:5px;
+    font-size: 1.15rem;
 }
 
 
@@ -603,6 +569,7 @@
     color:var(--muted);
 
     line-height:1.6;
+    font-size: 1rem;
 }
 
 
