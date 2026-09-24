@@ -6,8 +6,8 @@ Known bugs and inconsistencies in the Hydrogen Lab Safety app. This is a working
 
 ## Security / access control
 
-### `save-hazards` and `upload-image` have no server-side auth guard
-The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/lab/save-hazards` and `POST /api/lab/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hotspot data or lab image, regardless of the caller's permissions.
+### `save-hotspots` and `upload-image` have no server-side auth guard
+The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`, but that only hides the *UI*. The two write endpoints it eventually calls — `POST /api/lab/save-hotspots` and `POST /api/lab/upload-image` — have no server-side auth check of their own. Nothing stops a direct, unauthenticated request to either one from overwriting the shared hotspot data or lab image, regardless of the caller's permissions.
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
 ### `/api/profile/get` and `/api/profile/create` have no auth guard and no ownership check
@@ -19,7 +19,7 @@ Every other `requireAdmin` route maps `"Access denied"`/`"Missing authorization 
 
 ### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
 `GET /api/lab/load-module-options` (added to populate the lab editor's Linked Module dropdowns) was deliberately left public, on the reasoning that it returns a subset of data — `topic`, `id`, `title`, `badge_num` — already exposed publicly per-topic via `GET /api/modules/load-modules`, so gating it wouldn't reduce any real exposure. That reasoning holds on its own.
-But it was evaluated in a context where the write endpoint it feeds into, `POST /api/lab/save-hazards`, has no auth guard either (see above) — so "is this data already effectively public" was judged against a write surface that itself shouldn't be reachable unauthenticated. Once `save-hazards`/`upload-image` get proper guards, it's worth re-confirming `load-module-options`'s public status still makes sense on its own terms, rather than carrying forward a conclusion reached alongside an open gap.
+But it was evaluated in a context where the write endpoint it feeds into, `POST /api/lab/save-hotspots`, has no auth guard either (see above) — so "is this data already effectively public" was judged against a write surface that itself shouldn't be reachable unauthenticated. Once `save-hotspots`/`upload-image` get proper guards, it's worth re-confirming `load-module-options`'s public status still makes sense on its own terms, rather than carrying forward a conclusion reached alongside an open gap.
 
 ### `/admin/users/[uid]/progress` client-side gate is weaker than its parent page
 `/admin/users` checks `isAdmin` before rendering. `/admin/users/[uid]/progress` only checks that a user is logged in (`useAuth()`'s `user`), not `isAdmin`. In practice this is a shell-only gap — the API route behind it, `GET /api/admin/users/{uid}/progress`, does enforce `requireAdmin`, so a non-admin who navigates here directly gets a static shell and every data fetch comes back `403`. Still worth tightening for consistency, since relying on "the API happens to reject it" is a thinner guarantee than gating the page itself.
@@ -99,8 +99,8 @@ If a quiz's `pass_threshold` is ever changed via the quiz editor, a learner's ge
 The next time the user visits `/login` in that tab — e.g. clicking "Login" from the navbar to sign back in — the page finds the stale flag, silently redirects straight back to `/`, and only then clears it. The user's first "Login" click after such a logout does nothing visible; they have to click it again to actually see the form.
 **Fix:** clear the flag in `handleLogout` itself once its own `router.replace('/')` fires (rather than relying solely on `/login` to consume it), or use a one-shot mechanism that doesn't depend on `/login` being the next page visited.
 
-### `save-hazards` does a full delete-then-reinsert, not a diff
-`/api/lab/save-hazards` deletes every row in the `hotspots` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
+### `save-hotspots` does a full delete-then-reinsert, not a diff
+`/api/lab/save-hotspots` deletes every row in the `hotspots` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
 
 ### Several tables store a `uid` (or other cross-table reference) with no foreign key enforcing it
 `user_module_progress` does this correctly — `fk_user_progress` ties its `uid` to `profiles.uid`, and `fk_user_progress_module` ties `(topic, module_id)` to `modules`. Nothing else follows that pattern:
@@ -108,7 +108,7 @@ The next time the user visits `/login` in that tab — e.g. clicking "Login" fro
 - `feedback.user_id` has no FK to `profiles.uid`.
 - `user_lab_progress.uid` has no FK to `profiles.uid`; `hotspot_id` has no FK to `hotspots.type`.
 
-Application code checks referential validity in some of these cases (e.g. `POST /api/lab/progress` looks up the hazard before inserting), but the database itself doesn't enforce it — a row could be inserted directly, or by a future code path that skips the check, referencing a `uid`/`hotspot_id`/`quiz_id` that doesn't exist. A straightforward FK from `user_lab_progress.hotspot_id` to `hotspots.type` also has to account for `save-hazards`' delete-then-reinsert pattern (above): as a plain FK it would either block a hotspot save that has any recorded progress (`on delete restrict`) or wipe all lab progress on every hotspot save (`on delete cascade`), so `save-hazards` becoming diff-and-update is a prerequisite for adding that particular FK safely.
+Application code checks referential validity in some of these cases (e.g. `POST /api/lab/progress` looks up the hotspot before inserting), but the database itself doesn't enforce it — a row could be inserted directly, or by a future code path that skips the check, referencing a `uid`/`hotspot_id`/`quiz_id` that doesn't exist. A straightforward FK from `user_lab_progress.hotspot_id` to `hotspots.type` also has to account for `save-hotspots`' delete-then-reinsert pattern (above): as a plain FK it would either block a hotspot save that has any recorded progress (`on delete restrict`) or wipe all lab progress on every hotspot save (`on delete cascade`), so `save-hotspots` becoming diff-and-update is a prerequisite for adding that particular FK safely.
 **Fix:** add the missing foreign keys, following `user_module_progress`'s existing pattern.
 
 ---
@@ -122,7 +122,7 @@ Application code checks referential validity in some of these cases (e.g. `POST 
 `next.config.ts` is an empty stub; `next.config.js` holds the real, active config. Harmless but potentially confusing — Next.js only loads one of them.
 
 ### `GET /api/lab/progress` is read by the dashboard but nowhere in the admin panel
-The dashboard's "Scenarios / Simulation" stat card reads `completedHazards`/`totalHazards` from this route for the signed-in learner. But the admin panel — the per-user progress page, and the `/admin/users` list page's own stats — never reads it, so lab/hotspot progress is visible to a learner about themselves but invisible to an admin looking at that same learner. See "Admin 'Certificate eligibility'" above for how this also means lab progress plays no part in certificate eligibility anywhere in the app.
+The dashboard's "Simulations" stat card reads `completedHotspots`/`totalHotspots` from this route for the signed-in learner. But the admin panel — the per-user progress page, and the `/admin/users` list page's own stats — never reads it, so lab/hotspot progress is visible to a learner about themselves but invisible to an admin looking at that same learner. See "Admin 'Certificate eligibility'" above for how this also means lab progress plays no part in certificate eligibility anywhere in the app.
 
 ### `leaderboard_visible` is returned by the admin per-user progress route but never displayed
 `GET /api/admin/users/{uid}/progress` selects `*` on `user_quiz_progress`, so `leaderboard_visible` comes through in the response, but no admin UI currently reads or shows it.
@@ -152,8 +152,8 @@ See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-a
 
 ## Architecture / structure
 
-### The lab's edit mode lives entirely in `app/lab/page.tsx` + `useHazards.ts` — worth revisiting if a third editable page appears
-The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple topics and (eventually) both listing and reader pages. `useHazards.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHazards.ts` preemptively for a pattern used by only one page today.
+### The lab's edit mode lives entirely in `app/lab/page.tsx` + `useHotspots.ts` — worth revisiting if a third editable page appears
+The module reader-page editor (`useModuleEditor.ts`, `ModuleEditor.tsx`, etc.) was deliberately split into its own hook/components rather than folded into `useModules.ts`, since that hook is shared read-only infrastructure used by multiple topics and (eventually) both listing and reader pages. `useHotspots.ts` doesn't face that same pressure today — `/lab` is its only consumer — so it still reasonably combines load+edit+save in one hook. But if a third page gains an in-app editor (or `/lab`'s edit mode is refactored alongside the modules one), it's worth deciding on one consistent shape across all of them — e.g. a generic "load defaults + live data, with an edit/save layer on top" pattern — rather than three independently-evolved editors. Not worth reworking `useHotspots.ts` preemptively for a pattern used by only one page today.
 
 ### The quiz editor has an "unsaved changes" warning that the lab and module editors don't
 `app/quizzes/[quizId]/edit/page.tsx` warns before an admin loses in-progress edits — on tab close/refresh, on any in-app link click while a change is unsaved, and on the page's own "Back to Quizzes" link (see `ADDITIONAL_INFO.md`, "Quiz Content Editor"). Neither `/lab`'s edit mode nor the module reader pages' editors have any equivalent — navigating away from either with unsaved hotspot/module edits loses them silently, with no prompt. Worth deciding whether the other two should get the same treatment for consistency, or whether the quiz editor's separate-page structure (as opposed to the other two's in-place edit-mode toggle) makes the warning more necessary there specifically.
@@ -170,7 +170,7 @@ Every page/component folder that needs styling imports its own `.css` file (see 
 ## Cosmetic / minor
 
 ### `ModuleVideo.tsx`/`VideoEditorPanel.tsx` still use "module"-prefixed names despite being shared with the lab page
-`ModuleVideo.tsx`'s CSS classes (`module-video-*`, defined in `globals.css`) and the classes `VideoEditorPanel.tsx` reuses from the module editor (`module-field-stack`, `module-select`, `module-add-item-btn`, `module-delete-btn`) read as module-specific, but both files are shared with `HotspotEditor.tsx`/`HazardPopup.tsx` on `/lab` too. The component name itself has the same problem — `ModuleVideo` for something that's just as much a lab component now would more accurately be `EmbeddedVideo`. Purely cosmetic — nothing behaves incorrectly — but worth a rename pass (component, file, and the CSS classes) for clarity.
+`ModuleVideo.tsx`'s CSS classes (`module-video-*`, defined in `globals.css`) and the classes `VideoEditorPanel.tsx` reuses from the module editor (`module-field-stack`, `module-select`, `module-add-item-btn`, `module-delete-btn`) read as module-specific, but both files are shared with `HotspotEditor.tsx`/`Popup.tsx` on `/lab` too. The component name itself has the same problem — `ModuleVideo` for something that's just as much a lab component now would more accurately be `EmbeddedVideo`. Purely cosmetic — nothing behaves incorrectly — but worth a rename pass (component, file, and the CSS classes) for clarity.
 
 ### `AdminModuleCard`'s `mode` prop is accepted but never read
 `AdminModuleCardProps` declares `mode?: "student" | "admin"`, and the per-user progress page passes `mode="admin"` when rendering it, but the component body never references `mode` anywhere — it always renders the same admin-style layout regardless of the value passed. Harmless, but either dead prop or an unfinished student/admin variant.

@@ -73,7 +73,7 @@
 }
 
 .hotspot:hover::before {
-	content: "Inspect hazard";
+	content: "Inspect item";
 	position: absolute;
 	top: -30px;
 	left: -30px;

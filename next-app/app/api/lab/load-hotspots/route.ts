@@ -1,5 +1,5 @@
-// app/api/lab/load-hazards/route.ts
-// Returns all hotspot + hazard data from Supabase.
+// app/api/lab/load-hotspots/route.ts
+// Returns all hotspot data from Supabase.
 // Note: "left" is quoted because it is a reserved word.
 
 import { NextResponse } from "next/server";
@@ -12,7 +12,7 @@ export async function GET() {
 		.order('sort_order', { ascending: true });
 	
 	if (error) {
-		console.error('load-hazards error:', error);
+		console.error('load-hotspots error:', error);
 		return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
 	}
 	

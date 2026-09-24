@@ -24,8 +24,8 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 - Once a hotspot is selected, its **Hotspot Video** field lets you attach a YouTube link or upload an mp4 file (max size 50MB) — shown under the description in its popup.
 	Saving or removing a video takes effect immediately, independently of Save Changes/Reset to Defaults for the rest of the hotspot's fields.
 - Position values update automatically as you drag (clamped to 0–95% on each axis, so a hotspot can't be dragged fully off the image), or can be typed directly.
-- Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image, titled "⚠️ New Hazard" with no linked module, and is auto-selected for editing.
-	Its `type` is auto-generated as `hazard_N`, using the first number not already in use (so deleting `hazard_2` and adding a new hotspot reuses `hazard_2` rather than continuing to `hazard_4`).
+- Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image, titled "⚠️ New Hotspot" with no linked module, and is auto-selected for editing.
+	Its `type` is auto-generated as `hotspot_N`, using the first number not already in use (so deleting `hotspot_2` and adding a new hotspot reuses `hotspot_2` rather than continuing to `hotspot_4`).
 - Click **✕** next to a hotspot in the list to delete it.
 - Click **Save Changes** to write all hotspot changes to Supabase — changes persist everywhere immediately.
 - Click **Reset to Defaults** to revert hotspots to the values in `lib/hazards.ts` (does not affect the lab image).
@@ -159,7 +159,7 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 
 ## Linking Hotspots to Modules
 
-Each hotspot can optionally link to a module, via its `moduleId`/`moduleTopic` fields — this is what powers the Learn More button in the hazard popup.
+Each hotspot can optionally link to a module, via its `moduleId`/`moduleTopic` fields — this is what powers the Learn More button in the hotspot's popup.
 
 **In edit mode**, select a hotspot and use the **Linked Module** field: pick a topic from the first dropdown, then a module from the second (its options are scoped to whichever topic you just picked).
 	Pick "None" to remove the link — this clears both fields together, since a hotspot's link must be fully set or fully empty, never half-set.

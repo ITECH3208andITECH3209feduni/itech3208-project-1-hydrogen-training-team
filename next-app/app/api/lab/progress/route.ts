@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const { count: totalHazards, error: countError } =
+        const { count: totalHotspotCount, error: countError } =
             await supabaseServer
                 .from("hotspots")
                 .select("*", {
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             ok: true,
             progress: data ?? [],
-            completedHazards: data?.length ?? 0,
-            totalHazards: totalHazards ?? 0,
+            completedHotspots: data?.length ?? 0,
+            totalHotspots: totalHotspotCount ?? 0,
         });
     } catch (error) {
         console.error(
@@ -91,16 +91,16 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
 
-        const hazardId =
-            typeof body.hazardId === "string"
-                ? body.hazardId.trim()
+        const hotspotId =
+            typeof body.hotspotId === "string"
+                ? body.hotspotId.trim()
                 : "";
 
-        if (!hazardId) {
+        if (!hotspotId) {
             return NextResponse.json(
                 {
                     ok: false,
-                    error: "hazardId is required",
+                    error: "hotspotId is required",
                 },
                 { status: 400 }
             );
@@ -110,34 +110,34 @@ export async function POST(request: NextRequest) {
          * Confirm that this hotspot actually exists.
          */
         const {
-            data: hazard,
-            error: hazardError,
+            data: hotspot,
+            error: hotspotError,
         } = await supabaseServer
             .from("hotspots")
             .select("type")
-            .eq("type", hazardId)
+            .eq("type", hotspotId)
             .maybeSingle();
 
-        if (hazardError) {
+        if (hotspotError) {
             console.error(
-                "Hazard lookup error:",
-                hazardError
+                "Hotspot lookup error:",
+                hotspotError
             );
 
             return NextResponse.json(
                 {
                     ok: false,
-                    error: hazardError.message,
+                    error: hotspotError.message,
                 },
                 { status: 500 }
             );
         }
 
-        if (!hazard) {
+        if (!hotspot) {
             return NextResponse.json(
                 {
                     ok: false,
-                    error: "Unknown hazard",
+                    error: "Unknown hotspot",
                 },
                 { status: 400 }
             );
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
             .upsert(
                 {
                     uid,
-                    hotspot_id: hazardId,
+                    hotspot_id: hotspotId,
                     scenario_id: SCENARIO_ID,
                 },
                 {
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
         if (error) {
             console.error(
-                "Save hazard progress error:",
+                "Save hotspot progress error:",
                 error
             );
 
@@ -175,11 +175,11 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
             ok: true,
-            message: "Hazard progress recorded",
+            message: "Hotspot progress recorded",
         });
     } catch (error) {
         console.error(
-            "POST hazard progress exception:",
+            "POST hotspot progress exception:",
             error
         );
 

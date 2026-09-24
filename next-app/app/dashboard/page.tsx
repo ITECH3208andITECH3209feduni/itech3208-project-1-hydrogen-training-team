@@ -32,13 +32,13 @@ export default function Dashboard() {
     const [quizLoading, setQuizLoading] =
         useState(true);
 
-    const [hazardProgress, setHazardProgress] =
+    const [simulationProgress, setSimulationProgress] =
         useState<{
-            completedHazards: number;
-            totalHazards: number;
+            completedHotspots: number;
+            totalHotspots: number;
         } | null>(null);
 
-    const [hazardLoading, setHazardLoading] =
+    const [simulationLoading, setSimulationLoading] =
         useState(true);
 
     // Redirect unauthenticated users
@@ -95,14 +95,14 @@ export default function Dashboard() {
     }, [user, loading]);
 
 
-    // Load user's interactive lab hazard progress
+    // Load user's interactive lab (simulation)) progress
     useEffect(() => {
-        async function loadHazardProgress() {
+        async function loadSimulationProgress() {
             try {
-                setHazardLoading(true);
+                setSimulationLoading(true);
 
                 if (!user) {
-                    setHazardProgress(null);
+                    setSimulationProgress(null);
                     return;
                 }
 
@@ -119,26 +119,26 @@ export default function Dashboard() {
                 const data = await response.json();
 
                 if (response.ok && data.ok) {
-                    setHazardProgress({
-                        completedHazards: Number(data.completedHazards ?? 0),
-                        totalHazards: Number(data.totalHazards ?? 0),
+                    setSimulationProgress({
+                        completedHotspots: Number(data.completedHotspots ?? 0),
+                        totalHotspots: Number(data.totalHotspots ?? 0),
                     });
                 } else {
-                    setHazardProgress(null);
+                    setSimulationProgress(null);
                 }
             } catch (error) {
                 console.error(
-                    "Failed to load dashboard hazard progress:",
+                    "Failed to load dashboard simulation progress:",
                     error
                 );
-                setHazardProgress(null);
+                setSimulationProgress(null);
             } finally {
-                setHazardLoading(false);
+                setSimulationLoading(false);
             }
         }
 
         if (!loading) {
-            loadHazardProgress();
+            loadSimulationProgress();
         }
     }, [user, loading]);
 
@@ -207,16 +207,16 @@ export default function Dashboard() {
                         </div>
 
                         <div className="count">
-                            {hazardLoading
+                            {simulationLoading
                                 ? "—"
-                                : `${hazardProgress?.completedHazards ?? 0}/${hazardProgress?.totalHazards ?? 0}`
+                                : `${simulationProgress?.completedHotspots ?? 0}/${simulationProgress?.totalHotspots ?? 0}`
                             }
                         </div>
 
                         <div className="sub">
-                            {hazardLoading
+                            {simulationLoading
                                 ? "Loading..."
-                                : `${hazardProgress?.completedHazards ?? 0} hazards identified`
+                                : `${simulationProgress?.completedHotspots ?? 0} items identified`
                             }
                         </div>
                     </div>

@@ -2,7 +2,7 @@
 // Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position/video editor on the right
 
 import { useRef } from 'react';
-import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHazards';
+import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHotspots';
 import { ModuleTopicOptions } from '@/hooks/lab/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
@@ -244,7 +244,7 @@ export default function HotspotEditor({
 									<p className="field-hint">
 										{hotspots[selected].info.moduleTopic && !hotspots[selected].info.moduleId
 											? '⚠️ Select a module, or set this back to "None" — saving is disabled until then.'
-											: 'Powers the "Learn More" button in this hazard\u2019s popup. Set to "None" to hide it.'}
+											: 'Powers the "Learn More" button in this hotspot\u2019s popup. Set to "None" to hide it.'}
 									</p>
 								</div>
 
@@ -264,7 +264,7 @@ export default function HotspotEditor({
 										onSaveYoutubeVideo={onSaveYoutubeVideo}
 										onUploadMp4Video={onUploadMp4Video}
 										onRemoveVideo={onRemoveVideo}
-										noVideoMessage="Shown under this hazard's description in its popup."
+										noVideoMessage="Shown under this hotspot's description in its popup."
 									/>
 								</div>
 

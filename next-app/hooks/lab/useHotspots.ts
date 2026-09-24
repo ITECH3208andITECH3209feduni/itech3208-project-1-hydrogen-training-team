@@ -1,4 +1,4 @@
-// hooks/lab/useHazards.ts
+// hooks/lab/useHotspots.ts
 // Manages all hotspot state, Supabase load/save, drag logic, edit mode, lab image URL state and upload, and per-hotspot video embeds
 
 import { useState, useCallback, useEffect } from 'react';
@@ -46,12 +46,12 @@ export function clamp(val: number, min: number, max: number) {
 export function generateType(existing: EditableHotspot[]): string {
 	const existingTypes = new Set(existing.map((hs) => hs.type));
 	let i = 1;
-	while (existingTypes.has(`hazard_${i}`)) i++;
-	return `hazard_${i}`;
+	while (existingTypes.has(`hotspot_${i}`)) i++;
+	return `hotspot_${i}`;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
-export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>) {
+export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>) {
 	const { user } = useAuth();
 	
 	// States
@@ -71,18 +71,18 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	const [videoDraftFile, setVideoDraftFile]             = useState<File | null>(null);
 	const [videoSaving, setVideoSaving]                   = useState(false);
 
-	// ── Load hazards from Supabase on mount ─────────────────────────────────────────
+	// ── Load hotspots from Supabase on mount ─────────────────────────────────────────
 	// Runs once when page first loads
 	useEffect(() => {
-		async function loadHazards() {
+		async function loadHotspots() {
 			try {
-				// Fetch hazards from Supabase
-				const res  = await fetch('/api/lab/load-hazards', { cache: 'no-store' });
+				// Fetch hotspots from Supabase
+				const res  = await fetch('/api/lab/load-hotspots', { cache: 'no-store' });
 				const json = await res.json();
 				
 				// If fetch fails or table empty, use hazards.ts instead
 				if (!json.ok) {
-  					console.error('load-hazards API error:', json.error);
+  					console.error('load-hotspots API error:', json.error);
   					setLoadStatus('error');
   					return;
 				}
@@ -122,11 +122,11 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				setHotspots(loaded);	// Replace defaults
 				setLoadStatus('ready');
 			} catch {
-				console.error('Failed to load hazards from Supabase — using defaults');
+				console.error('Failed to load hotspots from Supabase — using defaults');
 				setLoadStatus('error');
 			}
 		}
-		loadHazards();
+		loadHotspots();
 	}, []);
 	
 	// ── Load image URL from Supabase on mount ──────────────────────
@@ -239,8 +239,8 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 				top:  '50%',
 				left: '50%',
 				info: {
-					title: '⚠️ New Hazard',
-					text:  'Describe this hazard here.',
+					title: '⚠️ New Hotspot',
+					text:  'Describe this hotspot here.',
 					moduleId: null,
 					moduleTopic: null,
 					videoUrl: null,
@@ -404,7 +404,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		(hs) => (hs.info.moduleTopic === null) !== (hs.info.moduleId === null)
 	);
 
-	// ── Save hazards to Supabase ────────────────────────────────────────────────────
+	// ── Save Hotspots to Supabase ────────────────────────────────────────────────────
 	// Save current hotspots to Supabase
 	const saveToSupabase = useCallback(async () => {
 		// Cancel save if any hotspots have an invalid module link
@@ -415,12 +415,12 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		}
 		setSaveStatus('saving');	// Updated over course of function to show progress
 		try {
-			const res = await fetch('/api/lab/save-hazards', {
+			const res = await fetch('/api/lab/save-hotspots', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					hotspots:   hotspots.map(({ type, top, left }) => ({ type, top, left })),
-					hazardData: Object.fromEntries(hotspots.map((hs) => [hs.type, hs.info])),
+					hotspotData: Object.fromEntries(hotspots.map((hs) => [hs.type, hs.info])),
 				}),
 			});
 			if (!res.ok) throw new Error('API error');
@@ -439,9 +439,9 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		setSelected(null);
 	}, []);
 	
-	// ── live hazard info map for popup ──────────────────────────────────────
+	// ── live hotspot info map for popup ──────────────────────────────────────
 	// Converts hotspots array into a key-value map that the program can directly lookup hotspots from
-	const liveHazardData: Record<string, HazardInfo> = Object.fromEntries(
+	const liveHotspotData: Record<string, HazardInfo> = Object.fromEntries(
 		hotspots.map((hs) => [hs.type, hs.info])
 	);
 	
@@ -465,7 +465,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		uploadImage,
 		saveToSupabase,
 		resetDefaults,
-		liveHazardData,
+		liveHotspotData,
 		videoDraftType,
 		videoDraftYoutubeUrl,
 		videoDraftFile,

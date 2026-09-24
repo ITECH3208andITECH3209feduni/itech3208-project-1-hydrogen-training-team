@@ -1,4 +1,4 @@
-// app/lab/components/HazardPopup.tsx
+// app/lab/components/Popup.tsx
 // Modal popup shown when a hotspot is clicked.
 
 "use client";
@@ -8,12 +8,12 @@ import { useEffect } from "react";
 import { HazardInfo } from "@/lib/hazards";
 import ModuleVideo from "@/components/ModuleVideo";
 
-interface HazardPopupProps {
+interface PopupProps {
     info: HazardInfo;
     onClose: () => void;
 }
 
-export default function HazardPopup({ info, onClose }: HazardPopupProps) {
+export default function Popup({ info, onClose }: PopupProps) {
 	// Close popup on Escape key
 	useEffect(() => {
 		const handleKey = (e: KeyboardEvent) => {

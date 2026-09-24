@@ -48,7 +48,7 @@ hydrogen-lab/
 │   ├── page.tsx              			# Public landing/intro page (/) — root, no login required
 │   ├── intro.css						# Landing-page-specific styles
 │   ├── dashboard/
-│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and lab-hazard progress from the API for the signed-in user
+│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and simulation progress from the API for the signed-in user
 │   │   └── dashboard.css				# Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
@@ -81,7 +81,7 @@ hydrogen-lab/
 │   │   ├── lab.css						# Lab-specific styles
 │   │   └── components/
 │   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, embedded video, lab image and linked module
-│   │       └── HazardPopup.tsx			# Modal popup for hazard info (+ embedded video & learn more link, if set)
+│   │       └── Popup.tsx				# Modal popup shown when a hotspot is clicked (+ embedded video & learn more link, if set)
 │   ├── modules/
 │   │   ├── modules.css					# Shared styles for every topic under app/modules/
 │   │   ├── components/
@@ -128,9 +128,9 @@ hydrogen-lab/
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
 │       ├── lab/
-│       │   ├── load-hazards/
+│       │   ├── load-hotspots/
 │       │   │   └── route.ts			# GET — loads hotspot data from Supabase (anon client; public read, no auth guard)
-│       │   ├── save-hazards/
+│       │   ├── save-hotspots/
 │       │   │   └── route.ts			# POST — saves hotspot data to Supabase (delete-all, then re-insert); no auth guard
 │       │   ├── load-image/
 │       │   │   └── route.ts			# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
@@ -178,8 +178,8 @@ hydrogen-lab/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
 │   ├── lab/							# Hooks for the interactive lab page (/lab)
-│   │   ├── useHazards.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
-│   │   ├── useHazards.test.ts			# Unit + integration tests for useHazards.ts
+│   │   ├── useHotspots.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
+│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHazards.ts
 │   │   ├── useModuleOptions.ts			# Hook — flat Supabase (topic, id, title, badgeNum) list, grouped per topic
 │   │   └── useModuleOptions.test.ts	# Integration tests for useModuleOptions.ts
 │   ├── modules/						# Hooks shared by every app/modules/ topic (listing + reader pages)

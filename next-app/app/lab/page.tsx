@@ -8,11 +8,11 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import HazardPopup from './components/HazardPopup';
+import Popup from './components/Popup';
 import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
-import { useHazards } from '@/hooks/lab/useHazards';
+import { useHotspots } from '@/hooks/lab/useHotspots';
 import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
 
 export default function LabPage() {
@@ -22,7 +22,7 @@ export default function LabPage() {
 
 	// Page constants
 	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
-	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
+	const [activePopup, setActivePopup] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
 
 	const {
 		hotspots,
@@ -44,7 +44,7 @@ export default function LabPage() {
 		uploadImage,
 		saveToSupabase,
 		resetDefaults,
-		liveHazardData,
+		liveHotspotData,
 		videoDraftType,
 		videoDraftYoutubeUrl,
 		videoDraftFile,
@@ -55,7 +55,7 @@ export default function LabPage() {
 		saveHotspotYoutubeVideo,
 		uploadHotspotMp4Video,
 		removeHotspotVideo,
-	} = useHazards(containerRef);
+	} = useHotspots(containerRef);
 
 	const moduleOptions = useModuleOptions();
 
@@ -72,7 +72,7 @@ export default function LabPage() {
 		}
 	}, [editMode, permissions.canManageUsers, toggleEditMode]);
 
-	async function recordHazardProgress(hazardId: string) {
+	async function recordHotspotProgress(hotspotId: string) {
     if (!user) return;
 
     try {
@@ -87,7 +87,7 @@ export default function LabPage() {
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    hazardId,
+                    hotspotId,
                 }),
             }
         );
@@ -96,13 +96,13 @@ export default function LabPage() {
             const data = await response.json();
 
             console.error(
-                "Failed to record hazard progress:",
+                "Failed to record hotspot progress:",
                 data.error
             );
         }
     } catch (error) {
         console.error(
-            "Failed to record hazard progress:",
+            "Failed to record hotspot progress:",
             error
         );
     }
@@ -159,14 +159,14 @@ export default function LabPage() {
 							key={hs.type}
 							className={`hotspot ${editMode ? (isSelected ? 'hotspot--selected' : 'hotspot--edit') : ''}`}
 							style={{ top: hs.top, left: hs.left }}
-							aria-label={`Inspect ${hs.type} hazard`}
+							aria-label={`Inspect ${hs.type} item`}
 							onMouseDown={editMode ? handleDragStart(index) : undefined}
 							onClick={() => {
 								if (editMode) {
 									setSelected(index);
 								} else {
-									setActiveHazard(hs.type);
-									recordHazardProgress(hs.type);
+									setActivePopup(hs.type);
+									recordHotspotProgress(hs.type);
 								}
 							}}
 						/>
@@ -213,13 +213,11 @@ export default function LabPage() {
 				/>
 			)}
 			
-			{/* Hazard popup - Only appears outside edit mode and if clicked on a hotspot */}
-			{!editMode && activeHazard && (
-				<HazardPopup
-					info={liveHazardData[activeHazard]}
-					onClose={() =>
-						setActiveHazard(null)
-					}
+			{/* Popup - Only appears outside edit mode and if clicked on a hotspot */}
+			{!editMode && activePopup && (
+				<Popup
+					info={liveHotspotData[activePopup]}
+					onClose={() => setActivePopup(null)}
 				/>
 			)}
 		</main>

@@ -1,4 +1,4 @@
-// app/api/lab/save-hazards/route.ts
+// app/api/lab/save-hotspots/route.ts
 // Saves the current hotspot state to Supabase.
 // Deletes existing rows first, then recreates them from the current UI state.
 // Uses supabaseServer because this is a server-side write operation.
@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 
-type HazardDataEntry = {
+type HotspotDataEntry = {
     title:         string;
     text:          string;
     moduleId:      string | null;
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const hotspots = (body.hotspots ?? []) as Hotspot[];
 
-        const hazardData = (body.hazardData ?? {}) as Record<string, HazardDataEntry>;
+        const hotspotData = (body.hotspotData ?? {}) as Record<string, HotspotDataEntry>;
 
         // Step 1 — delete existing rows
         const { error: deleteError } = await supabaseServer
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         // Step 2 — recreate current hotspot set
         if (hotspots.length > 0) {
             const rows = hotspots.map((hotspot, index) => {
-                const info = hazardData[hotspot.type];
+                const info = hotspotData[hotspot.type];
 
                 return {
                     type: hotspot.type,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
             ok: true,
         });
     } catch (err) {
-        console.error("save-hazards error:", err);
+        console.error("save-hotspots error:", err);
 
         return NextResponse.json(
             {

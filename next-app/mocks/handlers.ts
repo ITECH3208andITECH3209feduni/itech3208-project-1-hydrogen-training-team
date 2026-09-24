@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw';
 // Put a successful response in each route (for fail cases, override in test file)
 export const handlers = [
     // Lab page routes
-    http.get('/api/lab/load-hazards', () => {
+    http.get('/api/lab/load-hotspots', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -26,7 +26,7 @@ export const handlers = [
     http.get('/api/lab/load-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/lab-photo.jpg' });
     }),
-    http.post('/api/lab/save-hazards', () => {
+    http.post('/api/lab/save-hotspots', () => {
         return HttpResponse.json({ ok: true });
     }),
     http.post('/api/lab/upload-image', () => {

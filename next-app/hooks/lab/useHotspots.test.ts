@@ -1,9 +1,9 @@
-// hooks/lab/useHazards.test.ts
-// Unit & Integration tests for functions in useHazards.ts & related API calls
+// hooks/lab/useHotspots.test.ts
+// Unit & Integration tests for functions in useHotspots.ts & related API calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { createRef } from 'react';
-import { buildDefaultHotspots, clamp, generateType, useHazards } from './useHazards';
+import { buildDefaultHotspots, clamp, generateType, useHotspots } from './useHotspots';
 import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 import { File } from 'node:buffer';
@@ -23,9 +23,9 @@ beforeEach(() => {
 
 // ─── Unit Tests (test purely internal functions) ───────────────
 
-// 1. Test if hotspot data and hazard text merge correctly
+// 1. Test if hotspot data and text merge correctly
 describe('1. buildDefaultHotspots', () => {
-  it('1.1 merges default positions with default hazard text', () => {
+  it('1.1 merges default positions with default hotspot text', () => {
     const result = buildDefaultHotspots();
     expect(result.length).toBeGreaterThan(0);   // Check that list isn't empty
     result.forEach((hs) => {
@@ -53,29 +53,29 @@ describe('2. clamp', () => {
   });
 });
 
-// 3. Test if new hotspots get new hazard types (no duplicates)
+// 3. Test if new hotspots get new hotspot types (no duplicates)
 describe('3. generateType', () => {
-  // Test if 1st hotspot added gets 1st hazard type
-  it('3.1 returns 1st hazard type when no hotspots exist', () => {
-    expect(generateType([])).toBe('hazard_1');
+  // Test if 1st hotspot added gets 1st hotspot type
+  it('3.1 returns 1st hotspot type when no hotspots exist', () => {
+    expect(generateType([])).toBe('hotspot_1');
   });
   
-  // Test if new hotspots get next available hazard type
-  it('3.2 skips existing hazard types', () => {
+  // Test if new hotspots get next available hotspot type
+  it('3.2 skips existing hotspot types', () => {
     const existing = [
-      { type: 'hazard_1' },
-      { type: 'hazard_2' },
+      { type: 'hotspot_1' },
+      { type: 'hotspot_2' },
     ] as any;
-    expect(generateType(existing)).toBe('hazard_3');
+    expect(generateType(existing)).toBe('hotspot_3');
   });
   
-  // Test if new hotspots get next available hazard type even if existing types are non-sequential
-  it('3.3 skips non-sequential existing hazard types', () => {
+  // Test if new hotspots get next available hotspot type even if existing types are non-sequential
+  it('3.3 skips non-sequential existing hotspot types', () => {
     const existing = [
-      { type: 'hazard_1' },
-      { type: 'hazard_3' },
+      { type: 'hotspot_1' },
+      { type: 'hotspot_3' },
     ] as any;
-    expect(generateType(existing)).toBe('hazard_2');
+    expect(generateType(existing)).toBe('hotspot_2');
   });
 });
 
@@ -85,7 +85,7 @@ describe('4. addHotspot', () => {
   // Test if a new hotspot is added with the default info
   it('4.1 seeds a new hotspot with default info', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     const countBefore = result.current.hotspots.length;
     act(() => { result.current.addHotspot(); });
@@ -93,7 +93,7 @@ describe('4. addHotspot', () => {
     expect(result.current.hotspots.length).toBe(countBefore + 1);
 
     const newHotspot = result.current.hotspots[result.current.hotspots.length - 1];
-    expect(newHotspot.info.title).toBe('⚠️ New Hazard');
+    expect(newHotspot.info.title).toBe('⚠️ New Hotspot');
     expect(newHotspot.info.moduleId).toBeNull();
     expect(newHotspot.info.moduleTopic).toBeNull();
   });
@@ -105,7 +105,7 @@ describe('5. updateModuleLink', () => {
   // Test if topic and id are both written together onto the target hotspot
   it('5.1 sets moduleTopic and moduleId together on the target hotspot', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
 
@@ -116,7 +116,7 @@ describe('5. updateModuleLink', () => {
   // Test if only the targeted hotspot is affected, not every hotspot in state
   it('5.2 only updates the targeted hotspot, leaving others unchanged', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.updateModuleLink(0, 'guides', '2'); });
 
@@ -128,7 +128,7 @@ describe('5. updateModuleLink', () => {
   // Test if both fields can be cleared back to null in one call (e.g. "None" picked in the editor)
   it('5.3 can clear both fields back to null', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     // Default hotspots start linked (see lib/hazards.ts)
     expect(result.current.hotspots[0].info.moduleTopic).not.toBeNull();
@@ -145,7 +145,7 @@ describe('6. hasInvalidModuleLink', () => {
   // Test if default hotspots return false (all links valid)
   it('6.1 is false for the default hotspots (every link fully set)', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     expect(result.current.hasInvalidModuleLink).toBe(false);
   });
@@ -153,7 +153,7 @@ describe('6. hasInvalidModuleLink', () => {
   // Test if true when have a topic but no ID (mid-edit in the UI)
   it('6.2 becomes true when a hotspot has only moduleTopic set', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.updateModuleLink(0, 'hazards', null); });
 
@@ -163,7 +163,7 @@ describe('6. hasInvalidModuleLink', () => {
   // Test if true when have an ID but no topic (not reachable via the UI)
   it('6.3 becomes true when a hotspot has only moduleId set', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.updateModuleLink(0, null, '1'); });
 
@@ -173,7 +173,7 @@ describe('6. hasInvalidModuleLink', () => {
   // Test if it goes back to false once the mismatched hotspot is fixed
   it('6.4 returns to false once the mismatched hotspot is resolved', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.updateModuleLink(0, 'hazards', null); });
     expect(result.current.hasInvalidModuleLink).toBe(true);
@@ -188,7 +188,7 @@ describe('7. toggleEditMode', () => {
   // Test if edit mode turns on from its default (off) state
   it('7.1 turns edit mode on', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     expect(result.current.editMode).toBe(false);
     act(() => { result.current.toggleEditMode(); });
@@ -198,7 +198,7 @@ describe('7. toggleEditMode', () => {
   // Test if edit mode turns back off on a second call
   it('7.2 turns edit mode back off on a second call', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.toggleEditMode(); });  // enter edit mode
     expect(result.current.editMode).toBe(true);
@@ -210,7 +210,7 @@ describe('7. toggleEditMode', () => {
   // Test if the selected hotspot is cleared when exiting edit mode
   it('7.3 clears the selected hotspot when exiting edit mode', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.toggleEditMode(); });  // enter edit mode
     act(() => { result.current.setSelected(0); });
@@ -224,7 +224,7 @@ describe('7. toggleEditMode', () => {
   // Test if selection is left untouched when entering edit mode
   it('7.4 does not touch selection when entering edit mode', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     expect(result.current.selected).toBeNull();
     act(() => { result.current.toggleEditMode(); });
@@ -236,7 +236,7 @@ describe('7. toggleEditMode', () => {
 describe('8. video draft sync', () => {
   it('8.1 loads the selected hotspot\'s persisted video into the draft', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.addHotspot(); });
     const index = result.current.hotspots.length - 1;
@@ -252,7 +252,7 @@ describe('8. video draft sync', () => {
 
   it('8.2 defaults to an empty YouTube draft for a hotspot with no video', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.setSelected(0); });
 
@@ -262,7 +262,7 @@ describe('8. video draft sync', () => {
 
   it('8.3 resets the draft file when switching to a different hotspot', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     act(() => { result.current.setSelected(0); });
     const fakeFile = new File(['x'], 'test.mp4', { type: 'video/mp4' });
@@ -281,7 +281,7 @@ describe('8. video draft sync', () => {
 describe('9. selectVideoDraftFile', () => {
   it('9.1 accepts a file under the 50MB limit', () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     const smallFile = new File(['x'.repeat(10)], 'small.mp4', { type: 'video/mp4' });
     act(() => { result.current.selectVideoDraftFile(smallFile); });
@@ -292,7 +292,7 @@ describe('9. selectVideoDraftFile', () => {
   it('9.2 rejects a file over the 50MB limit and alerts', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     const bigFile = new File(['x'], 'big.mp4', { type: 'video/mp4' });
     Object.defineProperty(bigFile, 'size', { value: 51 * 1024 * 1024 });
@@ -307,13 +307,13 @@ describe('9. selectVideoDraftFile', () => {
 
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 10. Test load-hazards API call
-describe('10. load-hazards', () => {
+// 10. Test load-hotspots API call
+describe('10. load-hotspots', () => {
   // Test if loads successfully
   it('10.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     // Wait for data to finish loading
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
@@ -338,11 +338,11 @@ describe('10. load-hazards', () => {
   it('10.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.json({ ok: true, data: [] }))
+      http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [] }))
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
     
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
@@ -356,16 +356,16 @@ describe('10. load-hazards', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
+      http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('error'));
     expect(result.current.hotspots.length).toBeGreaterThan(0);
     // Check that error was logged to console (ensures error handling works)
-    expect(consoleSpy).toHaveBeenCalledWith('load-hazards API error:', 'Supabase error');
+    expect(consoleSpy).toHaveBeenCalledWith('load-hotspots API error:', 'Supabase error');
     // Restore console error to normal (prevents leaking to other tests)
     consoleSpy.mockRestore();
   });
@@ -375,29 +375,29 @@ describe('10. load-hazards', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.error())
+      http.get('/api/lab/load-hotspots', () => HttpResponse.error())
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('error'));
     expect(result.current.hotspots.length).toBeGreaterThan(0);
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to load hazards from Supabase — using defaults');
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to load hotspots from Supabase — using defaults');
     consoleSpy.mockRestore();
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_topic/module_id (doesn't use default values from hazards.ts)
   it('10.5 passes through module_topic/module_id as null when the hotspot has no linked module', async () => {
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hotspots', () => HttpResponse.json({
         ok: true,
         data: [
           {
             type: 'ventilation',
             top: '25.0%',
             left: '35.0%',
-            title: 'Unlinked Hazard',
+            title: 'Unlinked Hotspot',
             text: 'No module linked to this one.',
             module_topic: null,
             module_id: null,
@@ -409,7 +409,7 @@ describe('10. load-hazards', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
 
@@ -424,7 +424,7 @@ describe('11. load-image', () => {
   // Test if loads successfully and sets imageUrl state
   it('11.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
     
     await waitFor(() => expect(result.current.imageUrl).toContain('/uploads/lab-photo.jpg'));
   });
@@ -434,7 +434,7 @@ describe('11. load-image', () => {
     server.use(http.get('/api/lab/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     // Check that current image is the default (lab.jpg)
@@ -448,19 +448,19 @@ describe('11. load-image', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     expect(result.current.imageUrl).toBe('/lab.jpg');
   });
 });
 
-// 12. Test save-hazards API call
-describe('12. save-hazards', () => {
+// 12. Test save-hotspots API call
+describe('12. save-hotspots', () => {
   // Test a successful save
   it('12.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     // Invoke function and wait for it to finish running
@@ -471,29 +471,29 @@ describe('12. save-hazards', () => {
   // Test a failed save
   it('12.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
-      http.post('/api/lab/save-hazards', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
+      http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     await act(async () => { await result.current.saveToSupabase(); });
     expect(result.current.saveStatus).toBe('error');
   });
 
-  // Test if all fields are sent to the API (hotspots + hazardData)
-  it('12.3 sends the full hotspots + hazardData payload', async () => {
+  // Test if all fields are sent to the API (hotspots + hotspotData)
+  it('12.3 sends the full hotspots + hotspotData payload', async () => {
     let capturedBody: any = null;
     server.use(
-      http.post('/api/lab/save-hazards', async ({ request }) => {
+      http.post('/api/lab/save-hotspots', async ({ request }) => {
         capturedBody = await request.json();
         return HttpResponse.json({ ok: true });
       })
     );
  
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
  
     // Wait for the load to complete so hotspots carry the mock's info
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
@@ -505,8 +505,8 @@ describe('12. save-hazards', () => {
       { type: 'gas', top: '20.0%', left: '30.0%' },
     ]);
  
-    // hazardData: the HazardInfo for the loaded hotspot
-    expect(capturedBody.hazardData.gas).toEqual({
+    // hotspotData: the HazardInfo for the loaded hotspot
+    expect(capturedBody.hotspotData.gas).toEqual({
       title: 'Loaded Title',
       text: 'Loaded description text.',
       moduleId: '1',
@@ -520,14 +520,14 @@ describe('12. save-hazards', () => {
   it('12.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
-      http.post('/api/lab/save-hazards', () => {
+      http.post('/api/lab/save-hotspots', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
     );
     
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
     
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
@@ -545,14 +545,14 @@ describe('12. save-hazards', () => {
   it('12.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
-      http.post('/api/lab/save-hazards', () => {
+      http.post('/api/lab/save-hotspots', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
     );
     
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
     
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     
@@ -574,7 +574,7 @@ describe('13. upload-image', () => {
   // Test a successful upload
   it('13.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
 
@@ -594,7 +594,7 @@ describe('13. upload-image', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     const fakeFile = new File(['fake'], 'test.jpg', { type: 'image/jpeg' });
 
@@ -607,7 +607,7 @@ describe('13. upload-image', () => {
 describe('14. saveHotspotYoutubeVideo', () => {
   it('14.1 saves the draft YouTube URL and updates the hotspot\'s info', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -627,7 +627,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -645,7 +645,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -663,7 +663,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
 describe('15. uploadHotspotMp4Video', () => {
   it('15.1 uploads the draft file, updates the hotspot\'s info, and clears the draft file', async () => {
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -685,7 +685,7 @@ describe('15. uploadHotspotMp4Video', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -706,7 +706,7 @@ describe('16. removeHotspotVideo', () => {
   it('16.1 clears the hotspot\'s video after confirming', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hotspots', () => HttpResponse.json({
         ok: true,
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
@@ -718,7 +718,7 @@ describe('16. removeHotspotVideo', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -739,7 +739,7 @@ describe('16. removeHotspotVideo', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
@@ -754,7 +754,7 @@ describe('16. removeHotspotVideo', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
-      http.get('/api/lab/load-hazards', () => HttpResponse.json({
+      http.get('/api/lab/load-hotspots', () => HttpResponse.json({
         ok: true,
         data: [{
           type: 'gas', top: '20.0%', left: '30.0%',
@@ -767,7 +767,7 @@ describe('16. removeHotspotVideo', () => {
     );
 
     const ref = createRef<HTMLDivElement>();
-    const { result } = renderHook(() => useHazards(ref));
+    const { result } = renderHook(() => useHotspots(ref));
 
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     act(() => { result.current.setSelected(0); });
