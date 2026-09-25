@@ -1,4 +1,4 @@
-// app/admin/users/page.tsx
+﻿// app/admin/users/page.tsx
 
 "use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
@@ -30,6 +30,9 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [exportOrganisation, setExportOrganisation] =
+    useState<"Fed Uni" | "Other">("Fed Uni");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -190,6 +193,64 @@ This action cannot be undone.`
     }
   }
 
+  async function handleExportResults() {
+    try {
+      setExporting(true);
+
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      const response = await fetch(
+        `/api/admin/users/export?organisation=${encodeURIComponent(exportOrganisation)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Unable to export quiz results.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download =
+        exportOrganisation === "Fed Uni"
+          ? "hydrogen-quiz-results-Fed-Uni.xlsx"
+          : "hydrogen-quiz-results-Other.xlsx";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error("EXPORT QUIZ RESULTS FAILED:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to export quiz results.";
+
+      alert(message);
+    } finally {
+      setExporting(false);
+    }
+  }
   const filteredUsers = useMemo(() => {
     const term = searchTerm.toLowerCase();
 
@@ -288,6 +349,28 @@ This action cannot be undone.`
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
         />
 
+        <div className="export-controls">
+          <select
+            className="export-select"
+            value={exportOrganisation}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setExportOrganisation(
+                e.target.value as "Fed Uni" | "Other"
+              )
+            }
+          >
+            <option value="Fed Uni">Fed Uni</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <button
+            className="export-btn"
+            onClick={handleExportResults}
+            disabled={exporting}
+          >
+            {exporting ? "Exporting..." : "Export Excel"}
+          </button>
+        </div>
         <div className="user-count">{filteredUsers.length} of {totalUsers} users</div>
       </div>
 
@@ -367,3 +450,4 @@ This action cannot be undone.`
     </main>
   );
 }
+
