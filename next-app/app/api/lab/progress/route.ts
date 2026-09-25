@@ -1,4 +1,4 @@
-// app/api/lab/progress/route.ts
+﻿// app/api/lab/progress/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
         const uid = await requireUser(request);
 
         const { data, error } = await supabaseServer
-            .from("user_hazard_progress")
-            .select("hazard_id, first_clicked_at")
+            .from("user_lab_progress")
+            .select("hotspot_id, first_clicked_at")
             .eq("uid", uid)
             .eq("scenario_id", SCENARIO_ID);
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
         const { count: totalHazards, error: countError } =
             await supabaseServer
-                .from("hazards")
+                .from("hotspots")
                 .select("*", {
                     count: "exact",
                     head: true,
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
             data: hazard,
             error: hazardError,
         } = await supabaseServer
-            .from("hazards")
+            .from("hotspots")
             .select("type")
             .eq("type", hazardId)
             .maybeSingle();
@@ -145,16 +145,16 @@ export async function POST(request: NextRequest) {
         }
 
         const { error } = await supabaseServer
-            .from("user_hazard_progress")
+            .from("user_lab_progress")
             .upsert(
                 {
                     uid,
-                    hazard_id: hazardId,
+                    hotspot_id: hazardId,
                     scenario_id: SCENARIO_ID,
                 },
                 {
                     onConflict:
-                        "uid,scenario_id,hazard_id",
+                        "uid,scenario_id,hotspot_id",
                     ignoreDuplicates: true,
                 }
             );
@@ -196,3 +196,5 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+

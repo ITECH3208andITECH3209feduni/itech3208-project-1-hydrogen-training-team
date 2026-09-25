@@ -1,4 +1,4 @@
-// app/api/lab/load-hazards/route.ts
+﻿// app/api/lab/load-hazards/route.ts
 // Returns all hotspot + hazard data from Supabase.
 // Note: "left" is quoted because it is a reserved word.
 
@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET() {
 	const { data, error } = await supabase
-		.from('hazards')
+		.from('hotspots')
 		.select('type, title, text, top, "left", module_topic, module_id, video_url, video_type, sort_order')
 		.order('sort_order', { ascending: true });
 	
@@ -18,3 +18,4 @@ export async function GET() {
 	
 	return NextResponse.json({ ok: true, data });
 }
+
