@@ -1,4 +1,4 @@
-// app/api/profile/create/route.ts
+﻿// app/api/profile/create/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
             email,
             display_name,
             organisation,
+            student_id,
         } = await req.json();
 
         if (!uid || !email) {
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
                 email,
                 display_name,
                 organisation: organisation || null,
+                student_id: student_id || null,
                 role: "user",
                 user_type: "public",
             })

@@ -1,4 +1,4 @@
-// context/AuthContext.tsx
+﻿// context/AuthContext.tsx
 "use client";
 
 import {
@@ -35,6 +35,7 @@ type UserProfile = {
     | "industry_professional"
     | "public";
   organisation?: string | null;
+  student_id?: string | null;
 };
 
 /* ============================================
@@ -63,6 +64,7 @@ type RegisterData = {
   password: string;
   name: string;
   organisation?: string;
+  student_id?: string;
   role: "user";
   user_type: "public";
 };
@@ -257,6 +259,7 @@ export function AuthProvider({
     password,
     name,
     organisation,
+    student_id,
     role,
     user_type,
   }: RegisterData) {
@@ -290,6 +293,7 @@ export function AuthProvider({
             userCredential.user.email,
           display_name: name,
           organisation,
+          student_id,
           role,
           user_type,
         }),
@@ -357,3 +361,4 @@ export function useAuth() {
 
   return context;
 }
+
