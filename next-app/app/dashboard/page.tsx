@@ -21,25 +21,11 @@ export default function Dashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
-    const {
-        modules,
-        loadStatus,
-    } = useModules("hazards", hazardModules);
-
-    const [quizProgress, setQuizProgress] =
-        useState<QuizProgress | null>(null);
-
-    const [quizLoading, setQuizLoading] =
-        useState(true);
-
-    const [simulationProgress, setSimulationProgress] =
-        useState<{
-            completedHotspots: number;
-            totalHotspots: number;
-        } | null>(null);
-
-    const [simulationLoading, setSimulationLoading] =
-        useState(true);
+    const { modules, loadStatus, } = useModules("hazards", hazardModules);
+    const [quizProgress, setQuizProgress] = useState<QuizProgress | null>(null);
+    const [quizLoading, setQuizLoading] = useState(true);
+    const [simulationProgress, setSimulationProgress] = useState<{completedHotspots: number; totalHotspots: number;} | null>(null);
+    const [simulationLoading, setSimulationLoading] = useState(true);
 
     // Redirect unauthenticated users
     useEffect(() => {
@@ -63,9 +49,7 @@ export default function Dashboard() {
 
                 const response = await fetch("/api/quizzes/progress", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}`, },
                     cache: "no-store",
                 });
 
@@ -73,9 +57,9 @@ export default function Dashboard() {
 
                 if (response.ok && data.ok && data.progress) {
                     setQuizProgress({
-                        score: Number(data.progress.score ?? 0),
-                        passed: Boolean(data.progress.passed),
-                        attempts: Number(data.progress.attempts ?? 0),
+                        score:             Number(data.progress.score ?? 0),
+                        passed:            Boolean(data.progress.passed),
+                        attempts:          Number(data.progress.attempts ?? 0),
                         last_attempted_at: data.progress.last_attempted_at ?? null,
                     });
                 } else {
@@ -110,9 +94,7 @@ export default function Dashboard() {
 
                 const response = await fetch("/api/lab/progress", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}`, },
                     cache: "no-store",
                 });
 
@@ -121,16 +103,13 @@ export default function Dashboard() {
                 if (response.ok && data.ok) {
                     setSimulationProgress({
                         completedHotspots: Number(data.completedHotspots ?? 0),
-                        totalHotspots: Number(data.totalHotspots ?? 0),
+                        totalHotspots:     Number(data.totalHotspots ?? 0),
                     });
                 } else {
                     setSimulationProgress(null);
                 }
             } catch (error) {
-                console.error(
-                    "Failed to load dashboard simulation progress:",
-                    error
-                );
+                console.error("Failed to load dashboard simulation progress:", error);
                 setSimulationProgress(null);
             } finally {
                 setSimulationLoading(false);
@@ -164,7 +143,7 @@ export default function Dashboard() {
     // Training topics
     const trainingTopics = useMemo(() =>
         modules.map((module) => ({
-            id: module.id,
+            id:    module.id,
             title: module.title,
         })), [modules]
     );

@@ -124,10 +124,7 @@
         overflow: hidden;
         animation: fadeUp 0.5s ease both;
 }
-
-.dashboard-panel:nth-child(2) {
-        animation-delay: 0.1s;
-}
+.dashboard-panel:nth-child(2) { animation-delay: 0.1s; }
 
 .dashboard-panel .panel-header {
         display: flex;
@@ -166,9 +163,7 @@
         white-space: nowrap;
 }
 
-.panel-link:hover {
-        color: var(--accent-hover);
-}
+.panel-link:hover { color: var(--accent-hover); }
 
 /* ─── Training Topics ──────────────────────────────────────────────────── */
 .topic-list {
@@ -248,10 +243,7 @@
         font-weight: 600;
         text-decoration: none;
 }
-
-.topics-footer a:hover {
-        color: var(--accent-hover);
-}
+.topics-footer a:hover { color: var(--accent-hover); }
 
 .topics-loading {
         padding: 30px 10px;
@@ -290,10 +282,7 @@
         font-size: 2.1rem;
 }
 
-.certificate-text {
-        max-width: 440px;
-}
-
+.certificate-text { max-width: 440px; }
 .certificate-text h3 {
         margin: 0 0 8px;
         color: var(--white);

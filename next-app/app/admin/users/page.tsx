@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
       <div className="greeting">
         <div>
           <h1>
-            Access{" "}
+            User{" "}
             <span className="greeting-accent">Management</span>
           </h1>
 

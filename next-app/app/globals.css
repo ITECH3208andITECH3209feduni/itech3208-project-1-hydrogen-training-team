@@ -14,8 +14,7 @@
 	--teal:        #00B4D8;
 	--teal-dark:   #0077A8;
 	--teal-glow:   rgba(0,180,216,0.18);
-	/* Contrasting accent (orange) — sub-headings, links, hover effects.
-	   To try another colour, change these five lines only. */
+	/* Contrasting accent (orange) — sub-headings, links, hover effects. */
 	--accent:        #FB923C;
 	--accent-hover:  #FDBA74;
 	--accent-glow:   rgba(251,146,60,0.12);
@@ -33,7 +32,6 @@
 	--radius:      14px;
 	--border-rule: 1px solid var(--border);
 	--radius-pill: 99px;
-
 	/* Fonts — --font-inter / --font-exo2 are set by next/font in layout.tsx.
 	   Use these two tokens in every stylesheet; never write the family names directly,
 	   because next/font gives the real fonts generated names. */
@@ -125,6 +123,7 @@ body::after {
 	box-shadow: 0 0 16px rgba(0,180,216,0.5);
 }
 .logo-accent { color: var(--teal); }
+.logo:hover span { color: var(--accent); }
 
 .logo-img {
 	height: 50px;
@@ -189,7 +188,16 @@ body::after {
 	border: none;
 	cursor: pointer;
 	font-weight: 600;
-	font-size: 0.95rem;
+	background: white;
+	color: black;
+	transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.btn-logout:hover {
+	background: var(--accent);
+	color: var(--navy);
+	box-shadow: 0 6px 18px var(--accent-shadow);
+	transform: translateY(-2px);
 }
 
 /* Public Login button */
@@ -212,8 +220,10 @@ body::after {
 }
 
 .btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px var(--accent-shadow);
+	background: var(--accent);
+	color: var(--navy);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 18px var(--accent-shadow);
 }
 
 /* ─── Main container ─────────────────────────────────────────────────────── */
@@ -247,12 +257,8 @@ body::after {
 .panel-body { padding: 26px 22px; }
 
 /* ─── Panel modifiers + form field layout helpers ───────────────────────── */
-.panel--clip {
-	overflow: hidden;
-}
-.panel-header--spread {
-	justify-content: space-between;
-}
+.panel--clip { overflow: hidden; }
+.panel-header--spread { justify-content: space-between; }
 .field-hint {
 	font-size: 0.85rem;
 	color: var(--muted);
@@ -262,9 +268,7 @@ body::after {
 	display: flex;
 	gap: 12px;
 }
-.field-row-item {
-	flex: 1;
-}
+.field-row-item { flex: 1; }
 
 /* ─── Edit mode toggle ──────────────────────────────────────────────────── */
 .edit-mode-toggle-bar {
@@ -371,10 +375,7 @@ body::after {
     gap: 10px;
     margin-bottom: 14px;
 }
-
-.module-video-heading span {
-    font-size: 1.3rem;
-}
+.module-video-heading span { font-size: 1.3rem; }
 
 .module-video-heading h2 {
 	font-family: var(--font-heading);
@@ -649,8 +650,8 @@ body::after {
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-	.nav                     { padding: 0 20px; }
-	.main                    { padding: 24px 20px 40px; }
+	.nav  { padding: 0 20px; }
+	.main { padding: 24px 20px 40px; }
 	.edit-mode-bar--expanded {
 		flex-direction: column;
 		align-items: flex-start;

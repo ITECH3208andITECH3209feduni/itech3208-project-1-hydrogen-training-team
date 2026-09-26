@@ -2,606 +2,373 @@
 
 /* About page header */
 .about-header{
-
     margin-bottom:50px;
-
     text-align:center;
 }
 
 /* Main page title */
 .about-header h1{
-
     font-family: var(--font-heading);
-
     font-size: 3rem;
-
     color:white;
-
     margin-bottom:12px;
 }
 
 /* Page introduction */
 .about-header p{
-
     max-width: 760px;
-
     margin:auto;
-
     color:var(--muted);
-
     line-height:1.7;
     font-size: 1.1rem;
 }
 
 /* Generic section spacing */
-.about-section{
-
-    margin-bottom:60px;
-}
+.about-section{ margin-bottom:60px; }
 
 /* Section heading */
-.section-title{
-
-    margin-bottom:24px;
-}
+.section-title{ margin-bottom:24px; }
 
 .section-title h2{
-
     font-family: var(--font-heading);
-
     color: var(--accent);
-
     font-size: 1.95rem;
 }
 
 /* Standard information card */
 .about-card{
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:30px;
 }
 
 /* Paragraph styling */
 .about-card p{
-
     color:var(--muted);
-
     line-height:1.9;
-
     margin-bottom:18px;
     font-size: 1.05rem;
 }
+.about-card p:last-child{ margin-bottom:0; }
 
-.about-card p:last-child{
-
-    margin-bottom:0;
-}
 /* Section description */
 .section-subtitle{
-
     color:var(--muted);
-
     max-width: 800px;
-
     line-height:1.7;
-
     margin-top:10px;
     font-size: 1.05rem;
 }
 
-/* Shared card hover effect — used by every hoverable card on this page.
-   (Previously copy-pasted per card with slightly different shadows; tech-card had none.) */
+/* Shared card hover effect — used by every hoverable card on this page. */
 .info-card:hover,
 .feature-card:hover,
 .tech-card:hover,
 .leadership-card:hover,
 .developer-card:hover{
-
     transform:translateY(-5px);
-
     border-color:var(--accent);
-
     box-shadow:0 12px 24px var(--accent-shadow);
 }
 
 /* Information card grid */
 .info-grid{
-
     display:grid;
-
     grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-
     gap:24px;
-
     margin-top:35px;
 }
 
 /* Individual information card */
 .info-card{
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:28px;
-
     transition:.25s;
 }
 
 /* Icon at top of each card */
 .info-icon{
-
     width:58px;
-
     height:58px;
-
     border-radius:50%;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     font-size: 1.9rem;
-
     background:rgba(0,180,216,.12);
-
     margin-bottom:20px;
 }
 
 /* Card heading */
 .info-card h3{
-
     color:white;
-
     font-family: var(--font-heading);
-
     margin-bottom:14px;
     font-size: 1.25rem;
 }
 
 /* Card text */
 .info-card p{
-
     color:var(--muted);
-
     line-height:1.7;
     font-size: 1rem;
 }
 /* Platform feature grid */
 .feature-grid{
-
     display:grid;
-
     grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-
     gap:24px;
-
     margin-top:35px;
 }
 
 /* Individual feature card */
 .feature-card{
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:30px;
-
     transition:.25s;
 }
 
 /* Feature icon */
 .feature-icon{
-
     width:60px;
-
     height:60px;
-
     border-radius:14px;
-
     display:flex;
-
     justify-content:center;
-
     align-items:center;
-
     font-size: 1.9rem;
-
     background:rgba(0,180,216,.12);
-
     margin-bottom:18px;
 }
 
 /* Feature title */
 .feature-card h3{
-
     font-family: var(--font-heading);
-
     color:white;
-
     margin-bottom:12px;
     font-size: 1.25rem;
 }
 
 /* Feature description */
 .feature-card p{
-
     color:var(--muted);
-
     line-height:1.7;
     font-size: 1rem;
 }
 /* Technology grid */
 .tech-grid{
-
     display:grid;
-
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-
     gap:20px;
-
     margin-top:35px;
 }
 
 /* Technology card */
 .tech-card{
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:24px;
-
     text-align:center;
-
     transition:.25s;
 }
 
 /* Technology icon */
 .tech-icon{
-
     font-size: 2.3rem;
-
     margin-bottom:18px;
 }
 
 /* Technology heading */
 .tech-card h3{
-
     color:white;
-
     font-family: var(--font-heading);
-
     margin-bottom:10px;
     font-size: 1.15rem;
 }
 
 /* Technology description */
 .tech-card p{
-
     color:var(--muted);
-
     line-height:1.6;
     font-size: 0.95rem;
 }
-/* Contributors section */
-.contributor-group{
 
-    margin-top:35px;
-}
+/* Contributors section */
+.contributor-group{ margin-top:35px; }
 
 /* Contributor section heading */
 .contributor-group-heading{
-
     display:flex;
-
     align-items:flex-start;
-
     gap:14px;
-
     margin-bottom:20px;
 }
 
 .contributor-group-icon{
-
     width:48px;
-
     height:48px;
-
     border-radius:12px;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     font-size: 1.5rem;
-
     background:rgba(0,180,216,.12);
-
     flex-shrink:0;
 }
 
 .contributor-group-heading h3{
-
     font-family: var(--font-heading);
-
     color:white;
-
     margin-bottom:6px;
     font-size: 1.25rem;
 }
 
 .contributor-group-heading p{
-
     color:var(--muted);
-
     line-height:1.6;
     font-size: 1rem;
 }
 
-
 /* Project leadership grid */
 .leadership-grid{
-
     display:grid;
-
     grid-template-columns:repeat(2,minmax(0,1fr));
-
     gap:24px;
 }
 
-
 /* Leadership contributor card */
 .leadership-card{
-
     display:flex;
-
     gap:22px;
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:28px;
-
     transition:.25s;
 }
 
-
 /* Contributor avatar */
 .contributor-avatar{
-
     width:60px;
-
     height:60px;
-
     border-radius:50%;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     flex-shrink:0;
-
     font-size: 1.8rem;
-
     background:rgba(0,180,216,.12);
 }
 
 
-.leadership-card-content{
-
-    flex:1;
-}
-
-
+.leadership-card-content{ flex:1; }
 .leadership-card h3{
-
     font-family: var(--font-heading);
-
     color:white;
-
     margin-bottom:6px;
     font-size: 1.2rem;
 }
 
-
 /* Contributor role */
 .contributor-role{
-
     color: var(--accent);
-
     font-weight:600;
-
     font-size: 1rem;
 }
 
-
 .leadership-card p{
-
     color:var(--muted);
-
     line-height:1.7;
-
     margin-top:16px;
-
     padding-top:16px;
-
     border-top:var(--border-rule);
     font-size: 1rem;
 }
 
-
 /* Development team grid */
 .development-grid{
-
     display:grid;
-
     grid-template-columns:repeat(4,minmax(0,1fr));
-
     gap:20px;
 }
 
-
 /* Development team card */
 .developer-card{
-
     background:var(--card-bg);
-
     border:var(--border-rule);
-
     border-radius:var(--radius);
-
     padding:24px;
-
     text-align:center;
-
     transition:.25s;
 }
-
-
-.developer-card .contributor-avatar{
-
-    margin:0 auto 16px;
-}
-
+.developer-card .contributor-avatar{ margin:0 auto 16px; }
 
 .developer-card h3{
-
     font-family: var(--font-heading);
-
     color:white;
-
     margin-bottom:6px;
     font-size: 1.15rem;
 }
 
-
 .developer-card p{
-
     color:var(--muted);
-
     margin-top:16px;
-
     padding-top:16px;
-
     border-top:var(--border-rule);
     font-size: 0.95rem;
 }
 
-
-/* Contributors thank-you message */
+/* Contributors section */
 .contributor-thanks{
-
     display:flex;
-
     align-items:center;
-
     gap:18px;
-
     margin-top:30px;
-
     padding:22px 26px;
-
     background:rgba(0,180,216,.08);
-
     border:1px solid rgba(0,180,216,.25);
-
     border-radius:var(--radius);
 }
 
-
 .contributor-thanks-icon{
-
     width:52px;
-
     height:52px;
-
     border-radius:12px;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     flex-shrink:0;
-
     font-size: 1.7rem;
-
     background:rgba(0,180,216,.12);
 }
 
-
 .contributor-thanks h3{
-
     font-family: var(--font-heading);
-
     color:white;
-
     margin-bottom:5px;
     font-size: 1.15rem;
 }
 
-
 .contributor-thanks p{
-
     color:var(--muted);
-
     line-height:1.6;
     font-size: 1rem;
 }
 
-
 /* Contributors responsive layout */
 @media(max-width:900px){
-
-    .leadership-grid{
-
-        grid-template-columns:1fr;
-    }
-
-    .development-grid{
-
-        grid-template-columns:repeat(2,minmax(0,1fr));
-    }
+    .leadership-grid  { grid-template-columns:1fr; }
+    .development-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
-
 @media(max-width:600px){
-
-    .development-grid{
-
-        grid-template-columns:1fr;
-    }
-
-    .leadership-card{
-
-        flex-direction:column;
-    }
-
-    .contributor-thanks{
-
-        align-items:flex-start;
-    }
+    .development-grid   { grid-template-columns:1fr; }
+    .leadership-card    { flex-direction:column; }
+    .contributor-thanks { align-items:flex-start; }
 }
