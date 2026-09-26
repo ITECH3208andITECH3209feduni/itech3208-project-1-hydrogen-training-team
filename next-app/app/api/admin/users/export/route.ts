@@ -29,12 +29,11 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Get users belonging to the selected organisation
-        const { data: profiles, error: profilesError } = await supabaseServer
-            .from("profiles")
-            .select("uid, student_id")
-            .eq("organisation", organisation)
-            .eq("user_type", "public");
+        // Load profiles and select users for the chosen organisation.
+        const { data: allProfiles, error: profilesError } =
+            await supabaseServer
+                .from("profiles")
+                .select("uid, student_id, organisation, user_type");
 
         if (profilesError) {
             console.error(
@@ -51,10 +50,15 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const userIds = (profiles ?? []).map((profile) => profile.uid);
+        const profiles = (allProfiles ?? []).filter(
+            (profile) =>
+                profile.organisation?.trim() === organisation &&
+                profile.user_type === "public"
+        );
 
-        console.log("EXPORT PROFILES:", profiles);
-        console.log("EXPORT USER IDS:", userIds);
+        const userIds = profiles.map(
+            (profile) => profile.uid
+        );
 
         let quizProgress: {
             uid: string;
@@ -211,4 +215,5 @@ export async function GET(request: NextRequest) {
         );
     }
 }
+
 
