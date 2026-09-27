@@ -12,13 +12,12 @@ const QUIZ_ID = "hydrogen-hazards";
 
 export async function GET(request: NextRequest) {
     try {
-        // Only administrators can export quiz results
+        // Only administrators can export quiz results.
         await requireAdmin(request);
 
         const { searchParams } = new URL(request.url);
         const organisation = searchParams.get("organisation");
 
-        // The user story limits organisation to these two values
         if (organisation !== "Fed Uni" && organisation !== "Other") {
             return NextResponse.json(
                 {
@@ -29,15 +28,33 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Load profiles and select users for the chosen organisation.
+        /*
+         * Load profiles and their related quiz progress in one query.
+         * The relationship is provided by:
+         *
+         * user_quiz_progress.uid
+         *     -> profiles.uid
+         */
         const { data: allProfiles, error: profilesError } =
             await supabaseServer
                 .from("profiles")
-                .select("uid, student_id, organisation, user_type");
+                .select(`
+                    uid,
+                    student_id,
+                    organisation,
+                    user_type,
+                    user_quiz_progress (
+                        quiz_id,
+                        score,
+                        attempts,
+                        passed,
+                        last_attempted_at
+                    )
+                `);
 
         if (profilesError) {
             console.error(
-                "EXPORT PROFILES ERROR:",
+                "EXPORT PROFILE/QUIZ QUERY ERROR:",
                 profilesError
             );
 
@@ -50,58 +67,14 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        // Keep only public users belonging to the selected organisation.
         const profiles = (allProfiles ?? []).filter(
             (profile) =>
                 profile.organisation?.trim() === organisation &&
                 profile.user_type === "public"
         );
 
-        const userIds = profiles.map(
-            (profile) => profile.uid
-        );
-
-        let quizProgress: {
-            uid: string;
-            score: number | null;
-            attempts: number | null;
-            passed: boolean | null;
-            last_attempted_at: string | null;
-        }[] = [];
-
-        if (userIds.length > 0) {
-            const { data, error } = await supabaseServer
-                .from("user_quiz_progress")
-                .select(
-                    "uid, quiz_id, score, attempts, passed, last_attempted_at"
-                )
-                .in("uid", userIds);
-
-            if (error) {
-                console.error(
-                    "EXPORT QUIZ PROGRESS ERROR:",
-                    error
-                );
-
-                return NextResponse.json(
-                    {
-                        ok: false,
-                        error: error.message,
-                    },
-                    { status: 500 }
-                );
-            }
-
-            quizProgress = (data ?? [])
-                .filter((item) => item.quiz_id === QUIZ_ID)
-                .map((item) => ({
-                    uid: item.uid,
-                    score: item.score,
-                    attempts: item.attempts,
-                    passed: item.passed,
-                    last_attempted_at: item.last_attempted_at,
-                }));
-        }
-        // Create Excel workbook
+        // Create Excel workbook.
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Quiz Results");
 
@@ -133,9 +106,17 @@ export async function GET(request: NextRequest) {
             },
         ];
 
-        for (const profile of profiles ?? []) {
-            const progress = quizProgress.find(
-                (item) => item.uid === profile.uid
+        for (const profile of profiles) {
+            /*
+             * A profile may have progress for different quizzes.
+             * Select only the hydrogen hazards quiz.
+             *
+             * If the user has never attempted the quiz,
+             * progress will be undefined and the profile will
+             * still appear in the spreadsheet.
+             */
+            const progress = profile.user_quiz_progress?.find(
+                (item) => item.quiz_id === QUIZ_ID
             );
 
             worksheet.addRow({
@@ -157,7 +138,7 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        // Make spreadsheet headings easier to read
+        // Make spreadsheet headings easier to read.
         worksheet.getRow(1).font = {
             bold: true,
         };
@@ -215,5 +196,3 @@ export async function GET(request: NextRequest) {
         );
     }
 }
-
-
