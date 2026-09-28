@@ -71,6 +71,12 @@
 	font-family: inherit;
 }
 
+/* Textareas resize vertically only, so they can't be dragged wider than the panel */
+.quiz-editor-fields textarea,
+.quiz-editor-question-detail textarea {
+	resize: vertical;
+}
+
 .quiz-editor-questions {
 	display: grid;
 	grid-template-columns: 300px 1fr;
