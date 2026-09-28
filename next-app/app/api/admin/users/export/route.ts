@@ -1,4 +1,4 @@
-﻿// app/api/admin/users/export/route.ts
+// app/api/admin/users/export/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
@@ -67,11 +67,10 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Keep only public users belonging to the selected organisation.
+        // Keep all users belonging to the selected organisation.
         const profiles = (allProfiles ?? []).filter(
             (profile) =>
-                profile.organisation?.trim() === organisation &&
-                profile.user_type === "public"
+                profile.organisation?.trim() === organisation
         );
 
         // Create Excel workbook.
