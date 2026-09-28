@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
+import { useUnsavedChanges } from '@/hooks/unsavedChanges/useUnsavedChanges';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -22,6 +23,31 @@ export function buildBlankSection(existingCount: number): ModuleSection {
 	};
 }
 
+// Make a snapshot of the current module to compare against what was last loaded/saved. Used for warnings about unsaved changes
+export function snapshotModule(moduleData: ModuleData | undefined): string {
+	if (!moduleData) return '';
+	return JSON.stringify({
+		id: moduleData.id,
+		slug: moduleData.slug ?? null,
+		badgeNum: moduleData.badgeNum != null ? String(moduleData.badgeNum) : null,
+		icon: moduleData.icon,
+		iconBg: moduleData.iconBg,
+		title: moduleData.title,
+		description: moduleData.description,
+		keyTakeaway: moduleData.keyTakeaway,
+		prevId: moduleData.prevId ?? null,
+		nextId: moduleData.nextId ?? null,
+		sections: moduleData.sections.map((s) => ({
+			num: s.num,
+			heading: s.heading,
+			body: s.body,
+			listType: s.listType ?? null,
+			items: s.items?.length ? s.items : null,
+			callout: s.callout ?? null,
+		})),
+	});
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 // topic: which app/modules/ topic this module belongs to (e.g. 'hazard-modules')
 // item: the live (Supabase-merged) module, from useModuleById — seeds the draft
@@ -33,10 +59,12 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 	const [draft, setDraft] = useState<ModuleData | undefined>(item);
 	const [selectedSection, setSelectedSection] = useState<number | null>(null);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+	// Whether the draft differs from what's stored, plus how to tell it what's now stored (see useUnsavedChanges)
+	const { hasUnsavedChanges, markSaved } = useUnsavedChanges(draft, item, snapshotModule);
 
-	// Value tracking current edit state
-	const editModeRef = useRef(editMode);
-	editModeRef.current = editMode;
+	// Unsaved-changes flag, readable from the effect below without becoming a dependency
+	const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+	hasUnsavedChangesRef.current = hasUnsavedChanges;
 
 	// Exit edit mode and discard changes when moving to a different module
 	useEffect(() => {
@@ -45,10 +73,11 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 		setDraft(item);
 	}, [item?.id]);
 
-	// Return current edits when re-entering edit mode
+	// Maintain unsaved edits even if edit mode is toggled off
 	useEffect(() => {
-		if (!editModeRef.current) setDraft(item);
-	}, [item]);
+		if (!hasUnsavedChangesRef.current) setDraft(item);
+		markSaved(item);
+	}, [item, markSaved]);
 
 	// Turning edit mode off doesn't discard unsaved changes
 	const toggleEditMode = useCallback(() => {
@@ -181,6 +210,7 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 			});
 			const json = await res.json();
 			if (!res.ok || !json.ok) throw new Error(json.error ?? 'API error');
+			markSaved(draft);   // `draft` is the closure value that was sent, so edits made while saving stay unsaved
 			setSaveStatus('saved');
 			setTimeout(() => setSaveStatus('idle'), 2500);
 		} catch (err) {
@@ -188,11 +218,12 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [draft, topic, user]);
+	}, [draft, topic, user, markSaved]);
 
 	return {
 		editMode,
 		toggleEditMode,
+		hasUnsavedChanges,
 		draft,
 		selectedSection,
 		setSelectedSection,

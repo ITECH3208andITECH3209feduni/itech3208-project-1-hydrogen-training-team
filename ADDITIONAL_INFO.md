@@ -162,9 +162,12 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 - Toggling edit mode off does **not** discard unsaved changes — mirroring `useHotspots`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
 - Navigating to a different module (the prev/next links, or the listing page) re-seeds the draft from the new module and forces edit mode off.
 	This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`.
-	A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving) but only while not currently editing, so a background refresh can't overwrite an in-progress edit.
+	A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving), but only while there are no unsaved changes, so a background refresh can't overwrite an in-progress edit — including one made before edit mode was switched off.
 - **`resetToDefaults`** replaces the whole draft with `fallback` — reverting to the bundled `lib/` entry, the same semantics as `/lab`'s Reset to Defaults reverting to `lib/hazards.ts` rather than to whatever Supabase last returned.
 	Disabled (`canReset: false`) when no `fallback` was supplied — a topic whose wrapper page doesn't pass a `defaults` prop into `ModuleReaderPage` has no bundled content to revert to.
+- **Unsaved changes:** `hasUnsavedChanges` reports whether the draft differs from the live module.
+	`snapshotModule` compares only the fields `save-module` persists — `videoUrl`/`videoType` are excluded, since they save immediately (see "Embedded Videos").
+	`ModuleReaderPage.tsx` passes the flag to `useLeaveWarning`; see "Unsaved-Changes Protection" below.
 - While edit mode is on, `ModuleReaderPage` renders the whole reading view (hero, sections, key takeaway, prev/next links) from `draft` instead of `item`, so edits appear live above the editor panel.
 
 **Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields.
@@ -280,9 +283,12 @@ Unlike the lab and module reader pages, this editor is a separate page rather th
 
 **State (`hooks/quizzes/useQuizEditor.ts`):** takes the `quizId`, the live `item` from `useQuiz`, and an optional `fallback` (the matching bundled `QUIZ_DEFAULTS`, looked up via a `quiz_id`-keyed map in the page component).
 	It holds a `draft` copy of the quiz, seeded from `item`.
-- There's no `editMode` flag to gate on, unlike `useModuleEditor` — a `hasEditedRef`/`hasUnsavedChanges` pair tracks whether the draft has actually been touched instead, serving the same purpose `editModeRef` serves in the module editor:
-	a background refresh of `item` (e.g. the initial live fetch resolving) only overwrites `draft` while nothing's been edited yet.
-- Switching `quizId` clears that touched flag and re-seeds the draft — relevant once a second quiz exists, since the dynamic `[quizId]` route reuses the same page component instance across different quiz ids.
+- A background refresh of `item` (e.g. the initial live fetch resolving) only overwrites `draft` while there are no unsaved changes — the same rule `useModuleEditor` applies.
+	There's no `editMode` flag; `hasUnsavedChanges` alone decides.
+- Switching `quizId` discards the draft and re-seeds it from the current `item` — relevant once a second quiz exists, since the dynamic `[quizId]` route reuses the same page component instance across different quiz ids.
+- **Unsaved changes:** `hasUnsavedChanges` reports whether the draft differs from the last loaded or saved quiz.
+	`snapshotQuiz` compares `title`, `description`, `passThreshold`, `poolSize` and each question's `id`, `question`, `options`, `correctIndex`, `explanation` and `isCore`.
+	`page.tsx` passes the flag to `useLeaveWarning`; see "Unsaved-Changes Protection" below.
 - **`resetToDefaults`** replaces the whole draft with `fallback`, the same semantics as the module editor's Reset to Defaults.
 	Disabled (`canReset: false`) when no `fallback` is supplied — currently only the `hazards` quiz has bundled defaults wired into the lookup map.
 - **Validation:** every question needs at least 2 options and a `correctIndex` pointing at one of them (`hasInvalidQuestion`/`invalidQuestionIndex`);
@@ -300,9 +306,6 @@ Unlike the lab and module reader pages, this editor is a separate page rather th
 3. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement — including each question's `is_core` value.
 
 This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (see `supabase_setup.sql`) is required for both operations above, independent of which DML statement each performs — PostgREST constructs its response (matched-row data, counts) via a read-back that needs `select` privilege regardless of whether the underlying call is an upsert, insert, update, or delete.
-
-**Unsaved-changes protection:** the editor warns before an admin navigates away with an edit in progress, via three independent guards: a `beforeunload` handler (tab close/refresh), a capture-phase `click` listener on `document` that intercepts any in-app link click — including the navigation bar, since it's rendered into the same document via `layout.tsx` — while `hasUnsavedChanges` is true, and the page's own "Back to Quizzes" link going through that same listener.
-	This doesn't cover the navigation bar's Logout button (a plain `<button>`, not a link, so the click listener has nothing to intercept) or the browser's own Back/Forward buttons.
 
 ### Quizzes hub (`/quizzes`)
 
@@ -454,8 +457,35 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 	`PUT /api/modules/video` and `PUT /api/lab/video` (both `requireAdmin`-gated) handle a YouTube URL or an mp4 file upload; `DELETE` on each removes the video.
 	An mp4 upload goes to Supabase Storage (`module-videos` or `lab-videos`, one file per module/hotspot) and the route updates `video_url`/`video_type` afterwards; replacing or removing an existing mp4 deletes the old Storage object once the database write succeeds.
 	`lib/video/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
+	A video change therefore never counts as an unsaved change (see "Unsaved-Changes Protection").
 
 Once a video is saved through either route, the hook managing that page (`useModuleEditor`'s inline handlers on `ModuleReaderPage.tsx`, or `useHotspots.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo`) writes the returned `video_url`/`video_type` into local state, so the display component picks it up without a full page reload.
+
+---
+
+## Unsaved-Changes Protection
+
+The lab (`/lab`), the module reader pages and the quiz editor (`/quizzes/[quizId]/edit`) all warn an admin before an edit in progress is lost. Two hooks in `hooks/unsavedChanges/` provide it. Learners never see a warning, since only admins can edit.
+
+**Tracking (`useUnsavedChanges.ts`):** `useUnsavedChanges(draft, initialSaved, snapshot)` returns `hasUnsavedChanges` and `markSaved`.
+	It holds a snapshot of what's stored in Supabase and reports `hasUnsavedChanges` while the draft's snapshot differs from it.
+	The comparison is independent of edit mode, so unsaved edits are still reported after edit mode is switched off.
+	Editing a value and putting it back leaves nothing unsaved, and Reset to Defaults counts as an unsaved change unless the defaults already equal what's stored.
+- **`snapshot`** is supplied by each editor and reduces a draft to just the fields its Save persists, as a string: `snapshotHotspots` in `useHotspots.ts`, `snapshotQuiz` in `useQuizEditor.ts` and `snapshotModule` in `useModuleEditor.ts`.
+	Each is defined at module scope, so its identity is stable.
+	Equivalent values produce the same string: `undefined` and `null` for optional fields, a missing or empty list of a module section's `items`, and a module's `badgeNum` whether it holds a number or the string typed into its input.
+	Embedded video fields are excluded from the lab and module snapshots, since a video is written to Supabase as soon as it's saved (see "Embedded Videos").
+- **`markSaved(value)`** declares that `value` is what's now stored.
+	Each editor calls it with the live data whenever that loads or refreshes, and after a successful save with the draft that was sent, so an edit made while the save request is in flight stays unsaved.
+- **`initialSaved`** is only read on the first render.
+- Each editor decides for itself when live data may replace its draft; `useModuleEditor` and `useQuizEditor` do so only while there are no unsaved changes. `useUnsavedChanges` only measures the difference.
+
+**Warning (`useLeaveWarning.ts`):** `useLeaveWarning(hasUnsavedChanges)` is called from `app/lab/page.tsx`, `ModuleReaderPage.tsx` and `app/quizzes/[quizId]/edit/page.tsx`.
+	While `hasUnsavedChanges` is true it installs two independent guards, and removes them when it's false:
+- a `beforeunload` handler (tab close/reload);
+- a capture-phase `click` listener on `document` that asks for confirmation before any in-app link click navigates away — including the navigation bar, since it's rendered into the same document via `layout.tsx` — and otherwise lets the click continue to Next.js's own `Link` handling.
+	It ignores clicks that don't navigate the current tab away: links to the current path, external links, links with a `target` other than `_self` or a `download` attribute, and modified clicks (Ctrl/Cmd/Shift/Alt, or a non-primary button).
+	This doesn't cover the navigation bar's Logout button (a plain `<button>`, not a link, so the click listener has nothing to intercept) or the browser's own Back/Forward buttons.
 
 ---
 
@@ -465,7 +495,8 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 
 ### What's covered
 
-- **Unit tests** — pure helper functions with no network/DOM dependency (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHotspots.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video/video.ts`)
+- **Unit tests** — helper functions and hook state, checked on their own terms rather than through an API route's behaviour (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHotspots.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video/video.ts`;)
+	A test that waits on a mocked API still counts as a unit test when it checks a helper or derived value rather than the API call itself — e.g. `hasUnsavedChanges` after a save in `useHotspots.test.ts`.
 - **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHotspots` loading, saving, and uploading via mocked `/api/lab/load-hotspots`, `/api/lab/load-image`, `/api/lab/save-hotspots`, `/api/lab/upload-image`, `/api/lab/video`;)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/lab/useHotspots.ts` → `hooks/lab/useHotspots.test.ts`). Vitest picks these up automatically.

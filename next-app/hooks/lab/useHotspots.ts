@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { MAX_MP4_BYTES } from '@/lib/video/video';
+import { useUnsavedChanges } from '@/hooks/unsavedChanges/useUnsavedChanges';
 import {
 	HazardType,
 	hazardData as defaultHazardData,
@@ -50,16 +51,32 @@ export function generateType(existing: EditableHotspot[]): string {
 	return `hotspot_${i}`;
 }
 
+// Make a snapshot of the current hotspots to compare against what was last loaded/saved. Used for warnings about unsaved changes
+export function snapshotHotspots(hotspots: EditableHotspot[]): string {
+	return JSON.stringify(
+		hotspots.map((hs) => ({
+			type: hs.type,
+			top: hs.top,
+			left: hs.left,
+			title: hs.info.title,
+			text: hs.info.text,
+			moduleTopic: hs.info.moduleTopic ?? null,
+			moduleId: hs.info.moduleId ?? null,
+		}))
+	);
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>) {
 	const { user } = useAuth();
 	
 	// States
-	const [hotspots, setHotspots]     = useState<EditableHotspot[]>(buildDefaultHotspots);   // Live array of hotspot data
-	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');                     // Tracks status of Supabase fetch
-	const [editMode, setEditMode]     = useState(false);                                     // Whether edit mode is active
-	const [selected, setSelected]     = useState<number | null>(null);                       // Index of hotspot currently being edited
-	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');                        // Handles appearance of save button in edit mode
+	const [hotspots, setHotspots]     = useState<EditableHotspot[]>(buildDefaultHotspots);              // Live array of hotspot data
+	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');                                // Tracks status of Supabase fetch
+	const [editMode, setEditMode]     = useState(false);                                                // Whether edit mode is active
+	const [selected, setSelected]     = useState<number | null>(null);                                  // Index of hotspot currently being edited
+	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');                                   // Handles appearance of save button in edit mode
+	const { hasUnsavedChanges, markSaved } = useUnsavedChanges(hotspots, hotspots, snapshotHotspots);   // Whether hotspots differ from what's stored (for unsaved change warnings)
 	
 	// Image state — starts with the local fallback, replaced by Supabase URL after load
 	const [imageUrl, setImageUrl]         = useState<string>(DEFAULT_IMAGE);
@@ -120,6 +137,7 @@ export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>
 				);
 				
 				setHotspots(loaded);	// Replace defaults
+				markSaved(loaded);
 				setLoadStatus('ready');
 			} catch {
 				console.error('Failed to load hotspots from Supabase — using defaults');
@@ -127,7 +145,7 @@ export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>
 			}
 		}
 		loadHotspots();
-	}, []);
+	}, [markSaved]);
 	
 	// ── Load image URL from Supabase on mount ──────────────────────
 	useEffect(() => {
@@ -424,13 +442,14 @@ export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>
 				}),
 			});
 			if (!res.ok) throw new Error('API error');
+			markSaved(hotspots);   // `hotspots` is the closure value that was sent, so edits made while saving stay unsaved
 			setSaveStatus('saved');
 			setTimeout(() => setSaveStatus('idle'), 2500);
 		} catch {
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [hotspots]);
+	}, [hotspots, markSaved]);
 	
 	// ── Reset ───────────────────────────────────────────────────────────────
 	// Rebuild hotspots from hazards.ts and discard unsaved edits
@@ -438,7 +457,7 @@ export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>
 		setHotspots(buildDefaultHotspots());
 		setSelected(null);
 	}, []);
-	
+
 	// ── live hotspot info map for popup ──────────────────────────────────────
 	// Converts hotspots array into a key-value map that the program can directly lookup hotspots from
 	const liveHotspotData: Record<string, HazardInfo> = Object.fromEntries(
@@ -449,6 +468,7 @@ export function useHotspots(containerRef: React.RefObject<HTMLDivElement | null>
 		hotspots,
 		loadStatus,
 		editMode,
+		hasUnsavedChanges,
 		selected,
 		toggleEditMode,
 		setSelected,

@@ -483,4 +483,57 @@ describe('5. modules/progress', () => {
         expect(loadedModule?.status).toBe('done');
         expect(loadedModule?.progress).toBe(100);
     });
+
+    // Test that a superseded load can't overwrite the result of the load that replaced it
+    it('5.8 ignores a superseded load whose progress request finishes late', async () => {
+        mockUseAuth.mockReturnValue({ user: fakeUser, loading: false });
+
+        // Hold back the 1st load's progress response until after the 2nd load has finished
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => { release = resolve; });
+        let progressCalls = 0;
+
+        server.use(
+            http.get('/api/modules/load-modules', ({ request }) => {
+                const topic = new URL(request.url).searchParams.get('topic');
+                return HttpResponse.json({
+                    ok: true,
+                    data: [{
+                        id: '1',
+                        slug: null,
+                        badge_num: 1,
+                        icon: '🧪',
+                        icon_bg: 'rgba(0,0,0,0.1)',
+                        title: `Loaded for ${topic}`,
+                        description: 'Description.',
+                        key_takeaway: 'Key takeaway.',
+                        prev_id: null,
+                        next_id: null,
+                        video_url: null,
+                        video_type: null,
+                        module_sections: [],
+                    }],
+                });
+            }),
+            http.get('/api/modules/progress', async () => {
+                progressCalls++;
+                if (progressCalls === 1) await gate;
+                return HttpResponse.json({ ok: true, progress: [] });
+            })
+        );
+
+        const { result, rerender } = renderHook(
+            ({ topic }) => useModules(topic, testModules),
+            { initialProps: { topic: 'first' } }
+        );
+
+        await waitFor(() => expect(progressCalls).toBe(1));        // 1st load is now waiting on its progress request
+        rerender({ topic: 'second' });                             // Supersede it with a 2nd load
+        await waitFor(() => expect(result.current.modules[0].title).toBe('Loaded for second'));
+
+        release();                                                 // 1st load's progress request now finishes
+        await new Promise((resolve) => setTimeout(resolve, 50));   // Give the stale load a chance to (wrongly) overwrite state
+
+        expect(result.current.modules[0].title).toBe('Loaded for second');
+    });
 });

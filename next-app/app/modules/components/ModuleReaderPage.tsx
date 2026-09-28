@@ -16,6 +16,7 @@ import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/modules/useModuleProgress";
 import { useModuleEditor } from "@/hooks/modules/useModuleEditor";
+import { useLeaveWarning } from "@/hooks/unsavedChanges/useLeaveWarning";
 import { MAX_MP4_BYTES } from "@/lib/video/video";
 
 interface ModuleReaderPageProps {
@@ -67,6 +68,7 @@ export default function ModuleReaderPage({
     const {
         editMode,
         toggleEditMode,
+        hasUnsavedChanges,
         draft,
         selectedSection,
         setSelectedSection,
@@ -83,6 +85,8 @@ export default function ModuleReaderPage({
         resetToDefaults,
         canReset,
     } = useModuleEditor(topic, item, fallbackItem);
+
+    useLeaveWarning(hasUnsavedChanges);
 
     // Keep video controls in sync with the current module
     useEffect(() => {

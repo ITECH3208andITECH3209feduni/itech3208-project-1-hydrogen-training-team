@@ -62,6 +62,13 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 - Click **Save Changes** to write the module's fields and sections to Supabase — changes persist everywhere immediately, including for a module that only existed as bundled fallback content before.
 - Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/modules/` entry (e.g. `lib/modules/hazards.ts`). This button is disabled, with an explanatory tooltip, for any topic that doesn't have bundled defaults wired up.
 
+### Leaving with Unsaved Changes
+
+The lab, the module reader pages and the quiz editor warn before an edit in progress is lost — when closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet. Confirming lets you leave, and the changes are lost.
+	The warning follows the changes, not edit mode: switching edit mode off keeps unsaved changes, and the warning stays active until you save them or leave the page. Putting a value back the way it was clears it, and Reset to Defaults counts as a change until it's saved.
+	Saving, replacing or removing an embedded video takes effect immediately, so it never triggers the warning.
+	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
+
 ---
 
 ## Customising Module Content
@@ -125,9 +132,6 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 - Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.
 - Click **Reset to Defaults** to revert every field and question back to the quiz's bundled `lib/questionhazards.ts` entry.
 	Only the Hazards quiz currently has bundled defaults wired up; a quiz without them shows this button disabled with an explanatory tooltip, the same as a module topic with no bundled defaults.
-
-**Leaving with unsaved changes:** the editor warns before losing an edit in progress — on closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet.
-	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
 
 **`quiz_questions` columns:**
 - `quiz_id` — which quiz this question belongs to; part of the composite primary key with `id`.

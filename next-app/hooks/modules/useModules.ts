@@ -46,7 +46,7 @@ export function mapSection(row: SupabaseSectionRow): ModuleSection {
 }
 
 // Combines a Supabase row with the matching local default (if any).
-// status/progress always default â€” Supabase doesn't carry them.
+// status/progress always default (Supabase doesn't carry them).
 export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleData {
 	return {
 		id: row.id,
@@ -142,6 +142,8 @@ export function useModules(topic: string, defaults: ModuleData[]) {
 				        console.error("Failed to load user module progress:", error);
 				    }
 				}
+
+				if (cancelled) return;   // the progress fetch above awaits, so this run may have been superseded by then
 
 				const progressMap = new Map(
 				    progressRecords.map((record) => [

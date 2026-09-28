@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { createRef } from 'react';
-import { buildDefaultHotspots, clamp, generateType, useHotspots } from './useHotspots';
+import { buildDefaultHotspots, clamp, generateType, useHotspots, snapshotHotspots } from './useHotspots';
 import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 import { File } from 'node:buffer';
@@ -305,12 +305,168 @@ describe('9. selectVideoDraftFile', () => {
   });
 });
 
+// 10. Test snapshotHotspots (the helper behind hasUnsavedChanges)
+describe('10. snapshotHotspots', () => {
+  const base = {
+    type: 'a', top: '1%', left: '2%',
+    info: { title: 'T', text: 'X', moduleTopic: null, moduleId: null, videoUrl: null, videoType: null },
+  } as any;
+
+  // Test that video fields don't count (they persist immediately via /api/lab/video)
+  it('10.1 ignores video fields', () => {
+    const withVideo = { ...base, info: { ...base.info, videoUrl: 'u', videoType: 'youtube' } };
+    expect(snapshotHotspots([withVideo])).toBe(snapshotHotspots([base]));
+  });
+
+  // Test that bundled defaults (undefined link) match Supabase rows (null link)
+  it('10.2 treats an undefined module link the same as null', () => {
+    const undefinedLink = { ...base, info: { title: 'T', text: 'X' } };
+    expect(snapshotHotspots([undefinedLink])).toBe(snapshotHotspots([base]));
+  });
+
+  // Test that every persisted field is actually compared
+  it('10.3 differs when any persisted field differs', () => {
+    expect(snapshotHotspots([{ ...base, top: '9%' }])).not.toBe(snapshotHotspots([base]));
+    expect(snapshotHotspots([{ ...base, info: { ...base.info, text: 'Y' } }])).not.toBe(snapshotHotspots([base]));
+  });
+});
+
+// 11. Test hasUnsavedChanges
+describe('11. hasUnsavedChanges', () => {
+  // Render and wait for the live load to finish, so every test starts from a clean baseline
+  async function renderLoaded() {
+    const ref = createRef<HTMLDivElement>();
+    const hook = renderHook(() => useHotspots(ref));
+    await waitFor(() => expect(hook.result.current.loadStatus).toBe('ready'));
+    return hook;
+  }
+
+  // Test that loading live data isn't counted as an edit
+  it('11.1 is false once live data has loaded (loading is not an edit)', async () => {
+    const { result } = await renderLoaded();
+    expect(result.current.hotspots[0].info.title).toBe('Loaded Title');
+    expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+
+  // Test edit, then revert
+  it('11.2 becomes true after an edit, and false again if the edit is reverted', async () => {
+    const { result } = await renderLoaded();
+    act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    act(() => { result.current.updateInfo(0, 'title', 'Loaded Title'); });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+
+  // Test each kind of edit is detected
+  it('11.3 becomes true after a position change, a module link change, an add, and a delete', async () => {
+    const { result } = await renderLoaded();
+
+    act(() => { result.current.updatePosition(0, 'top', '55.0%'); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    act(() => { result.current.updatePosition(0, 'top', '20.0%'); });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+
+    act(() => { result.current.updateModuleLink(0, null, null); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    act(() => { result.current.updateModuleLink(0, 'hazards', '1'); });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+
+    act(() => { result.current.addHotspot(); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    act(() => { result.current.deleteHotspot(result.current.hotspots.length - 1); });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+
+    act(() => { result.current.deleteHotspot(0); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+  });
+
+  // Test video changes don't count (they persist immediately via /api/lab/video)
+  it('11.4 ignores embedded video changes', async () => {
+    const { result } = await renderLoaded();
+    act(() => {
+      result.current.updateInfo(0, 'videoUrl', 'https://youtu.be/abc');
+      result.current.updateInfo(0, 'videoType', 'youtube');
+    });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+
+  // Test that toggling edit mode doesn't affect the flag (edits are kept when edit mode is turned off)
+  it('11.5 is unaffected by toggling edit mode', async () => {
+    const { result } = await renderLoaded();
+    act(() => { result.current.toggleEditMode(); });
+    act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
+    act(() => { result.current.toggleEditMode(); });
+    expect(result.current.editMode).toBe(false);
+    expect(result.current.hasUnsavedChanges).toBe(true);
+  });
+
+  // Test a successful save clears the flag
+  it('11.6 becomes false after a successful save', async () => {
+    const { result } = await renderLoaded();
+    act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
+    await act(async () => { await result.current.saveToSupabase(); });
+    expect(result.current.saveStatus).toBe('saved');
+    expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+
+  // Test a failed save leaves the flag set
+  it('11.7 stays true after a failed save', async () => {
+    server.use(
+      http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
+    );
+    const { result } = await renderLoaded();
+    act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
+    await act(async () => { await result.current.saveToSupabase(); });
+    expect(result.current.saveStatus).toBe('error');
+    expect(result.current.hasUnsavedChanges).toBe(true);
+  });
+
+  // Test that an edit made while the save request is in flight isn't wrongly marked as saved
+  it('11.8 keeps edits made while a save is in flight marked as unsaved', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    server.use(
+      http.post('/api/lab/save-hotspots', async () => {
+        await gate;
+        return HttpResponse.json({ ok: true });
+      })
+    );
+
+    const { result } = await renderLoaded();
+    act(() => { result.current.updateInfo(0, 'title', 'First edit'); });
+
+    let savePromise!: Promise<void>;
+    act(() => { savePromise = result.current.saveToSupabase(); });
+    act(() => { result.current.updateInfo(0, 'title', 'Second edit'); });
+
+    await act(async () => { release(); await savePromise; });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+  });
+
+  // Test Reset to Defaults counts as an unsaved change when defaults differ from what's stored
+  it('11.9 Reset to Defaults counts as unsaved when the defaults differ from what is stored', async () => {
+    const { result } = await renderLoaded();
+    act(() => { result.current.resetDefaults(); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+  });
+
+  // Test Reset to Defaults isn't an unsaved change when nothing is stored yet (baseline is the defaults)
+  it('11.10 Reset to Defaults is not unsaved when nothing is stored yet', async () => {
+    server.use(http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [] })));
+    const { result } = await renderLoaded();
+    act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
+    expect(result.current.hasUnsavedChanges).toBe(true);
+    act(() => { result.current.resetDefaults(); });
+    expect(result.current.hasUnsavedChanges).toBe(false);
+  });
+});
+
 // ─── Integration Tests (test API calls with mock server) ───────────────
 
-// 10. Test load-hotspots API call
-describe('10. load-hotspots', () => {
+// 12. Test load-hotspots API call
+describe('12. load-hotspots', () => {
   // Test if loads successfully
-  it('10.1 maps response into hotspots, including moduleId from defaults', async () => {
+  it('12.1 maps response into hotspots, including moduleId from defaults', async () => {
     // Set up a page to run the tests in
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
@@ -335,7 +491,7 @@ describe('10. load-hotspots', () => {
   });
   
   // Test if uses default info when API returns empty
-  it('10.2 falls back to defaults when API returns empty', async () => {
+  it('12.2 falls back to defaults when API returns empty', async () => {
     // Override default response with fail case
     server.use(
       http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [] }))
@@ -351,7 +507,7 @@ describe('10. load-hotspots', () => {
   });
   
   // Test if uses default info when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('10.3 falls back to defaults when API responds with an error', async () => {
+  it('12.3 falls back to defaults when API responds with an error', async () => {
     // Replace console error with a fake (avoids clutter)
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
@@ -371,7 +527,7 @@ describe('10. load-hotspots', () => {
   });
 
   // Test if uses default info when API call fails (internet failure, server crash, etc.)
-  it('10.4 falls back to defaults on a network failure', async () => {
+  it('12.4 falls back to defaults on a network failure', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     server.use(
@@ -388,7 +544,7 @@ describe('10. load-hotspots', () => {
   });
 
   // Test if a hotspot with no linked module doesn't show values for module_topic/module_id (doesn't use default values from hazards.ts)
-  it('10.5 passes through module_topic/module_id as null when the hotspot has no linked module', async () => {
+  it('12.5 passes through module_topic/module_id as null when the hotspot has no linked module', async () => {
     server.use(
       http.get('/api/lab/load-hotspots', () => HttpResponse.json({
         ok: true,
@@ -419,10 +575,10 @@ describe('10. load-hotspots', () => {
   });
 });
 
-// 11. Test load-image API call
-describe('11. load-image', () => {
+// 13. Test load-image API call
+describe('13. load-image', () => {
   // Test if loads successfully and sets imageUrl state
-  it('11.1 sets imageUrl from API when available', async () => {
+  it('13.1 sets imageUrl from API when available', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
     
@@ -430,7 +586,7 @@ describe('11. load-image', () => {
   });
 
   // Test if uses default when API returns empty
-  it('11.2 keeps the default image when no image exists in the API', async () => {
+  it('13.2 keeps the default image when no image exists in the API', async () => {
     server.use(http.get('/api/lab/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const ref = createRef<HTMLDivElement>();
@@ -442,7 +598,7 @@ describe('11. load-image', () => {
   });
 
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
-  it('11.3 keeps the default image when API responds with an error', async () => {
+  it('13.3 keeps the default image when API responds with an error', async () => {
     server.use(
       http.get('/api/lab/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
@@ -455,10 +611,10 @@ describe('11. load-image', () => {
   });
 });
 
-// 12. Test save-hotspots API call
-describe('12. save-hotspots', () => {
+// 14. Test save-hotspots API call
+describe('14. save-hotspots', () => {
   // Test a successful save
-  it('12.1 sets saveStatus to saved on a successful save', async () => {
+  it('14.1 sets saveStatus to saved on a successful save', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
 
@@ -469,7 +625,7 @@ describe('12. save-hotspots', () => {
   });
 
   // Test a failed save
-  it('12.2 sets saveStatus to error if the save request fails', async () => {
+  it('14.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
       http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
@@ -483,7 +639,7 @@ describe('12. save-hotspots', () => {
   });
 
   // Test if all fields are sent to the API (hotspots + hotspotData)
-  it('12.3 sends the full hotspots + hotspotData payload', async () => {
+  it('14.3 sends the full hotspots + hotspotData payload', async () => {
     let capturedBody: any = null;
     server.use(
       http.post('/api/lab/save-hotspots', async ({ request }) => {
@@ -517,7 +673,7 @@ describe('12. save-hotspots', () => {
   });
 
   // Test if guards against saving when a hotspot has an invalid module link
-  it('12.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
+  it('14.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
       http.post('/api/lab/save-hotspots', () => {
@@ -542,7 +698,7 @@ describe('12. save-hotspots', () => {
   });
   
   // Test if a save proceeds normally once the link is fixed back to a valid state
-  it('12.5 proceeds with the save once the module link is valid again', async () => {
+  it('14.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
       http.post('/api/lab/save-hotspots', () => {
@@ -569,10 +725,10 @@ describe('12. save-hotspots', () => {
   });
 });
 
-// 13. Test upload-image API call
-describe('13. upload-image', () => {
+// 15. Test upload-image API call
+describe('15. upload-image', () => {
   // Test a successful upload
-  it('13.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
+  it('15.1 updates imageUrl with a cache-busted URL on successful upload', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
 
@@ -588,7 +744,7 @@ describe('13. upload-image', () => {
   });
 
   // Test a failed upload
-  it('13.2 sets uploadStatus to error if the upload fails', async () => {
+  it('15.2 sets uploadStatus to error if the upload fails', async () => {
     server.use(
       http.post('/api/lab/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
@@ -603,9 +759,9 @@ describe('13. upload-image', () => {
   });
 });
 
-// 14. Test saveHotspotYoutubeVideo API call
-describe('14. saveHotspotYoutubeVideo', () => {
-  it('14.1 saves the draft YouTube URL and updates the hotspot\'s info', async () => {
+// 16. Test saveHotspotYoutubeVideo API call
+describe('16. saveHotspotYoutubeVideo', () => {
+  it('16.1 saves the draft YouTube URL and updates the hotspot\'s info', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
 
@@ -619,7 +775,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
     expect(result.current.hotspots[0].info.videoType).toBe('youtube');
   });
 
-  it('14.2 does nothing when there is no signed-in user', async () => {
+  it('16.2 does nothing when there is no signed-in user', async () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     let called = false;
     server.use(
@@ -638,7 +794,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
     expect(called).toBe(false);
   });
 
-  it('14.3 alerts and leaves the hotspot unchanged on a failed save', async () => {
+  it('16.3 alerts and leaves the hotspot unchanged on a failed save', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
       http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Invalid URL' }, { status: 400 }))
@@ -659,9 +815,9 @@ describe('14. saveHotspotYoutubeVideo', () => {
   });
 });
 
-// 15. Test uploadHotspotMp4Video API call
-describe('15. uploadHotspotMp4Video', () => {
-  it('15.1 uploads the draft file, updates the hotspot\'s info, and clears the draft file', async () => {
+// 17. Test uploadHotspotMp4Video API call
+describe('17. uploadHotspotMp4Video', () => {
+  it('17.1 uploads the draft file, updates the hotspot\'s info, and clears the draft file', async () => {
     const ref = createRef<HTMLDivElement>();
     const { result } = renderHook(() => useHotspots(ref));
 
@@ -678,7 +834,7 @@ describe('15. uploadHotspotMp4Video', () => {
     expect(result.current.videoDraftFile).toBeNull();
   });
 
-  it('15.2 alerts and leaves the hotspot unchanged on a failed upload', async () => {
+  it('17.2 alerts and leaves the hotspot unchanged on a failed upload', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
       http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Upload failed' }, { status: 500 }))
@@ -701,9 +857,9 @@ describe('15. uploadHotspotMp4Video', () => {
   });
 });
 
-// 16. Test removeHotspotVideo API call
-describe('16. removeHotspotVideo', () => {
-  it('16.1 clears the hotspot\'s video after confirming', async () => {
+// 18. Test removeHotspotVideo API call
+describe('18. removeHotspotVideo', () => {
+  it('18.1 clears the hotspot\'s video after confirming', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     server.use(
       http.get('/api/lab/load-hotspots', () => HttpResponse.json({
@@ -731,7 +887,7 @@ describe('16. removeHotspotVideo', () => {
     vi.restoreAllMocks();
   });
 
-  it('16.2 does nothing if the confirmation is declined', async () => {
+  it('18.2 does nothing if the confirmation is declined', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     let called = false;
     server.use(
@@ -750,7 +906,7 @@ describe('16. removeHotspotVideo', () => {
     vi.restoreAllMocks();
   });
 
-  it('16.3 alerts and leaves the hotspot unchanged on a failed removal', async () => {
+  it('18.3 alerts and leaves the hotspot unchanged on a failed removal', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(

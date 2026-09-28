@@ -179,7 +179,7 @@ hydrogen-lab/
 ├── hooks/
 │   ├── lab/							# Hooks for the interactive lab page (/lab)
 │   │   ├── useHotspots.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
-│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHazards.ts
+│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHotspots.ts
 │   │   ├── useModuleOptions.ts			# Hook — flat Supabase (topic, id, title, badgeNum) list, grouped per topic
 │   │   └── useModuleOptions.test.ts	# Integration tests for useModuleOptions.ts
 │   ├── modules/						# Hooks shared by every app/modules/ topic (listing + reader pages)
@@ -188,11 +188,16 @@ hydrogen-lab/
 │   │   ├── useModuleProgress.ts		# Per-user progress/time tracking for the reader page
 │   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor
 │   │   └── useModuleEditor.test.ts		# Unit + integration tests for useModuleEditor.ts
-│   └── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
-│       ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
-│       ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
-│       ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
-│       └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   ├── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
+│   │   ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
+│   │   ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
+│   │   ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
+│   │   └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   └── unsavedChanges/					# Hooks shared by every in-app editor (lab, module reader pages, quiz editor)
+│       ├── useUnsavedChanges.ts		# Tracks whether an editor's draft differs from what's stored; each editor supplies its own snapshot function
+│       ├── useUnsavedChanges.test.ts	# Unit tests for useUnsavedChanges.ts
+│       ├── useLeaveWarning.ts			# Warns before leaving the page (tab close/reload, in-app link clicks) while there are unsaved changes
+│       └── useLeaveWarning.test.ts		# Unit tests for useLeaveWarning.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts

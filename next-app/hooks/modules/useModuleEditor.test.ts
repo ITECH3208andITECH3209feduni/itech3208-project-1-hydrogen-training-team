@@ -2,7 +2,7 @@
 // Unit + integration tests for functions in useModuleEditor.ts & related API calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { buildBlankSection, renumberSections, useModuleEditor } from './useModuleEditor';
+import { buildBlankSection, renumberSections, snapshotModule, useModuleEditor } from './useModuleEditor';
 import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 
@@ -97,6 +97,7 @@ describe('3. useModuleEditor draft state', () => {
 		act(() => result.current.toggleEditMode());                       // Exit edit mode
 
 		expect(result.current.draft?.title).toBe('Edited Title');         // Check that draft still has the edited title
+		expect(result.current.hasUnsavedChanges).toBe(true);              // Check the edit still counts as unsaved with edit mode off
 	});
 
 	it('3.3 resetToDefaults reverts the draft to the bundled fallback, not the live item', () => {
@@ -107,6 +108,7 @@ describe('3. useModuleEditor draft state', () => {
 
 		expect(result.current.draft?.title).toBe('Default Title');        // Check that draft now has the default value
 		expect(result.current.draft?.sections).toHaveLength(1);           // Check that the draft's sections have been reset to default (no longer the live item)
+		expect(result.current.hasUnsavedChanges).toBe(true);              // Check the reset counts as unsaved (defaults differ from the live item)
 	});
 
 	it('3.4 canReset is false when no fallback is provided', () => {
@@ -142,6 +144,38 @@ describe('3. useModuleEditor draft state', () => {
 		rerender({ item: refreshedItem });
 
 		expect(result.current.draft?.title).toBe('Refreshed Title');
+		expect(result.current.hasUnsavedChanges).toBe(false);   // Check the refresh became the new baseline
+	});
+
+	// Regression: a refresh arriving after edit mode was turned off used to replace the unsaved draft
+	it('3.7 a same-id refresh while edit mode is off does not discard unsaved edits', () => {
+		const { result, rerender } = renderHook(
+			({ item }) => useModuleEditor('hazards', item, defaultItem),
+			{ initialProps: { item: liveItem } }
+		);
+
+		act(() => result.current.toggleEditMode());                       // Enter edit mode
+		act(() => result.current.updateField('title', 'Edited Title'));   // Edit title
+		act(() => result.current.toggleEditMode());                       // Exit edit mode
+
+		rerender({ item: { ...liveItem, description: 'Refreshed description.' } });
+
+		expect(result.current.draft?.title).toBe('Edited Title');         // Check that the edit was not clobbered
+		expect(result.current.hasUnsavedChanges).toBe(true);              // Check it counts as unsaved against the refreshed data
+	});
+
+	it('3.8 a same-id refresh in edit mode with nothing edited follows the refreshed item and stays clean', () => {
+		const { result, rerender } = renderHook(
+			({ item }) => useModuleEditor('hazards', item, defaultItem),
+			{ initialProps: { item: liveItem } }
+		);
+
+		act(() => result.current.toggleEditMode());   // Enter edit mode without editing anything
+
+		rerender({ item: { ...liveItem, title: 'Refreshed Title' } });
+
+		expect(result.current.draft?.title).toBe('Refreshed Title');   // Check that the draft followed the refresh
+		expect(result.current.hasUnsavedChanges).toBe(false);          // Check that the refresh isn't counted as an edit
 	});
 });
 
@@ -225,11 +259,184 @@ describe('5. section list items', () => {
 	});
 });
 
+// 6. Test snapshotModule (the helper behind hasUnsavedChanges)
+describe('6. snapshotModule', () => {
+	// Returns liveItem with the first section patched
+	const withSection = (patch: Record<string, unknown>) =>
+		({ ...liveItem, sections: [{ ...liveItem.sections[0], ...patch }, liveItem.sections[1]] }) as any;
+
+	// Videos persist immediately via /api/modules/video, and aren't part of Save
+	it('6.1 ignores video fields', () => {
+		const withVideo = { ...liveItem, videoUrl: 'https://youtu.be/abc', videoType: 'youtube' } as any;
+		expect(snapshotModule(withVideo)).toBe(snapshotModule(liveItem as any));
+	});
+
+	// The editor's inputs produce undefined for blank optional fields; Supabase returns null
+	it('6.2 treats undefined and null optional fields the same', () => {
+		const withUndefined = { ...liveItem, slug: undefined, prevId: undefined, nextId: undefined } as any;
+		const withNull = { ...liveItem, slug: null, prevId: null, nextId: null } as any;
+		expect(snapshotModule(withUndefined)).toBe(snapshotModule(withNull));
+		expect(snapshotModule(withSection({ listType: undefined, callout: undefined })))
+			.toBe(snapshotModule(withSection({ listType: null, callout: null })));
+	});
+
+	// Adding then deleting a list item leaves [] where there was undefined
+	it('6.3 treats a missing and an empty list of items the same', () => {
+		expect(snapshotModule(withSection({ items: undefined }))).toBe(snapshotModule(withSection({ items: [] })));
+	});
+
+	// ModuleEditor casts the typed string to the badgeNum type
+	it('6.4 treats badgeNum the same as a number or a string', () => {
+		expect(snapshotModule({ ...liveItem, badgeNum: '1' } as any)).toBe(snapshotModule(liveItem as any));
+	});
+
+	it('6.5 differs when any persisted field differs', () => {
+		const base = snapshotModule(liveItem as any);
+
+		[{ title: 'X' }, { description: 'X' }, { keyTakeaway: 'X' }, { icon: 'X' }, { iconBg: 'X' },
+		 { slug: 'x' }, { prevId: 'x' }, { nextId: 'x' }, { badgeNum: 2 }].forEach((patch) => {
+			expect(snapshotModule({ ...liveItem, ...patch } as any)).not.toBe(base);
+		});
+
+		[{ heading: 'X' }, { body: 'X' }, { listType: 'ul' }, { items: ['a'] }, { callout: 'X' }].forEach((patch) => {
+			expect(snapshotModule(withSection(patch))).not.toBe(base);
+		});
+
+		const reordered = { ...liveItem, sections: [liveItem.sections[1], liveItem.sections[0]] } as any;
+		expect(snapshotModule(reordered)).not.toBe(base);
+	});
+});
+
+// 7. Test hasUnsavedChanges
+// Note: some of these wait on the save API, but they're testing hasUnsavedChanges, not the API call itself.
+describe('7. hasUnsavedChanges', () => {
+	const renderEditor = () =>
+		renderHook(
+			({ item }: { item: typeof liveItem }) => useModuleEditor('hazards', item, defaultItem),
+			{ initialProps: { item: liveItem } }
+		);
+
+	it('7.1 is false before anything is edited, true after an edit, and false again if the edit is reverted', () => {
+		const { result } = renderEditor();
+		expect(result.current.hasUnsavedChanges).toBe(false);
+		act(() => result.current.updateField('title', 'Edited Title'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.updateField('title', 'Live Title'));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('7.2 is true after section and list item edits, and false again once they are undone', () => {
+		const { result } = renderEditor();
+
+		act(() => result.current.updateSection(0, 'heading', 'Changed'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.updateSection(0, 'heading', 'Section 1'));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+
+		act(() => result.current.addSection());
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.deleteSection(result.current.draft!.sections.length - 1));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+
+		act(() => result.current.addSectionItem(0));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.deleteSectionItem(0, 0));
+		expect(result.current.hasUnsavedChanges).toBe(false);   // [] vs undefined items counts as unchanged
+	});
+
+	// The reader page calls updateField for videos after /api/modules/video succeeds
+	it('7.3 ignores embedded video changes', () => {
+		const { result } = renderEditor();
+		act(() => {
+			result.current.updateField('videoUrl', 'https://youtu.be/abc');
+			result.current.updateField('videoType', 'youtube');
+		});
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('7.4 a refresh while in edit mode keeps the draft, and it counts as unsaved against the refreshed data', () => {
+		const { result, rerender } = renderEditor();
+		act(() => result.current.toggleEditMode());
+		act(() => result.current.updateField('title', 'Edited Title'));
+
+		rerender({ item: { ...liveItem, title: 'Refreshed From Server' } });
+
+		expect(result.current.draft?.title).toBe('Edited Title');
+		expect(result.current.hasUnsavedChanges).toBe(true);
+	});
+
+	it('7.5 switching to a different module id clears it', () => {
+		const { result, rerender } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+
+		rerender({ item: { ...liveItem, id: '2', title: 'Other Module' } });
+
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('7.6 Reset to Defaults is not unsaved when the live module already matches the defaults', () => {
+		const { result } = renderHook(() => useModuleEditor('hazards', defaultItem, defaultItem));
+		act(() => result.current.updateField('title', 'Edited Title'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.resetToDefaults());
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('7.7 becomes false after a successful save', async () => {
+		const { result } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+
+		await act(async () => { await result.current.saveToSupabase(); });
+
+		expect(result.current.saveStatus).toBe('saved');
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('7.8 stays true after a failed save', async () => {
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		server.use(
+			http.post('/api/modules/save-module', () =>
+				HttpResponse.json({ ok: false, error: 'Access denied' }, { status: 403 })
+			)
+		);
+
+		const { result } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+		await act(async () => { await result.current.saveToSupabase(); });
+
+		expect(result.current.saveStatus).toBe('error');
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		consoleSpy.mockRestore();
+	});
+
+	it('7.9 keeps edits made while a save is in flight marked as unsaved', async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => { release = resolve; });
+		server.use(
+			http.post('/api/modules/save-module', async () => {
+				await gate;
+				return HttpResponse.json({ ok: true });
+			})
+		);
+
+		const { result } = renderEditor();
+		act(() => result.current.updateField('title', 'First edit'));
+
+		let savePromise!: Promise<void>;
+		act(() => { savePromise = result.current.saveToSupabase(); });
+		act(() => result.current.updateField('title', 'Second edit'));   // edited while the request is in flight
+
+		await act(async () => { release(); await savePromise; });
+		expect(result.current.hasUnsavedChanges).toBe(true);
+	});
+});
+
 // ─── Integration Tests (test API calls with mock server) ────────────────────────────────────────────────────
 
-// 6. Test save-module API call
-describe('6. save-module', () => {
-	it('6.1 sets saveStatus to saved on a successful save', async () => {
+// 8. Test save-module API call
+describe('8. save-module', () => {
+	it('8.1 sets saveStatus to saved on a successful save', async () => {
 		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
 
 		// Mock a successful save to Supabase
@@ -240,7 +447,7 @@ describe('6. save-module', () => {
 		expect(result.current.saveStatus).toBe('saved');   // Check that saveStatus correctly set
 	});
 
-	it('6.2 sets saveStatus to error when the server reports a failure', async () => {
+	it('8.2 sets saveStatus to error when the server reports a failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		// Mock an error response to saving the module
@@ -261,7 +468,7 @@ describe('6. save-module', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('6.3 sets saveStatus to error on a network failure', async () => {
+	it('8.3 sets saveStatus to error on a network failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		server.use(http.post('/api/modules/save-module', () => HttpResponse.error()));
@@ -276,7 +483,7 @@ describe('6. save-module', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('6.4 does nothing when there is no signed-in user', async () => {
+	it('8.4 does nothing when there is no signed-in user', async () => {
 		mockUseAuth.mockReturnValue({ user: null, loading: false });   // Simulate user being signed out
 
 		const { result } = renderHook(() => useModuleEditor('hazards', liveItem, defaultItem));
@@ -289,7 +496,7 @@ describe('6. save-module', () => {
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('6.5 sends the full module + sections payload', async () => {
+	it('8.5 sends the full module + sections payload', async () => {
 		let capturedBody: any = null;
 		// Mock a successful save to Supabase that sends the saved module data
 		server.use(

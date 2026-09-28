@@ -6,6 +6,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { QuizQuestion } from '@/lib/questionhazards';
 import { QuizData } from './useQuiz';
+import { useUnsavedChanges } from '@/hooks/unsavedChanges/useUnsavedChanges';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -29,6 +30,25 @@ export function buildBlankQuestion(questions: QuizQuestion[]): QuizQuestion {
 	};
 }
 
+// Make a snapshot of the current quiz to compare against what was last loaded/saved. Used for warnings about unsaved changes
+export function snapshotQuiz(quiz: QuizData | undefined): string {
+	if (!quiz) return '';
+	return JSON.stringify({
+		title: quiz.title,
+		description: quiz.description,
+		passThreshold: quiz.passThreshold,
+		poolSize: quiz.poolSize ?? null,
+		questions: quiz.questions.map((q) => ({
+			id: q.id,
+			question: q.question,
+			options: q.options,
+			correctIndex: q.correctIndex,
+			explanation: q.explanation,
+			isCore: !!q.isCore,
+		})),
+	});
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 // quizId: the table row identifier this editor writes to (e.g. 'hazards') — fixed, not part of the draft itself.
 // item: the live (Supabase-merged) quiz data, from useQuiz — seeds the draft.
@@ -41,36 +61,32 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
 
-	// Tracks whether user has touched the draft (stops background refetches of live data overwriting in-progress edits)
-	const hasEditedRef = useRef(false);
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	// Whether the draft differs from what's stored, plus how to tell it what's now stored (see useUnsavedChanges)
+	const { hasUnsavedChanges, markSaved } = useUnsavedChanges(draft, item, snapshotQuiz);
+	// Unsaved-changes flag, stops background refetches of live data overwriting in-progress edits.
+	const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+	hasUnsavedChangesRef.current = hasUnsavedChanges;
 
-	// Switching quizId resets the draft and any edit-in-progress flag.
+	// Switching quizId discards the draft and selection, re-seeding from the current item
 	useEffect(() => {
-		hasEditedRef.current = false;
-		setHasUnsavedChanges(false);
+		setDraft(item);
 		setSelectedQuestion(null);
 	}, [quizId]);
 
+	// Maintain unsaved edits until it is saved or reverted
 	useEffect(() => {
-		if (!hasEditedRef.current) setDraft(item);
-	}, [item]);
-
-	const markEdited = () => {
-		hasEditedRef.current = true;
-		setHasUnsavedChanges(true);
-	};
+		if (!hasUnsavedChangesRef.current) setDraft(item);
+		markSaved(item);
+	}, [item, markSaved]);
 
 	// ── Top-level field editing ──────────────────────────────────────────────
 	const updateField = useCallback(<K extends keyof QuizData>(field: K, value: QuizData[K]) => {
-		markEdited();
 		setDraft((prev) => (prev ? { ...prev, [field]: value } : prev));
 	}, []);
 
 	// ── Question editing ──────────────────────────────────────────────────────
 	const updateQuestion = useCallback(
 		<K extends keyof QuizQuestion>(index: number, field: K, value: QuizQuestion[K]) => {
-			markEdited();
 			setDraft((prev) => {
 				if (!prev) return prev;
 				const questions = prev.questions.map((q, i) => (i === index ? { ...q, [field]: value } : q));
@@ -81,7 +97,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	);
 
 	const addQuestion = useCallback(() => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			const questions = [...prev.questions, buildBlankQuestion(prev.questions)];
@@ -91,7 +106,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	}, []);
 
 	const deleteQuestion = useCallback((index: number) => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			return { ...prev, questions: prev.questions.filter((_, i) => i !== index) };
@@ -100,7 +114,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	}, []);
 
 	const moveQuestion = useCallback((index: number, direction: 'up' | 'down') => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			const target = direction === 'up' ? index - 1 : index + 1;
@@ -120,7 +133,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 
 	// ── Options within a question ─────────────────────────────────────────────
 	const updateOption = useCallback((questionIndex: number, optionIndex: number, value: string) => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			const questions = prev.questions.map((q, i) => {
@@ -132,7 +144,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	}, []);
 
 	const addOption = useCallback((questionIndex: number) => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			const questions = prev.questions.map((q, i) =>
@@ -145,7 +156,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	// Deleting an option keeps correctIndex pointing at the same answer where possible.
 	// (i.e. Moves with answer, or sets to 1st option if answer deleted.)
 	const deleteOption = useCallback((questionIndex: number, optionIndex: number) => {
-		markEdited();
 		setDraft((prev) => {
 			if (!prev) return prev;
 			const questions = prev.questions.map((q, i) => {
@@ -165,8 +175,6 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 		if (!fallback) return;
 		setDraft(fallback);
 		setSelectedQuestion(null);
-		hasEditedRef.current = true;
-		setHasUnsavedChanges(true);
 	}, [fallback]);
 
 	// ── Validation ────────────────────────────────────────────────────────────
@@ -217,9 +225,8 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 			});
 			const json = await res.json();
 			if (!res.ok || !json.ok) throw new Error(json.error ?? 'API error');
+			markSaved(draft);   // `draft` is the closure value that was sent, so edits made while the request was in flight stay unsaved
 			setSaveStatus('saved');
-			hasEditedRef.current = false;
-			setHasUnsavedChanges(false);
 			setTimeout(() => setSaveStatus('idle'), 2500);
 		} catch (err) {
 			console.error('save-quiz error:', err);

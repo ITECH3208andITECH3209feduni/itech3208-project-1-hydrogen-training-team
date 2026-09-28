@@ -14,6 +14,7 @@ import HotspotEditor from './components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
 import { useHotspots } from '@/hooks/lab/useHotspots';
 import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
+import { useLeaveWarning } from '@/hooks/unsavedChanges/useLeaveWarning';
 
 export default function LabPage() {
 	// Authentication
@@ -29,6 +30,7 @@ export default function LabPage() {
 		loadStatus,
 		editMode,
 		toggleEditMode,
+		hasUnsavedChanges,
 		selected,
 		setSelected,
 		saveStatus,
@@ -58,6 +60,7 @@ export default function LabPage() {
 	} = useHotspots(containerRef);
 
 	const moduleOptions = useModuleOptions();
+	useLeaveWarning(hasUnsavedChanges);
 
 	useEffect(() => {
 		if (!loading && !user) {
