@@ -178,19 +178,26 @@ hydrogen-lab/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
 │   ├── lab/							# Hooks for the interactive lab page (/lab)
-│   │   ├── useHotspots.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
+│   │   ├── useHotspots.ts				# Loads live hotspots + lab image URL from Supabase, falling back to lib/hazards.ts
 │   │   ├── useHotspots.test.ts			# Unit + integration tests for useHotspots.ts
+│   │   ├── useHotspotEditor.ts			# Edit-mode/draft/save state for the lab's in-app editor — drag, image upload, linked module, embedded video
+│   │   ├── useHotspotEditor.test.ts	# Unit + integration tests for useHotspotEditor.ts
+│   │   ├── useHotspotProgress.ts		# Records a signed-in learner's hotspot clicks
+│   │   ├── useHotspotProgress.test.ts	# Unit + integration tests for useHotspotProgress.ts
 │   │   ├── useModuleOptions.ts			# Hook — flat Supabase (topic, id, title, badgeNum) list, grouped per topic
 │   │   └── useModuleOptions.test.ts	# Integration tests for useModuleOptions.ts
 │   ├── modules/						# Hooks shared by every app/modules/ topic (listing + reader pages)
-│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ topic
+│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ topic; exposes reload()
 │   │   ├── useModules.test.ts			# Unit + integration tests for useModules.ts
 │   │   ├── useModuleProgress.ts		# Per-user progress/time tracking for the reader page
-│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor
+│   │   ├── useModuleProgress.test.ts	# Unit + integration tests for useModuleProgress.ts
+│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor, including its embedded video
 │   │   └── useModuleEditor.test.ts		# Unit + integration tests for useModuleEditor.ts
 │   ├── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
 │   │   ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
 │   │   ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
+│   │   ├── useQuizProgress.ts			# Per-user quiz-attempt progress for /quizzes/hazards — saving a result, and loading/updating the leaderboard opt-in
+│   │   ├── useQuizProgress.test.ts		# Unit + integration tests for useQuizProgress.ts
 │   │   ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
 │   │   └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
 │   └── unsavedChanges/					# Hooks shared by every in-app editor (lab, module reader pages, quiz editor)

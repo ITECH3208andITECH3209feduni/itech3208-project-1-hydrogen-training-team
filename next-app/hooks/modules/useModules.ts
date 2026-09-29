@@ -1,7 +1,7 @@
-﻿// hooks/useModules.ts
+﻿// hooks/modules/useModules.ts
 // Loads module content from Supabase for a given topic, merged over the defaults.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, ModuleSection, getModuleById } from '@/lib/modules/moduleTypes';
 
@@ -60,9 +60,9 @@ export function mergeRow(row: SupabaseModuleRow, fallback?: ModuleData): ModuleD
 		keyTakeaway: row.key_takeaway,
 		prevId: row.prev_id ?? undefined,
 		nextId: row.next_id ?? undefined,
-		videoUrl: row.video_url ?? fallback?.videoUrl ?? null,
+		videoUrl: row.video_url ?? null,
 		videoType: row.video_type === "youtube" || row.video_type === "mp4"
-        	? row.video_type : (fallback?.videoType ?? null),
+        	? row.video_type : null,
 		status: fallback?.status ?? 'todo',
 		progress: fallback?.progress ?? 0,
 	};
@@ -76,6 +76,10 @@ export function useModules(topic: string, defaults: ModuleData[]) {
 	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');
 	const [usingDefaults, setUsingDefaults] = useState(false);	// For if using defaults and showing inaccurate progress
 	const { user, loading: authLoading } = useAuth();
+	const [reloadKey, setReloadKey] = useState(0);
+
+	// Re-fetches modules + progress (e.g. after the editor has saved, or a video change)
+	const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -194,16 +198,16 @@ export function useModules(topic: string, defaults: ModuleData[]) {
 		return () => {
 			cancelled = true;
 		};
-	}, [topic, defaults, user, authLoading]);
+	}, [topic, defaults, user, authLoading, reloadKey]);
 
-	return { modules, loadStatus, usingDefaults };
+	return { modules, loadStatus, usingDefaults, reload };
 }
 
 // Convenience wrapper for reader pages that just need one module by id.
 export function useModuleById(topic: string, defaults: ModuleData[], id: string | undefined) {
-	const { modules, loadStatus, usingDefaults } = useModules(topic, defaults);
+	const { modules, loadStatus, usingDefaults, reload } = useModules(topic, defaults);
 	const item = id ? getModuleById(modules, id) : undefined;
-	return { item, loadStatus, usingDefaults };
+	return { item, loadStatus, usingDefaults, reload };
 }
 
 

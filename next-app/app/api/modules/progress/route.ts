@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
 		const { error } = await supabaseServer
 			.from("user_module_progress")
-			.insert({
+			.upsert({
 				uid,
 				topic,
                 module_id,
@@ -128,6 +128,9 @@ export async function POST(request: NextRequest) {
 				attempts: 1,
 				started_at: now,
 				last_accessed: now,
+			}, {
+				onConflict: "uid,topic,module_id",
+				ignoreDuplicates: true,
 			});
 
 		if (error) {

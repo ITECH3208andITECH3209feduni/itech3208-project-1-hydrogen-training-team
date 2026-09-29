@@ -13,6 +13,8 @@ import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
 import { useHotspots } from '@/hooks/lab/useHotspots';
+import { useHotspotEditor } from '@/hooks/lab/useHotspotEditor';
+import { useHotspotProgress } from '@/hooks/lab/useHotspotProgress';
 import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
 import { useLeaveWarning } from '@/hooks/unsavedChanges/useLeaveWarning';
 
@@ -28,6 +30,14 @@ export default function LabPage() {
 	const {
 		hotspots,
 		loadStatus,
+		imageUrl,
+		setImageUrl,
+		reload,
+		liveHotspotData,
+	} = useHotspots();
+
+	const {
+		draft,
 		editMode,
 		toggleEditMode,
 		hasUnsavedChanges,
@@ -41,12 +51,10 @@ export default function LabPage() {
 		hasInvalidModuleLink,
 		addHotspot,
 		deleteHotspot,
-		imageUrl,
 		uploadStatus,
 		uploadImage,
 		saveToSupabase,
 		resetDefaults,
-		liveHotspotData,
 		videoDraftType,
 		videoDraftYoutubeUrl,
 		videoDraftFile,
@@ -57,7 +65,9 @@ export default function LabPage() {
 		saveHotspotYoutubeVideo,
 		uploadHotspotMp4Video,
 		removeHotspotVideo,
-	} = useHotspots(containerRef);
+	} = useHotspotEditor(containerRef, hotspots, { onSaved: reload, onImageUploaded: setImageUrl });
+
+	const { recordHotspotProgress } = useHotspotProgress({ user });
 
 	const moduleOptions = useModuleOptions();
 	useLeaveWarning(hasUnsavedChanges);
@@ -75,42 +85,6 @@ export default function LabPage() {
 		}
 	}, [editMode, permissions.canManageUsers, toggleEditMode]);
 
-	async function recordHotspotProgress(hotspotId: string) {
-    if (!user) return;
-
-    try {
-        const token = await user.getIdToken();
-
-        const response = await fetch(
-            "/api/lab/progress",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    hotspotId,
-                }),
-            }
-        );
-
-        if (!response.ok) {
-            const data = await response.json();
-
-            console.error(
-                "Failed to record hotspot progress:",
-                data.error
-            );
-        }
-    } catch (error) {
-        console.error(
-            "Failed to record hotspot progress:",
-            error
-        );
-    }
-}
-
 	if (loading) {
 		return <div>Loading...</div>;
 	}
@@ -118,6 +92,9 @@ export default function LabPage() {
 	if (!user) {
 		return null;
 	}
+
+	// While editing, edits show live on the image; otherwise it shows the live/loaded hotspots
+	const displayed = editMode ? draft : hotspots;
 	
 	return (
 		<main className="main">
@@ -155,7 +132,7 @@ export default function LabPage() {
 					priority
 				/>
 
-				{loadStatus !== 'loading' && hotspots.map((hs, index) => {
+				{loadStatus !== 'loading' && displayed.map((hs, index) => {
 					const isSelected = selected === index;
 					return (
 						<button
@@ -180,7 +157,7 @@ export default function LabPage() {
 			{/* Edit panel - Only visible in edit mode*/}
 			{editMode && (
 				<HotspotEditor
-					hotspots={hotspots}
+					hotspots={draft}
 					selected={selected}
 					uploadStatus={uploadStatus}
 					moduleOptions={moduleOptions}

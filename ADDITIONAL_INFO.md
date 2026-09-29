@@ -82,20 +82,20 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 | Route                             | Method(s)       | Auth                         | Supabase tables / storage                                | Called from                                                                                                            |
 |-----------------------------------|-----------------|------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 | `/api/lab/load-hotspots`          | `GET`           | public                       | `hotspots`                                               | `useHotspots.ts` (`/lab`)                                                                                              |
-| `/api/lab/save-hotspots`          | `POST`          | public — see `BUG_REPORT.md` | `hotspots` (delete-all, reinsert)                        | `useHotspots.ts` (`/lab` editor save)                                                                                  |
+| `/api/lab/save-hotspots`          | `POST`          | public — see `BUG_REPORT.md` | `hotspots` (delete-all, reinsert)                        | `useHotspotEditor.ts` (`/lab` editor save)                                                                             |
 | `/api/lab/load-image`             | `GET`           | public                       | `lab-images` storage bucket                              | `useHotspots.ts` (`/lab`)                                                                                              |
-| `/api/lab/upload-image`           | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHotspots.ts` (`/lab` editor image upload)                                                                          |
+| `/api/lab/upload-image`           | `POST`          | public — see `BUG_REPORT.md` | `lab-images` storage bucket                              | `useHotspotEditor.ts` (`/lab` editor image upload)                                                                     |
 | `/api/lab/load-module-options`    | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/lab` editor's Linked Module dropdown)                                                         |
-| `/api/lab/progress`               | `GET`, `POST`   | `requireUser`                | `user_lab_progress`, `hotspots` (count)                  | `app/lab/page.tsx` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Simulations stat card)           |
-| `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hotspots`, `lab-videos` storage bucket                  | `useHotspots.ts` (`/lab` editor video panel)                                                                           |
+| `/api/lab/progress`               | `GET`, `POST`   | `requireUser`                | `user_lab_progress`, `hotspots` (count)                  | `useHotspotProgress.ts` (`POST` on hotspot click`), `app/dashboard/page.tsx` (`GET` for the Simulations stat card)     |
+| `/api/lab/video`                  | `PUT`, `DELETE` | `requireAdmin`               | `hotspots`, `lab-videos` storage bucket                  | `useHotspotEditor.ts` (`/lab` editor video panel)                                                                      |
 | `/api/modules/load-modules`       | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
-| `/api/modules/video`              | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `ModuleReaderPage.tsx`'s in-app editor                                                                                 |
+| `/api/modules/video`              | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `useModuleEditor.ts` (module reader editor video panel)                                                                |
 | `/api/modules/progress`           | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress),                                               |
 | ^^^^^                             | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/dashboard/page.tsx` (Modules stat card, via `useModules`), `app/certificate/page.tsx` (module-completion check)   |
 | `/api/modules/save-module`        | `POST`          | `requireAdmin`               | `modules`, `module_sections`                             | `useModuleEditor.ts` (module reader editor save)                                                                       |
 | `/api/quizzes/load-quiz`          | `GET`           | public                       | `quizzes`, `quiz_questions`                              | `useQuiz.ts` (`/quizzes` hub, `/quizzes/hazards`, quiz editor)                                                         |
 | `/api/quizzes/save-quiz`          | `POST`          | `requireAdmin`               | `quizzes`, `quiz_questions`                              | `useQuizEditor.ts` (`/quizzes/[quizId]/edit` save)                                                                     |
-| `/api/quizzes/progress`           | `GET`, `POST`,  | `requireUser`                | `user_quiz_progress`                                     | `app/quizzes/hazards/page.tsx` (submit + leaderboard opt-in), `app/dashboard/page.tsx` (Quizzes stat card),            |
+| `/api/quizzes/progress`           | `GET`, `POST`,  | `requireUser`                | `user_quiz_progress`                                     | `useQuizProgress.ts` (`/quizzes/hazards` submit + leaderboard opt-in), `app/dashboard/page.tsx` (Quizzes stat card)    |
 | ^^^^^                             | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/certificate/page.tsx` (quiz-pass check)                                                                           |
 | `/api/quizzes/leaderboard`        | `GET`           | `requireUser`                | `user_quiz_progress`, `profiles`                         | `app/quizzes/leaderboard/page.tsx`                                                                                     |
 | `/api/feedback`                   | `POST`          | `requireUser`                | `feedback`, `profiles` (email lookup)                    | `app/feedback/page.tsx`                                                                                                |
@@ -132,11 +132,11 @@ Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getM
 	they're currently unused but left in place pending a decision on whether to remove them, adapt them to take an array parameter, or leave them for other non-hook use cases.
 
 Module content lives in Supabase, loaded per-topic through `hooks/modules/useModules.ts`:
-- **`useModules(topic, defaults)`** — fetches `GET /api/modules/load-modules?topic=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults }`.
+- **`useModules(topic, defaults)`** — fetches `GET /api/modules/load-modules?topic=...`, merges each returned row over the matching entry (by `id`) in `defaults`, and returns `{ modules, loadStatus, usingDefaults, reload }`.
 	A successful, non-empty response is authoritative for whatever it contains — any missing modules from the fallback version are considered purposefully deleted.
 	`defaults` is only used wholesale as a fallback when the fetch fails entirely or the topic hasn't been seeded yet (empty response).
 	`usingDefaults` is `true` in exactly those fallback cases (an error, an empty response, or a network failure), `false` on a verified live load.
-- **`useModuleById(topic, defaults, id)`** — the same, narrowed to a single module by id; returns `{ item, loadStatus, usingDefaults }`.
+- **`useModuleById(topic, defaults, id)`** — the same, narrowed to a single module by id; returns `{ item, loadStatus, usingDefaults, reload }`.
 	This is what reader pages use in place of a topic's static `getXById` helper, since the lookup now has to react to data that arrives after the initial render.
 - **`mergeRow`/`mapSection`** (exported from `useModules.ts`) do the field-name translation between Supabase's snake_case row shape (`badge_num`, `icon_bg`, …) and the app's camelCase `ModuleData`/`ModuleSection` shape.
 - `status`/`progress` are never present in the Supabase `modules` row itself — they're deliberately not columns on `modules`; they're tracked per-user in `user_module_progress` instead.
@@ -145,7 +145,10 @@ Module content lives in Supabase, loaded per-topic through `hooks/modules/useMod
 	If there's no signed-in user, or no matching record for a given module, that module's `status`/`progress` are left as whatever `mergeRow` already set from `defaults`.
 - `slug` is treated differently from `badgeNum`: a `null` slug in Supabase is passed through as `undefined` rather than backfilled from `defaults`, since `slug` is a candidate for use in routing later and a stale slug silently standing in for a missing one would be a broken/misleading link.
 	`badgeNum` is purely cosmetic (a hotspot number's position in the list), so it's fine to backfill from `defaults` when Supabase hasn't got one.
-- `videoUrl`/`videoType` fall back to `defaults` together.
+- `videoUrl`/`videoType` come from Supabase alone once a module has a Supabase row — a `null` there is authoritative (no video) and is never backfilled from `defaults`.
+	Unlike `badgeNum`, a bundled default video is only ever shown before Supabase has responded (or if the row is missing entirely); it's never used to paper over a video that was explicitly removed.
+- `reload()` — also returned by both `useModules` and `useModuleById`, re-runs the same fetch (content, then per-user progress) without resetting `loadStatus` back to 'loading'.
+	The module reader page's editor passes this in as `onSaved` (see "Module Content Editor" below), so a content or video save is reflected in the page's live-mode display without a manual refresh.`
 
 Each topic's data file (e.g. `lib/modules/hazards.ts`) still exports its static `ModuleData[]` array, now serving as the `defaults` passed into `useModules`/`useModuleById` — what's shown before the Supabase fetch resolves, and the fallback if it fails.
 	Changes to this file still require a redeployment to take effect, but since it's now the fallback rather than the live source, most day-to-day content edits happen in Supabase instead and take effect immediately.
@@ -159,7 +162,7 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 	Neither component carries any lab- or module-specific copy; the one thing that differs between the two pages is layout width, passed through via an optional `className` on `EditModeToggle`.
 
 **State (`hooks/modules/useModuleEditor.ts`):** takes the topic name, the live `item` from `useModuleById`, and an optional `fallback` (the matching bundled `lib/` entry, looked up by `ModuleReaderPage` via `getModuleById(defaults, item.id)`). It holds a `draft` copy of the module, seeded from `item`.
-- Toggling edit mode off does **not** discard unsaved changes — mirroring `useHotspots`' `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
+- Toggling edit mode off does **not** discard unsaved changes — mirroring `useHotspotEditor`'s `toggleEditMode` on `/lab` — only `resetToDefaults` (below) or navigating to a different module does.
 - Navigating to a different module (the prev/next links, or the listing page) re-seeds the draft from the new module and forces edit mode off.
 	This is driven by an effect keyed on `item?.id` alone, since the Next.js App Router reuses the same page component instance across `[id]` param changes rather than remounting it — the same reason `useModuleProgress` keys its own reset effect on `[moduleId]`.
 	A second effect resyncs the draft from `item` when it changes for other reasons (e.g. the initial live fetch resolving), but only while there are no unsaved changes, so a background refresh can't overwrite an in-progress edit — including one made before edit mode was switched off.
@@ -168,6 +171,9 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 - **Unsaved changes:** `hasUnsavedChanges` reports whether the draft differs from the live module.
 	`snapshotModule` compares only the fields `save-module` persists — `videoUrl`/`videoType` are excluded, since they save immediately (see "Embedded Videos").
 	`ModuleReaderPage.tsx` passes the flag to `useLeaveWarning`; see "Unsaved-Changes Protection" below.
+- **Embedded video:** the hook also owns the module's video draft state (`videoDraftType`, `videoDraftYoutubeUrl`, `videoDraftFile`, `videoSaving`) and its three save/upload/remove handlers, kept in sync with the current draft's `videoUrl`/`videoType` by their own effect — see "Embedded Videos" below.
+- **`onSaved`:** an optional callback, passed by `ModuleReaderPage.tsx` as the loading hook's `reload` (`useModuleById`/`useModules`).
+	Called after a successful content save and after each video change, so the live `item` — and the page's non-edit-mode display — reflects it without a manual refresh.
 - While edit mode is on, `ModuleReaderPage` renders the whole reading view (hero, sections, key takeaway, prev/next links) from `draft` instead of `item`, so edits appear live above the editor panel.
 
 **Editable fields (`ModuleEditor.tsx`):** `id` is read-only (routes are built from it); `slug`, `badgeNum`, `icon`, `iconBg`, `title`, `description`, `keyTakeaway`, `prevId`, `nextId` are free-text fields.
@@ -214,6 +220,8 @@ Every reader page built on `ModuleReaderPage.tsx` has an in-app editor for that 
 	Pass `defaults={scenarios}` into `ModuleReaderPage` alongside `item`/`topic`/`basePath` — this is what the in-app editor's Reset to Defaults button reverts to; omitting it leaves Reset disabled for this topic.
 5. If the topic should appear in navigation, add a link in `Navbar.tsx`.
 
+Embedded-video editing (see "Embedded Videos") and its API routes work for any topic without further configuration, since they key off (topic, id) directly rather than a fixed topic.
+
 ### Adding a standalone page
 
 For a page unrelated to the modules template:
@@ -232,7 +240,7 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/m
 	This applies to every topic built on the shared template, including the unlinked `guides` example — each topic passes its own `topic` string into `ModuleReaderPage`/`useModuleProgress`/`useModules`, so progress stays correctly scoped per topic even where module ids collide across topics.
 
 `/api/modules/progress` (`requireUser`-gated) backs the hook:
-- **`POST`** — body `{ module_id, topic }`. If a `(uid, topic, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now.
+- **`POST`** — body `{ module_id, topic }`. If a `(uid, topic, module_id)` row doesn't already exist, creates one with `status: "progress"`, `progress: 0`, `attempts: 1`, `started_at`/`last_accessed` set to now, via an upsert (`onConflict: 'uid,topic,module_id'`, `ignoreDuplicates: true`) rather than a plain insert, so two concurrent create calls for the same module (e.g. React StrictMode's double-invoked effects in development) can't collide on the unique constraint.
 	If one exists, it's a no-op (`{ ok: true, message: "Progress already exists" }`) — it never resets an existing row.
 - **`GET`** — returns every progress row for the caller (`{ ok, progress: ModuleProgress[] }`), optionally scoped to one topic via a `?topic=` query param; the hook finds the one matching the current `moduleId`.
 - **`PATCH`** — body `{ module_id, topic, progress?, status?, attempts?, time_spent?, action? }`, all optional except `module_id`/`topic`.
@@ -319,12 +327,17 @@ A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the H
 - **Answering:** all questions must be answered before submitting (`answers.some(a => a === null)` blocks submit with an inline error).
 - **Scoring:** `percentage = round(correctCount / quiz.length * 100)`, where `quiz` is the pool drawn for that attempt — the denominator is the number of questions actually presented, not the full bank;
 	`passed = percentage >= passThreshold`, where `passThreshold` is `quizData.passThreshold` from `useQuiz` — the quiz's live, admin-editable pass threshold (falling back to `PASS_THRESHOLD` from `lib/questionhazards.ts` only when Supabase content isn't available), not a hardcoded value.
-- **Submitting** POSTs `{ score: percentage, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token — `passed` here is computed against the live threshold above and stored as-is.
+- **Submitting and progress tracking (`hooks/quizzes/useQuizProgress.ts`):** `submitQuizResult(score, passed)` POSTs `{ score, passed }` to `/api/quizzes/progress` (`requireUser`-gated) with a Firebase bearer token — `passed` here is computed against the live threshold above and stored as-is.
+	The hook also owns the leaderboard opt-in (below) and exposes `saving`/`error` for the page to render.
 - **After submitting:** each question re-renders showing correct/incorrect/your-answer state and an explanation for anything missed.
-	A Retry Quiz button (on fail) reshuffles and resets everything, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `handleSubmit` call reaches the server.
-- **Leaderboard opt-in:** once submitted, a banner offers "🏆 Show My Score" / "🔒 Keep Private", each firing `PATCH /api/quizzes/progress` with `{ leaderboard_visible }`.
-	The page fetches the caller's existing preference on load (`GET /api/quizzes/progress`), but `handleSubmit` unconditionally resets local `leaderboardVisible` state to `false` right after a successful submission — so the banner shows "Keep Private" as the active choice immediately after submitting or retrying, regardless of whatever the caller had actually chosen previously, until they press one of the two buttons again (which does then save correctly). See `BUG_REPORT.md`.
-- **On pass**, a "Get Your Certificate" button routes to `/certificate` via a client-side write to `localStorage` — dead code the certificate page no longer reads, see "Certificate gating" below.
+	A Retry Quiz button (on fail) reshuffles and resets everything via `drawQuizPool`, incrementing a client-side "Attempt #N" counter that isn't itself sent anywhere — only the eventual `submitQuizResult` call reaches the server.
+	Retrying calls the hook's `resetLeaderboardNotice()`, which hides the "✓ saved" note from a prior opt-in choice without touching the choice itself.
+	The hook fetches the caller's existing leaderboard preference once on mount (`GET /api/quizzes/progress`);
+	a guard discards that fetch's result if it resolves after a more recent explicit submit or opt-in change, so a slow initial load can never overwrite a choice the learner has already made.
+- **Leaderboard opt-in:** once submitted, a banner offers "🏆 Show My Score" / "🔒 Keep Private", each calling the hook's `updateLeaderboardPreference(visible)`, which `PATCH`es `/api/quizzes/progress` with `{ leaderboard_visible }`.
+	After a submission, the banner's active choice is seeded from what `POST /api/quizzes/progress` actually stored — the route preserves an existing preference across retries rather than resetting it (see below) — so a learner who previously opted in still sees "Show My Score" highlighted right after retrying.
+	The preference can currently only be changed from this banner, which only appears after submitting a quiz in the current session — see `BUG_REPORT.md`.
+- **On pass**, a "Get Your Certificate" button routes straight to `/certificate`.
 
 ### Leaderboard (`/quizzes/leaderboard`)
 
@@ -411,11 +424,11 @@ Each hotspot's `HazardInfo` (in `lib/hazards.ts`, and the live Supabase-backed v
 	`useHotspots.ts` only falls back to the full set of local defaults (including their module links) if the `/api/lab/load-hotspots` fetch fails outright or the table is empty; a successful, non-empty load is authoritative for `moduleId`/`moduleTopic`, even where they're `null`.
 
 **Both-or-neither:** the two columns form a matched pair enforced at the database level — the `hotspots_module_fk` foreign key uses `match full`, so a row can have both `null` or both set to a valid `(topic, id)` on `modules`, never just one.
-	`addHotspot()` in `useHotspots.ts` seeds new hotspots with both `null` accordingly.
+	`addHotspot()` in `useHotspotEditor.ts` seeds new hotspots with both `null` accordingly.
 	Deleting the linked module (`on delete set null`) doesn't delete the hotspot — it just resets both columns to `null`, so the Learn More button disappears rather than pointing at a dead link.
 
-**In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Topic dropdown, and, once a topic is picked, a Module dropdown scoped to that topic. Picking "None" (or switching topic) always clears the module id in the same update, via `useHotspots.ts`'s `updateModuleLink(index, moduleTopic, moduleId)`, which writes both fields together rather than as two separate state updates.
-	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHotspots.ts`) flags any hotspot currently half-set (a topic picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
+**In-app editing:** `HotspotEditor.tsx`'s edit-mode panel has a Linked Module field — a Topic dropdown, and, once a topic is picked, a Module dropdown scoped to that topic. Picking "None" (or switching topic) always clears the module id in the same update, via `useHotspotEditor.ts`'s `updateModuleLink(index, moduleTopic, moduleId)`, which writes both fields together rather than as two separate state updates.
+	The database's both-or-neither rule is mirrored client-side: `hasInvalidModuleLink` (also in `useHotspotEditor.ts`) flags any hotspot currently half-set (a topic picked with no module yet, or vice versa), and `saveToSupabase` refuses to call the API while it's true — the Save button disables and shows why, and the guard sits behind the button too, not just as a UI affordance.
 
 **Where the dropdown options come from:** `hooks/lab/useModuleOptions.ts` fetches `GET /api/lab/load-module-options` — a dedicated route (no auth guard, see `BUG_REPORT.md`) that returns every `(topic, id, title, badge_num)` row across all topics, flat, ordered by `topic, sort_order`.
 	The hook groups the response client-side into one entry per topic.
@@ -431,7 +444,7 @@ For how to set or change a hotspot's linked module, see `EDITING_GUIDE.md`.
 
 `user_lab_progress` records the first time a signed-in user clicks each hotspot on `/lab`, outside edit mode — `scenario_id` defaults to `'interactive-lab'`, a forward-looking column for if a second interactive simulation is ever added, always that one value today.
 
-**`POST /api/lab/progress`** (`requireUser`-gated): called from `recordHotspotProgress` in `app/lab/page.tsx` on every hotspot click.
+**`POST /api/lab/progress`** (`requireUser`-gated): called from `recordHotspotProgress` in `useHotspotProgress.ts`, invoked by `app/lab/page.tsx` on every hotspot click.
 	Confirms the hotspot type exists in `hotspots` first, then upserts onto `(uid, scenario_id, hotspot_id)` with `ignoreDuplicates: true` — so only the first click on a given hotspot is ever recorded;
 	later clicks on the same hotspot are silent no-ops, and `first_clicked_at` reflects that first click specifically, not the most recent one.
 
@@ -459,7 +472,9 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 	`lib/video/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
 	A video change therefore never counts as an unsaved change (see "Unsaved-Changes Protection").
 
-Once a video is saved through either route, the hook managing that page (`useModuleEditor`'s inline handlers on `ModuleReaderPage.tsx`, or `useHotspots.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo`) writes the returned `video_url`/`video_type` into local state, so the display component picks it up without a full page reload.
+Once a video is saved through either route, the editor hook managing that page — `useModuleEditor.ts`'s `saveYoutubeVideo`/`uploadMp4Video`/`removeModuleVideo`, or `useHotspotEditor.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo` — writes the returned `video_url`/`video_type` into its own draft, so the display component picks it up immediately without a full page reload.
+	Each also calls its optional `onSaved` callback, which both pages wire to their loading hook's `reload()` (`useModules`/`useModuleById` for a module, `useHotspots` for the lab), so the underlying live data is refreshed too — relevant once edit mode is switched back off, since the page then reads from `item`/`hotspots` rather than the draft.
+	A video removed this way is not re-derived from any bundled `lib/` default on that refresh — see the `videoUrl`/`videoType` bullet under "Modules system" above.
 
 ---
 
@@ -471,7 +486,7 @@ The lab (`/lab`), the module reader pages and the quiz editor (`/quizzes/[quizId
 	It holds a snapshot of what's stored in Supabase and reports `hasUnsavedChanges` while the draft's snapshot differs from it.
 	The comparison is independent of edit mode, so unsaved edits are still reported after edit mode is switched off.
 	Editing a value and putting it back leaves nothing unsaved, and Reset to Defaults counts as an unsaved change unless the defaults already equal what's stored.
-- **`snapshot`** is supplied by each editor and reduces a draft to just the fields its Save persists, as a string: `snapshotHotspots` in `useHotspots.ts`, `snapshotQuiz` in `useQuizEditor.ts` and `snapshotModule` in `useModuleEditor.ts`.
+- **`snapshot`** is supplied by each editor and reduces a draft to just the fields its Save persists, as a string: `snapshotHotspots` in `useHotspotEditor.ts`, `snapshotQuiz` in `useQuizEditor.ts` and `snapshotModule` in `useModuleEditor.ts`.
 	Each is defined at module scope, so its identity is stable.
 	Equivalent values produce the same string: `undefined` and `null` for optional fields, a missing or empty list of a module section's `items`, and a module's `badgeNum` whether it holds a number or the string typed into its input.
 	Embedded video fields are excluded from the lab and module snapshots, since a video is written to Supabase as soon as it's saved (see "Embedded Videos").
@@ -495,9 +510,9 @@ The project uses **Vitest** for unit and integration tests, with **React Testing
 
 ### What's covered
 
-- **Unit tests** — helper functions and hook state, checked on their own terms rather than through an API route's behaviour (e.g. `clamp`, `generateType`, `buildDefaultHotspots`, `addHotspot` in `hooks/lab/useHotspots.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video/video.ts`;)
-	A test that waits on a mocked API still counts as a unit test when it checks a helper or derived value rather than the API call itself — e.g. `hasUnsavedChanges` after a save in `useHotspots.test.ts`.
-- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHotspots` loading, saving, and uploading via mocked `/api/lab/load-hotspots`, `/api/lab/load-image`, `/api/lab/save-hotspots`, `/api/lab/upload-image`, `/api/lab/video`;)
+- **Unit tests** — helper functions and hook state, checked on their own terms rather than through an API route's behaviour (e.g. `buildDefaultHotspots` in `hooks/lab/useHotspots.ts`; `getYouTubeVideoId`, `getStoragePath`, `validateMp4File` in `lib/video/video.ts`;)
+	A test that waits on a mocked API still counts as a unit test when it checks a helper or derived value rather than the API call itself — e.g. `hasUnsavedChanges` after a save in `useHotspotEditor.test.ts`.
+- **Integration tests** — hooks/components interacting with mocked API routes (e.g. `useHotspots` loading via mocked `/api/lab/load-hotspots`/`/api/lab/load-image`;)
 
 Test files live alongside the code they cover, using a `.test.ts` / `.test.tsx` suffix (e.g. `hooks/lab/useHotspots.ts` → `hooks/lab/useHotspots.test.ts`). Vitest picks these up automatically.
 

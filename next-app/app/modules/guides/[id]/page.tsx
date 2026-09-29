@@ -13,7 +13,7 @@ import { guides } from '@/lib/modules/guides';
 export default function GuidePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item, usingDefaults } = useModuleById('guides', guides, id);
+	const { item, usingDefaults, reload } = useModuleById('guides', guides, id);
 
 	return (
 		<ModuleReaderPage
@@ -25,6 +25,7 @@ export default function GuidePage() {
 			heroHint="Replace with a short hero hint for this page."
 			usingDefaults={usingDefaults}
 			defaults={guides}
+			reload={reload}
 		/>
 	);
 }

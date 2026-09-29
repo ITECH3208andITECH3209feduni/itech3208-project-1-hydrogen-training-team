@@ -66,6 +66,17 @@ export const handlers = [
             hazard: { type: 'gas', title: 'Mock Title', video_url: null, video_type: null },
         });
     }),
+    http.get('/api/lab/progress', () => {
+        return HttpResponse.json({
+            ok: true,
+            progress: [{ hotspot_id: 'gas', first_clicked_at: '2026-01-01T00:00:00.000Z' }],
+            completedHotspots: 1,
+            totalHotspots: 4,
+        });
+    }),
+    http.post('/api/lab/progress', () => {
+        return HttpResponse.json({ ok: true, message: 'Hotspot progress recorded' });
+    }),
     
     // Module page routes
     http.get('/api/modules/load-modules', () => {
@@ -124,6 +135,12 @@ export const handlers = [
             progress: [{ module_id: '1', progress: 100, status: 'done' }],
         });
     }),
+    http.post('/api/modules/progress', () => {
+        return HttpResponse.json({ ok: true, message: 'Progress created' });
+    }),
+    http.patch('/api/modules/progress', () => {
+        return HttpResponse.json({ ok: true, message: 'Progress updated', progress: {} });
+    }),
 
     // Quiz page routes
     http.get('/api/quizzes/load-quiz', () => {
@@ -158,5 +175,39 @@ export const handlers = [
     }),
     http.post('/api/quizzes/save-quiz', () => {
         return HttpResponse.json({ ok: true });
+    }),
+    http.get('/api/quizzes/progress', () => {
+        return HttpResponse.json({
+            ok: true,
+            progress: {
+                quiz_id: 'hydrogen-hazards',
+                score: 80,
+                attempts: 1,
+                passed: true,
+                leaderboard_visible: false,
+            },
+        });
+    }),
+    http.post('/api/quizzes/progress', async ({ request }) => {
+        const body = await request.json() as { score: number; passed: boolean };
+        return HttpResponse.json({
+            ok: true,
+            message: 'Quiz result saved',
+            progress: {
+                quiz_id: 'hydrogen-hazards',
+                score: body.score,
+                attempts: 1,
+                passed: body.passed,
+                leaderboard_visible: false,
+            },
+        });
+    }),
+    http.patch('/api/quizzes/progress', async ({ request }) => {
+        const body = await request.json() as { leaderboard_visible: boolean };
+        return HttpResponse.json({
+            ok: true,
+            message: 'Leaderboard preference updated',
+            progress: { quiz_id: 'hydrogen-hazards', leaderboard_visible: body.leaderboard_visible },
+        });
     }),
 ];

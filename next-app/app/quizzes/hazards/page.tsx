@@ -7,15 +7,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useQuiz, drawQuizPool } from '@/hooks/quizzes/useQuiz';
+import { useQuizProgress } from '@/hooks/quizzes/useQuizProgress';
 import {
     QUIZ_SLUG,
     QUIZ_DEFAULTS,
     QuizQuestion,
 } from '@/lib/questionhazards';
-
-function storageKey(uid: string) {
-    return `hydrogenlabsafety_quiz_hazards_${uid}`;
-}
 
 // Array Shuffler (Fisher-Yates method)
 function shuffleArray<T>(array: T[]): T[] {
@@ -69,51 +66,21 @@ export default function HazardsQuizPage() {
 
     const [submitted, setSubmitted] = useState(false);
     const [attempt, setAttempt] = useState(1);
-    const [error, setError] = useState('');
-    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');   // Validation ("answer every question") only — save/leaderboard errors come from the hook
 
-    const [leaderboardVisible, setLeaderboardVisible] = useState<boolean | null>(null);
-    const [leaderboardSaving, setLeaderboardSaving] = useState(false);
-    const [leaderboardSaved, setLeaderboardSaved] = useState(false);
+    const {
+        saving,
+        error: progressError,
+        clearError: clearProgressError,
+        leaderboardVisible,
+        leaderboardSaving,
+        leaderboardSaved,
+        submitQuizResult,
+        updateLeaderboardPreference,
+        resetLeaderboardNotice,
+    } = useQuizProgress({ user, loading });
 
-    useEffect(() => {
-        let cancelled = false;
-
-        async function loadLeaderboardPreference() {
-            if (loading) return;
-
-            if (!user) {
-                setLeaderboardVisible(null);
-                return;
-            }
-
-            try {
-                const token = await user.getIdToken();
-
-                const response = await fetch('/api/quizzes/progress', {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    cache: 'no-store',
-                });
-
-                const result = await response.json();
-
-                if (!cancelled && response.ok && result.ok && result.progress && typeof result.progress.leaderboard_visible === 'boolean') {
-                    setLeaderboardVisible(result.progress.leaderboard_visible);
-                }
-            } catch (error) {
-                console.error('LEADERBOARD: failed to load saved preference', error);
-            }
-        }
-
-        loadLeaderboardPreference();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user, loading]);
+    const displayedError = error || progressError;
     
     const correctCount = answers.filter((answer, index) => answer === quiz[index].correctIndex).length;
     const percentage = Math.round((correctCount / quiz.length) * 100);
@@ -151,6 +118,7 @@ export default function HazardsQuizPage() {
         });
 
         setError('');
+        clearProgressError();
     }
 
     async function handleSubmit() {
@@ -161,83 +129,16 @@ export default function HazardsQuizPage() {
             return;
         }
 
-        try {
-            setSaving(true);
-            setError('');
+        setError('');
+        const saved = await submitQuizResult(percentage, passed);
+        if (!saved) return;
 
-            const token = await user.getIdToken();
+        setSubmitted(true);
 
-            const response = await fetch('/api/quizzes/progress', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        score: percentage,
-                        passed: passed,
-                    }),
-                }
-            );
-
-            const result = await response.json();
-
-            if (!response.ok || !result.ok) {
-                throw new Error(result.error || 'Failed to save quiz result.');
-            }
-
-            setLeaderboardVisible(false);
-            setLeaderboardSaved(false);
-            setSubmitted(true);
-
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth',
-            });
-        } catch (error) {
-            console.error('QUIZ SUBMIT: submission failed', error);
-            setError(error instanceof Error ? error.message : 'Failed to save quiz result.');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    async function updateLeaderboardPreference(visible: boolean) {
-        if (!user || leaderboardSaving) {
-            return;
-        }
-
-        try {
-            setLeaderboardSaving(true);
-            setError('');
-
-            const token = await user.getIdToken();
-
-            const response = await fetch('/api/quizzes/progress', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    leaderboard_visible: visible,
-                }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok || !result.ok) {
-                throw new Error(result.error ||'Failed to update leaderboard preference.');
-            }
-
-            setLeaderboardVisible(visible);
-            setLeaderboardSaved(true);
-        } catch (error) {
-            console.error('LEADERBOARD: preference update failed', error);
-            setError(error instanceof Error ? error.message : 'Failed to update leaderboard preference.');
-        } finally {
-            setLeaderboardSaving(false);
-        }
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
     }
 
     function handleRetry() {
@@ -246,9 +147,8 @@ export default function HazardsQuizPage() {
         setAnswers(Array(pool.length).fill(null));
         setSubmitted(false);
         setError('');
-
-        setLeaderboardVisible(false);
-        setLeaderboardSaved(false);
+        clearProgressError();
+        resetLeaderboardNotice();
 
         setAttempt((a) => a + 1);
 
@@ -256,14 +156,6 @@ export default function HazardsQuizPage() {
     }
 
     function handleContinue() {
-        if (!user) return;
-
-        localStorage.setItem(storageKey(user.uid), JSON.stringify({
-            passed: true,
-            score: percentage,
-            date: new Date().toISOString(),
-        }));
-
         router.push('/certificate');
     }
 
@@ -286,8 +178,8 @@ export default function HazardsQuizPage() {
                     )}
                 </div>
 
-                {error && (
-                    <p className="quiz-error">{error}</p>
+               {displayedError && (
+                    <p className="quiz-error">{displayedError}</p>
                 )}
 
                 {submitted && (
@@ -431,8 +323,8 @@ export default function HazardsQuizPage() {
 
                 {!submitted && (
                     <div className="quiz-submit-row">
-                        {error && (
-                            <p className="quiz-error">{error}</p>
+                        {displayedError && (
+                            <p className="quiz-error">{displayedError}</p>
                         )}
 
                         <button
