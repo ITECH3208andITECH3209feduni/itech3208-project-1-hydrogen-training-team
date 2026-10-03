@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
                 .from("profiles")
                 .select(`
                     uid,
+                    display_name,
+                    email,
                     student_id,
                     organisation,
                     user_type,
@@ -84,6 +86,16 @@ export async function GET(request: NextRequest) {
                 width: 20,
             },
             {
+                header: "Name",
+                key: "name",
+                width: 25,
+            },
+            {
+                header: "Email",
+                key: "email",
+                width: 35,
+            },
+            {
                 header: "Score",
                 key: "score",
                 width: 12,
@@ -120,6 +132,8 @@ export async function GET(request: NextRequest) {
 
             worksheet.addRow({
                 studentId: profile.student_id ?? "",
+                name: profile.display_name ?? "",
+                email: profile.email ?? "",
                 score: progress?.score ?? "",
                 attempts: progress?.attempts ?? 0,
                 passed:
