@@ -72,7 +72,8 @@ create table public.quizzes (
 	description    text    not null default '',
 	pass_threshold integer not null,
 	pool_size      integer null,
-	sort_order     integer not null default 0
+	sort_order     integer not null default 0,
+  constraint quizzes_pass_threshold_check check (pass_threshold >= 0 and pass_threshold <= 100),
 );
 
 create table public.quiz_questions (

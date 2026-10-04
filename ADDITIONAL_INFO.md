@@ -300,18 +300,21 @@ Unlike the lab and module reader pages, this editor is a separate page rather th
 - **`resetToDefaults`** replaces the whole draft with `fallback`, the same semantics as the module editor's Reset to Defaults.
 	Disabled (`canReset: false`) when no `fallback` is supplied — currently only the `hazards` quiz has bundled defaults wired into the lookup map.
 - **Validation:** every question needs at least 2 options and a `correctIndex` pointing at one of them (`hasInvalidQuestion`/`invalidQuestionIndex`);
-	`poolSize`, if set, must be at least 1, at least equal to the number of questions marked `isCore` (`coreCount`), and no more than the total question count (`hasInvalidPoolSize`/`poolSizeError`).
-	Both checks happen client-side (disabling Save via `SaveBar`'s `saveDisabled`/`saveDisabledReason` props) and again inside `saveToSupabase` itself before any request is sent, and once more server-side in the API route below.
+	`poolSize`, if set, must be at least 1, at least equal to the number of questions marked `isCore` (`coreCount`), and no more than the total question count (`hasInvalidPoolSize`/`poolSizeError`);
+	`passThreshold` must be a whole number from 0 to 100, since it is the percentage of questions a learner must answer correctly to pass (`hasInvalidPassThreshold`/`passThresholdError`).
+	All three checks happen client-side (disabling Save via `SaveBar`'s `saveDisabled`/`saveDisabledReason` props) and again inside `saveToSupabase` itself before any request is sent, then server-side in the API route below, and finally in the database, where `quizzes.pass_threshold` carries the check constraint `quizzes_pass_threshold_check` (0–100).
 - Deleting an option keeps `correctIndex` pointing at the same answer where possible: it shifts down if a preceding option was removed, or resets to `0` if the correct option itself was the one deleted.
 - New questions are numbered via `nextQuestionId` — the first id not currently in use, mirroring `useHotspots.ts`'s hotspot-type generation, so deleting question 2 and adding a new one reuses id 2 rather than continuing past the current highest id.
 
 **Editable fields (`app/quizzes/[quizId]/edit/page.tsx`):** `title`, `description`, `passThreshold`, and `poolSize` (blank/null = use every question) are free-text/number fields.
+	An invalid `passThreshold` or `poolSize` shows its error message directly beneath the field.
 	Questions can be added, deleted, and reordered (↑/↓); each question's `question` text, `options` (add/delete), correct answer (radio selection), `explanation`, and `isCore` (checkbox) are editable once selected from the question list.
 
 **Saving:** `POST /api/quizzes/save-quiz` (`requireAdmin`-gated) takes `{ quizId, quiz, questions }` and:
 1. Validates that `quiz.poolSize`, if provided, is a positive integer no smaller than the number of questions with `isCore: true`, rejecting the request with a 400 otherwise.
-2. Upserts the `quizzes` row (`onConflict: 'quiz_id'`), writing `title`, `description`, `pass_threshold`, and `pool_size` — `sort_order` is deliberately left untouched, the same reasoning `save-module` applies to a module's own `sort_order`.
-3. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement — including each question's `is_core` value.
+2. Validates that `quiz.passThreshold` is a whole number from 0 to 100, rejecting the request with a 400 otherwise.
+3. Upserts the `quizzes` row (`onConflict: 'quiz_id'`), writing `title`, `description`, `pass_threshold`, and `pool_size` — `sort_order` is deliberately left untouched, the same reasoning `save-module` applies to a module's own `sort_order`.
+4. Deletes and reinserts that quiz's `quiz_questions` rows, scoped to `quiz_id` — not the whole table, mirroring `save-module`'s per-module section replacement — including each question's `is_core` value.
 
 This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (see `supabase_setup.sql`) is required for both operations above, independent of which DML statement each performs — PostgREST constructs its response (matched-row data, counts) via a read-back that needs `select` privilege regardless of whether the underlying call is an upsert, insert, update, or delete.
 

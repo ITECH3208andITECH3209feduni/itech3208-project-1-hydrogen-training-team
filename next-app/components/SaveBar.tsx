@@ -2,8 +2,6 @@
 // Save/reset buttons for editor pages (Save sends current state to Supabase, Reset reverts to fallback defaults)
 // Shared by multiple in-app editors (e.g. lab, modules reader)
 
-import { primaryBtnStyle, secondaryBtnStyle } from './editorStyles';
-
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface SaveBarProps {
@@ -32,10 +30,6 @@ export default function SaveBar({
 		: saveStatus === 'error'  ? '❌ Save failed — check console'
 		: '💾 Save Changes';
 
-	const saveBg = saveStatus === 'saved'  ? 'linear-gradient(135deg, #059669, #10b981)'
-		: saveStatus === 'error' ? 'linear-gradient(135deg, #b91c1c, #ef4444)'
-		: primaryBtnStyle.background;
-
 	// Only one expected to be active at a time — reason matches whichever button is currently disabled.
 	const activeWarning = saveDisabled && saveDisabledReason
 		? saveDisabledReason
@@ -51,8 +45,8 @@ export default function SaveBar({
 					onClick={onReset}
 					disabled={resetDisabled}
 					title={resetDisabled ? resetDisabledReason : undefined}
+					className="editor-btn-secondary"
 					style={{
-						...secondaryBtnStyle,
 						opacity: resetDisabled ? 0.5 : 1,
 						cursor: resetDisabled ? 'not-allowed' : 'pointer',
 					}}
@@ -63,11 +57,14 @@ export default function SaveBar({
 					onClick={onSave}
 					disabled={isSaveDisabled}
 					title={saveDisabled ? saveDisabledReason : undefined}
+					className={`editor-btn-primary ${
+						saveStatus === 'saved' ? 'editor-btn-primary--saved'
+						: saveStatus === 'error' ? 'editor-btn-primary--error'
+						: ''
+					}`.trim()}
 					style={{
-						...primaryBtnStyle,
 						opacity: isSaveDisabled ? 0.6 : 1,
 						cursor: isSaveDisabled ? 'not-allowed' : 'pointer',
-						background: saveBg,
 					}}
 				>
 					{saveLabel}

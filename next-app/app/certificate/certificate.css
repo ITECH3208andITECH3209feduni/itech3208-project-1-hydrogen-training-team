@@ -11,13 +11,13 @@
 	animation: fadeUp 0.5s ease both;
 }
 .cert-page-header h1 {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 2rem;
+	font-family: var(--font-heading);
+	font-size: 2.1rem;
 	font-weight: 700;
 	color: var(--white);
 }
 .cert-page-header p {
-	font-size: 0.9rem;
+	font-size: 0.98rem;
 	color: var(--muted);
 	line-height: 1.7;
 	max-width: 520px;
@@ -27,10 +27,10 @@
 	display: inline-block;
 	padding: 6px 18px;
 	border-radius: var(--radius-pill);
-	background: var(--teal-glow);
-	border: var(--border-rule);
-	font-size: 0.82rem;
-	color: var(--teal);
+	background: var(--accent-glow);
+	border: 1px solid var(--accent-border);
+	font-size: 0.9rem;
+	color: var(--accent);
 	margin-bottom: 16px;
 }
 
@@ -42,11 +42,11 @@
 	border: 1px solid var(--border);
 	background: var(--card-bg);
 	color: var(--white);
-	font-size: 0.95rem;
+	font-size: 1.02rem;
 	margin: 24px 0 28px;
 	outline: none;
 }
-.cert-name-input:focus { border-color: var(--teal); }
+.cert-name-input:focus { border-color: var(--accent); }
 
 .cert-canvas {
 	width: 100%;
@@ -70,8 +70,8 @@
 	background: linear-gradient(135deg, var(--teal-dark), var(--teal));
 	color: white;
 	border: none;
-	font-family: 'Exo 2', sans-serif;
-	font-size: 0.95rem;
+	font-family: var(--font-heading);
+	font-size: 1.02rem;
 	font-weight: 600;
 	cursor: pointer;
 	text-decoration: none;
@@ -79,7 +79,12 @@
 	box-shadow: 0 4px 20px rgba(0,180,216,0.3);
 	transition: all 0.2s;
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,180,216,0.5); }
+.btn-primary:hover {
+	transform: translateY(-2px);
+	background: var(--accent);
+	color: var(--navy);
+	box-shadow: 0 6px 28px var(--accent-shadow);
+}
 
 .btn-outline {
 	padding: 13px 34px;
@@ -87,12 +92,16 @@
 	border: 1px solid var(--border);
 	color: var(--teal);
 	text-decoration: none;
-	font-family: 'Exo 2', sans-serif;
-	font-size: 0.95rem;
+	font-family: var(--font-heading);
+	font-size: 1.02rem;
 	font-weight: 600;
 	transition: all 0.2s;
 }
-.btn-outline:hover { background: var(--teal-glow); }
+.btn-outline:hover {
+	border-color: var(--accent-border);
+	background: var(--accent-glow);
+	color: var(--accent);
+}
 
 /* ─── Blocked state (quiz not passed yet) ────────────────────────────────── */
 .cert-blocked {
@@ -106,14 +115,14 @@
 	animation: fadeUp 0.5s ease both;
 }
 .cert-blocked h1 {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1.3rem;
+	font-family: var(--font-heading);
+	font-size: 1.4rem;
 	font-weight: 700;
 	color: var(--white);
 	margin-bottom: 12px;
 }
 .cert-blocked p {
-	font-size: 0.88rem;
+	font-size: 0.95rem;
 	color: var(--muted);
 	line-height: 1.7;
 	margin-bottom: 24px;

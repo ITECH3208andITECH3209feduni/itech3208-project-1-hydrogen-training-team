@@ -118,6 +118,9 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 
 **Editing:**
 - Title, Description, and Pass Threshold are free-text/number fields at the top of the page.
+- Pass Threshold is the percentage of questions a learner must answer correctly to pass, entered as a whole number from 0 to 100.
+	An invalid value shows an error beneath the field.
+	The `quizzes` table in Supabase is also constrained to only accept values from 0 to 100 — it will reject any other value.
 - Pool Size is a number field controlling how many questions are drawn per attempt; leave it blank to present every question in the bank.
 - The Questions panel lists every question on the left; click one to edit its question text, options, and explanation on the right.
 - Click **+** in the question list header to add a new question — it's numbered using the first id not already in use (so deleting question 2 and adding a new one reuses id 2 rather than continuing to 4).
@@ -126,7 +129,10 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option; deleting an earlier option shifts the correct answer's position down to match);
 	click **+ Add option** to add one.
 - A Core checkbox in the question detail panel marks that question to always appear in every drawn pool, regardless of Pool Size's random selection for the rest.
-- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected, or if Pool Size is below 1, below the number of core questions, or above the total number of questions.
+- **Save Changes** disables, with an explanatory warning, if:
+	- Any question has fewer than 2 options or no valid correct answer selected
+	- If Pass Threshold isn't a whole number from 0 to 100
+	- If Pool Size is below 1, below the number of core questions, or above the total number of questions.
 
 **Saving and resetting:**
 - Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.

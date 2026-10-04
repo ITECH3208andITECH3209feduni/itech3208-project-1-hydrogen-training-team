@@ -200,9 +200,17 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 	}
 	const hasInvalidPoolSize = poolSizeError !== null;
 
+	// Check passThreshold is a whole number from 0-100 (percentage of questions that must be correct)
+	let passThresholdError: string | null = null;
+	const pt = draft?.passThreshold;
+	if (pt !== undefined && (!Number.isInteger(pt) || pt < 0 || pt > 100)) {
+		passThresholdError = 'Pass threshold must be a whole number between 0 and 100.';
+	}
+	const hasInvalidPassThreshold = passThresholdError !== null;
+
 	// ── Save ──────────────────────────────────────────────────────────────────
 	const saveToSupabase = useCallback(async () => {
-		if (!draft || !user || hasInvalidQuestion || hasInvalidPoolSize) return;
+		if (!draft || !user || hasInvalidQuestion || hasInvalidPoolSize || hasInvalidPassThreshold) return;
 		setSaveStatus('saving');
 		try {
 			const token = await user.getIdToken();
@@ -218,7 +226,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 						title: draft.title,
 						description: draft.description,
 						passThreshold: draft.passThreshold,
-						poolSize: draft.poolSize, // <-- NEW
+						poolSize: draft.poolSize,
 					},
 					questions: draft.questions,
 				}),
@@ -233,7 +241,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [draft, quizId, user, hasInvalidQuestion, hasInvalidPoolSize]);
+	}, [draft, quizId, user, hasInvalidQuestion, hasInvalidPoolSize, hasInvalidPassThreshold]);
 
 	return {
 		draft,
@@ -257,5 +265,7 @@ export function useQuizEditor(quizId: string, item: QuizData | undefined, fallba
 		coreCount,
 		hasInvalidPoolSize,
 		poolSizeError,
+		hasInvalidPassThreshold,
+		passThresholdError,
 	};
 }

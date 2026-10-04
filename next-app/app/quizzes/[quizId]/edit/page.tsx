@@ -83,10 +83,14 @@ export default function QuizEditorPage() {
 							type="number"
 							min={0}
 							max={100}
+							step={1}
 							value={draft.passThreshold}
 							onChange={(e) => editor.updateField('passThreshold', Number(e.target.value))}
 						/>
 					</label>
+					{editor.passThresholdError && (
+						<p className="quiz-editor-load-error">{editor.passThresholdError}</p>
+					)}
 
 					{/* Question Pool Size */}
 					<label>
@@ -221,17 +225,18 @@ export default function QuizEditorPage() {
 				</div>
 			</div>
 
+			{/* Save Bar */}
 			<SaveBar
 				saveStatus={editor.saveStatus}
 				onReset={editor.resetToDefaults}
 				onSave={editor.saveToSupabase}
 				resetDisabled={!editor.canReset}
 				resetDisabledReason={!editor.canReset ? 'No defaults exist for this quiz.' : undefined}
-				saveDisabled={editor.hasInvalidQuestion || editor.hasInvalidPoolSize}
+				saveDisabled={editor.hasInvalidQuestion || editor.hasInvalidPoolSize || editor.hasInvalidPassThreshold}
 				saveDisabledReason={
 					editor.hasInvalidQuestion
 						? 'Every question needs at least 2 options and a selected correct answer.'
-						: editor.poolSizeError ?? undefined
+						: editor.passThresholdError ?? editor.poolSizeError ?? undefined
 				}
 			/>
 

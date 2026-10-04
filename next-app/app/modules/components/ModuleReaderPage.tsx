@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, getModuleById } from "@/lib/modules/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import ModuleVideo from "@/components/ModuleVideo";
+import EmbeddedVideo from "@/components/EmbeddedVideo";
 import ModuleEditor from "./ModuleEditor";
 import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
@@ -225,8 +225,8 @@ export default function ModuleReaderPage({
                 </div>
             ))}
 
-            {/* Module Video */}
-            <ModuleVideo
+            {/* Embedded Video */}
+            <EmbeddedVideo
                 videoUrl={displayed.videoUrl}
                 videoType={displayed.videoType}
             />
