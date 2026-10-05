@@ -1,4 +1,4 @@
-﻿// components/Navbar.tsx
+// components/Navbar.tsx
 // Universal navigation header that appears on all pages (some may purposfully hide it)
 
 "use client";
@@ -68,7 +68,7 @@ export default function Navbar() {
                     <>
                         {/* Modules */}
                         <Link
-                            href="/modules/hazards"
+                            href="/modules"
                             className={`nav-link ${
                                 pathname.startsWith("/modules")
                                     ? "active"
@@ -80,9 +80,9 @@ export default function Navbar() {
 
                         {/* Scenarios */}
                         <Link
-                            href="/lab"
+                            href="/scenarios"
                             className={`nav-link ${
-                                pathname === "/lab"
+                                (pathname === "/scenarios" || pathname === "/lab")
                                     ? "active"
                                     : ""
                             }`}
