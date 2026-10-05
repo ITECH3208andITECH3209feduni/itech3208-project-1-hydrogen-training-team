@@ -11,11 +11,11 @@ The `/lab` edit-mode toggle is gated client-side by `permissions.canManageUsers`
 **Fix:** add `requireUser` or `requireAdmin` (as appropriate) to both routes.
 
 ### `/api/profile/get` and `/api/profile/create` have no auth guard and no ownership check
-Both routes take `uid` as a plain request parameter (query string on `GET`, body field on `POST`) with no `Authorization` header check at all — this is deliberate, since `AuthContext.tsx` calls both to bootstrap a brand-new user's profile before there's necessarily a token relationship to check (see `ADDITIONAL_INFO.md`, "Roles and permissions"). But neither route additionally confirms the caller *is* the `uid` in question, so as written, anyone can read (`GET /api/profile/get?uid=...`) or create (`POST /api/profile/create`) a profile for an arbitrary uid they don't own, including choosing their own `role`/`user_type` on creation (not currently exploitable client-side, since `AuthContext.tsx`'s own calls always hardcode `role: "user"`, `user_type: "public"`, but the route itself doesn't enforce that).
+Both routes take `uid` as a plain request parameter (query string on `GET`, body field on `POST`) with no `Authorization` header check at all — this is deliberate, since `AuthContext.tsx` calls both to bootstrap a brand-new user's profile before there's necessarily a token relationship to check (see `ADDITIONAL_INFO.md`, "Roles and permissions"). But neither route additionally confirms the caller *is* the `uid` in question, so as written, anyone can read (`GET /api/profile/get?uid=...`) or create (`POST /api/profile/create`) a profile for an arbitrary uid they don't own, including choosing their own `organisation` and `student_id` on creation. `role` and `user_type` are always written as `"user"` and `"public"` by the route, whatever the body contains. When a profile already exists for the uid, `POST /api/profile/create` returns the full existing row, `student_id` included, so it also works as a read for any known uid.
 **Fix:** at minimum, verify a Firebase bearer token and require it to match the `uid` being read or created.
 
-### `GET /api/admin/feedback` doesn't follow the same status-code convention as other `requireAdmin` routes
-Every other `requireAdmin` route maps `"Access denied"`/`"Missing authorization token"`/`"User profile not found"` to `403`. `GET /api/admin/feedback` instead maps `"Missing authorization token"` to `401` and doesn't special-case `"User profile not found"` at all, falling through to a generic `500`. Functionally similar (an unauthorized caller still gets rejected), but the exact status code returned for the same underlying failure differs depending on which admin route you hit.
+### `GET /api/admin/feedback` and `GET /api/admin/users/export` don't follow the same status-code convention as other `requireAdmin` routes
+Most `requireAdmin` routes map `"Access denied"`/`"Missing authorization token"`/`"User profile not found"` to `403`. `GET /api/admin/feedback` instead maps `"Missing authorization token"` to `401` and doesn't special-case `"User profile not found"` at all, falling through to a generic `500`. `GET /api/admin/users/export` maps only `"Access denied"` and `"Missing authorization token"` to `403`, so `"User profile not found"` also becomes a generic `500`. Functionally similar (an unauthorized caller still gets rejected), but the exact status code returned for the same underlying failure differs depending on which admin route you hit.
 
 ### `load-module-options`'s "no auth needed" call was made against an already-unguarded write endpoint
 `GET /api/lab/load-module-options` (added to populate the lab editor's Linked Module dropdowns) was deliberately left public, on the reasoning that it returns a subset of data — `topic`, `id`, `title`, `badge_num` — already exposed publicly per-topic via `GET /api/modules/load-modules`, so gating it wouldn't reduce any real exposure. That reasoning holds on its own.
@@ -44,13 +44,19 @@ Routes using `requireAdmin` map specific thrown messages (`"Access denied"`, `"M
 
 **Fix:** correct `UserProfile['user_type']` in `AuthContext.tsx` to the real 6-value set, update the modal's options to match, and add server-side validation in the PATCH route.
 
-### Quiz ID naming mismatch
-`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug. The `quizzes`/`quiz_questions` tables (loaded via `useQuiz`/`GET /api/quizzes/load-quiz`, see `ADDITIONAL_INFO.md`) are not affected — both are keyed by `QUIZ_SLUG` (`"hazards"`) directly, so this mismatch is isolated to `user_quiz_progress` and the two routes below.
+### `organisation` and `student_id` are only checked by the registration form, and the export depends on exact `organisation` values
+The register form restricts Organisation to `Fed Uni` or `Other` and requires a Student ID for `Fed Uni`, but `POST /api/profile/create` accepts any `organisation` string and any (or no) `student_id`, `PATCH /api/admin/users/{uid}` passes `organisation` straight through, and `profiles.organisation` has no check constraint.
+`GET /api/admin/users/export` includes only profiles whose trimmed `organisation` is exactly the selected value (`Fed Uni` or `Other`), so a profile with a null or any other organisation — including one an admin has edited — appears in neither export. A user whose organisation is changed to `Fed Uni` through the Edit User modal has no `student_id` unless they supplied one at registration, so they appear in the Fed Uni export with a blank Student ID.
 
-### Quiz ID is hardcoded independently in three places
-`const QUIZ_ID = "hydrogen-hazards"` is declared separately in `app/api/quizzes/progress/route.ts`, `app/api/quizzes/leaderboard/route.ts`, and `app/api/admin/users/[uid]/progress/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the three `QUIZ_ID` copies staying in sync — if one is ever changed without the others (e.g. when a second quiz is added and this gets refactored), routes reading it would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning empty results rather than an error.
+**Fix:** validate `organisation` (and require `student_id` for `Fed Uni`) in the create and `PATCH` routes, add a matching check constraint on `profiles`, and let admins edit `student_id`.
+
+### Quiz ID naming mismatch
+`POST /api/quizzes/progress` hardcodes `quiz_id: "hydrogen-hazards"` server-side — a different string from `QUIZ_SLUG` (`"hazards"`, used in the URL and in `lib/questionhazards.ts`). Cosmetic today (there's only one quiz), but a trap for anything that assumes `quiz_id` matches the URL slug. The `quizzes`/`quiz_questions` tables (loaded via `useQuiz`/`GET /api/quizzes/load-quiz`, see `ADDITIONAL_INFO.md`) are not affected — both are keyed by `QUIZ_SLUG` (`"hazards"`) directly, so this mismatch is isolated to `user_quiz_progress` and the routes that read it (listed in the next entry).
+
+### Quiz ID is hardcoded independently in four places
+`const QUIZ_ID = "hydrogen-hazards"` is declared separately in `app/api/quizzes/progress/route.ts`, `app/api/quizzes/leaderboard/route.ts`, `app/api/admin/users/[uid]/progress/route.ts`, and `app/api/admin/users/export/route.ts`, rather than shared from one location. This is in addition to the existing mismatch against `QUIZ_SLUG` (`"hazards"`) noted above. Nothing enforces the four `QUIZ_ID` copies staying in sync — if one is ever changed without the others (e.g. when a second quiz is added and this gets refactored), routes reading it would silently query for a `quiz_id` that no `user_quiz_progress` row actually has, returning empty results rather than an error.
 The third copy, in the admin per-user progress route, also declares its own `const QUIZ_PASS_SCORE = 70` alongside its `QUIZ_ID` — a fourth independent hardcoded pass threshold, on top of the two described below under "Certificate pass-threshold." Its own comment says this exists specifically to "match the certificate page eligibility rule," which makes the duplication intentional in spirit but still a fourth place that has to be kept in sync by hand.
-**Fix:** export `QUIZ_ID` (and, ideally, the real pass threshold) from a single shared location (e.g. alongside `QUIZ_SLUG` in `lib/questionhazards.ts`) and import it in all three routes.
+**Fix:** export `QUIZ_ID` (and, ideally, the real pass threshold) from a single shared location (e.g. alongside `QUIZ_SLUG` in `lib/questionhazards.ts`) and import it in all four routes.
 
 ---
 
@@ -65,7 +71,7 @@ The leaderboard opt-in control (`updateLeaderboardPreference` in `useQuizProgres
 **Fix:** add a "Hide my score" / "Show my score" control to `/quizzes/leaderboard` itself — shown next to the learner's own entry when they're currently listed, or as a standalone toggle for anyone with a completed quiz record — calling the same `PATCH /api/quizzes/progress` used today.
 
 ### Admin panel's two progress numbers disagree with each other, and with reality
-`GET /api/admin/users` already returns a server-computed `statistics` object (`totalUsers`, `administrators`, `learners`, `trainingCompleted`, `averageProgress`, `totalModules`), derived from `user_module_progress` using `hazardModules.length` as `totalModules` and `progress >= 100` as "complete." **The admin page ignores this entirely.** Instead, for every non-admin, non-`public`-type user, it separately fetches `GET /api/admin/users/{uid}/progress` and recomputes its own "Training Completed"/"Average Progress" stat-card numbers from each response's `summary` object:
+`GET /api/admin/users` already returns a server-computed `statistics` object (`totalUsers`, `administrators`, `learners`, `trainingCompleted`, `averageProgress`, `totalModules`), derived from `user_module_progress` using `hazardModules.length` as `totalModules` and `progress >= 100` as "complete." **The admin page ignores this entirely.** Instead, for every non-admin user whose `user_type` is `public`, it separately fetches `GET /api/admin/users/{uid}/progress` and recomputes its own "Training Completed"/"Average Progress" stat-card numbers from each response's `summary` object:
 - N+1 requests where one would do — the exact `statistics` object it needs is sitting unused in the first response.
 - The two routes don't use the same completion rule for "done": the list route counts `progress >= 100` only; the per-user route also accepts `status === "done"`. Both now derive `totalModules` from `hazardModules.length`, so that part stays in sync — but the completion-rule difference would still let the two disagree about whether a specific module counts as finished.
 - The two routes compute "overall progress" differently in kind, not just source: the list route's `statistics.averageProgress` averages each module's own `progress` percentage across learners (partial credit); the per-user route's `summary.overallProgress` computes `completedModules / totalModules * 100` for that one learner (no credit until 100%). Since the page displays an average of the per-user route's numbers, "Average Progress" on the stat card is the coarser, all-or-nothing version — a user with five modules all at 80% contributes 0%, not 80%, to that average.
@@ -94,12 +100,24 @@ If a quiz's `pass_threshold` is ever changed via the quiz editor, a learner's ge
 The next time the user visits `/login` in that tab — e.g. clicking "Login" from the navbar to sign back in — the page finds the stale flag, silently redirects straight back to `/`, and only then clears it. The user's first "Login" click after such a logout does nothing visible; they have to click it again to actually see the form.
 **Fix:** clear the flag in `handleLogout` itself once its own `router.replace('/')` fires (rather than relying solely on `/login` to consume it), or use a one-shot mechanism that doesn't depend on `/login` being the next page visited.
 
+## Registration can create the profile twice, dropping `organisation`, `student_id` and `display_name`
+Creating a Firebase account fires `AuthContext.tsx`'s `onAuthStateChanged` listener, which looks up the profile, finds none, and calls `POST /api/profile/create` with `organisation: null`, no `student_id`, and the Firebase user's `displayName` (which can still be `null`, since `register()` sets it with `updateProfile` afterwards). `register()` makes its own `POST /api/profile/create` call with the form's values. The route returns an existing row unchanged, so whichever call reaches Supabase first decides the stored values. If the listener's call wins, the profile is saved with a null `organisation` and `student_id` (and possibly a null `display_name`), and `register()` then passes that incomplete row to `setProfile`.
+Such an account has no Student ID and appears in neither organisation export (see below). Nothing in the UI can repair it, since the Edit User modal and `PATCH /api/admin/users/{uid}` handle only `role`, `user_type` and `organisation`.
+
+**Fix:** have the listener skip bootstrap creation while `register()` is running, or have `register()` update the profile after it exists instead of relying on its create call winning the race.
+
+### Deleting a user is not atomic and leaves some data behind
+`DELETE /api/admin/users/{uid}` runs its steps one after another with no transaction: `user_quiz_progress` rows, `user_lab_progress` rows, the `profiles` row, then the Firebase Authentication account. A failure part-way leaves a partially deleted user. The worst case is the final step failing: the profile and progress are gone but the Firebase account remains, so that person can still sign in and `AuthContext.tsx` creates a blank profile for them (role `user`, no organisation or student ID).
+`feedback` rows the user submitted are never deleted — `feedback.user_id` has no foreign key and the route doesn't touch the table — so their email address and messages remain in `feedback` and on `/admin/feedback`.
+
+**Fix:** order the steps so a failure leaves a recoverable state (for example, delete the Firebase account first, so a later failure leaves a profile that can simply be deleted again), and delete or anonymise the user's `feedback` rows in the same operation.
+
 ### `save-hotspots` does a full delete-then-reinsert, not a diff
 `/api/lab/save-hotspots` deletes every row in the `hotspots` table, then re-inserts one row per current hotspot. If the request fails partway through, the table could in principle be left empty rather than reverted to its prior state.
 
 ### Several tables store a `uid` (or other cross-table reference) with no foreign key enforcing it
-`user_module_progress` does this correctly — `fk_user_progress` ties its `uid` to `profiles.uid`, and `fk_user_progress_module` ties `(topic, module_id)` to `modules`. Nothing else follows that pattern:
-- `user_quiz_progress.uid` has no FK to `profiles.uid`; `quiz_id` has no FK to `quizzes.quiz_id`.
+`user_module_progress` ties its `uid` to `profiles.uid` (`fk_user_progress`) and `(topic, module_id)` to `modules` (`fk_user_progress_module`), and `user_quiz_progress.uid` is tied to `profiles.uid`. The remaining cross-table references have no foreign key:
+- `user_quiz_progress.quiz_id` has no FK to `quizzes.quiz_id`.
 - `feedback.user_id` has no FK to `profiles.uid`.
 - `user_lab_progress.uid` has no FK to `profiles.uid`; `hotspot_id` has no FK to `hotspots.type`.
 
@@ -169,6 +187,9 @@ Every page/component folder that needs styling imports its own `.css` file (see 
 
 ### Admin feedback dashboard's "Average Rating" card always shows five filled stars
 `app/admin/feedback/page.tsx`'s summary card renders the numeric average correctly (e.g. "3.7") but the star row beneath it is a fixed `★★★★★` string, not scaled to the actual average — a 2.0-average dataset and a 5.0-average dataset show identical stars.
+
+### `register()` sends `role` and `user_type` that `/api/profile/create` ignores
+`RegisterData` types `role` as `"user"` and `user_type` as `"public"`, and both `register()` and the `onAuthStateChanged` bootstrap in `AuthContext.tsx` include them in the body of `POST /api/profile/create`. The route reads neither field and always inserts `role: "user"` and `user_type: "public"`. Harmless, since the values agree, but the fields are redundant and suggest the client controls them.
 
 ### Register form has an unused `userType` field in its local state
 `app/login/register/page.tsx`'s form state includes `userType: "public"`, wired through the same generic `update()` handler as the other fields, but no input in the form is actually bound to it, and `register()` is called with a separately hardcoded `user_type: "public"` regardless of the state value. Functionally harmless (new accounts are meant to start as `public` either way), just dead state left over from what may have been a planned user-type selector.

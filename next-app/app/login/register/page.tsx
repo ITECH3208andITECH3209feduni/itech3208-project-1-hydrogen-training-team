@@ -1,4 +1,4 @@
-// app/login/register/page.tsx
+﻿// app/login/register/page.tsx
 
 "use client";
 
@@ -20,13 +20,14 @@ export default function RegisterPage() {
 		confirm: "",
 		userType: "public",
 		organisation: "",
+                student_id: "",
 	});
 
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
 	function update(field: string) {
-		return (e: React.ChangeEvent<HTMLInputElement>) =>
+		return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
 			setForm((f) => ({ ...f, [field]: e.target.value }));
 	}
 
@@ -53,6 +54,10 @@ export default function RegisterPage() {
 				password: form.password,
 				name: form.name,                 // Saved as Firebase displayName
 				organisation: form.organisation,
+                                student_id:
+                                        form.organisation === "Fed Uni"
+                                                ? form.student_id
+                                                : undefined,
 				role: "user",
 				user_type: "public",
 			});
@@ -73,7 +78,7 @@ export default function RegisterPage() {
 		<div className="auth-page">
 			<div className="auth-card">
 				<div className="auth-logo">
-					<span className="auth-logo-icon">⚗️</span>
+					<span className="auth-logo-icon">âš—ï¸</span>
 					<h1 className="auth-logo-title">Hydrogen Lab</h1>
 					<p className="auth-logo-sub">Create your account</p>
 				</div>
@@ -97,19 +102,35 @@ export default function RegisterPage() {
 						/>
 					</div>
 
-					{/* Organisation (Optional) */}
-					<div className="auth-group">
-						<label className="auth-label">
-							Organisation <span style={{ fontWeight: "normal" }}>(optional)</span>
-						</label>
-						<input
-							className="auth-input"
-							type="text"
-							value={form.organisation}
-							onChange={update("organisation")}
-							placeholder="University, school or company"
-						/>
-					</div>
+                                        {/* Organisation */}
+                                        <div className="auth-group">
+                                                <label className="auth-label">Organisation</label>
+                                                <select
+                                                        className="auth-input"
+                                                        required
+                                                        value={form.organisation}
+                                                        onChange={update("organisation")}
+                                                >
+                                                        <option value="">Select organisation</option>
+                                                        <option value="Fed Uni">Fed Uni</option>
+                                                        <option value="Other">Other</option>
+                                                </select>
+                                        </div>
+
+                                        {/* Student ID - Fed Uni only */}
+                                        {form.organisation === "Fed Uni" && (
+                                                <div className="auth-group">
+                                                        <label className="auth-label">Student ID</label>
+                                                        <input
+                                                                className="auth-input"
+                                                                type="text"
+                                                                required
+                                                                value={form.student_id}
+                                                                onChange={update("student_id")}
+                                                                placeholder="Enter your Student ID"
+                                                        />
+                                                </div>
+                                        )}
 
 					{/* Email */}
 					<div className="auth-group">
@@ -152,7 +173,7 @@ export default function RegisterPage() {
 
 					{/* Register Button */}
 					<button className="auth-btn" disabled={loading}>
-						{loading ? "Creating account…" : "Create account"}
+						{loading ? "Creating accountâ€¦" : "Create account"}
 					</button>
 				</form>
 
@@ -164,3 +185,4 @@ export default function RegisterPage() {
 		</div>
 	);
 }
+

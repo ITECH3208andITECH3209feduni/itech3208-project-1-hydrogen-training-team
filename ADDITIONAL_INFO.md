@@ -34,9 +34,13 @@ Firebase handles authentication itself (sign-in, sign-up, session state);
 	Neither route has an auth guard, reasonably, since they're what `AuthContext.tsx` uses to bootstrap a profile before there's necessarily a role to check against.
 
 `context/AuthContext.tsx` wraps the whole app via `layout.tsx` and ties the two together: on every Firebase auth-state change it calls `/api/profile/get`;
-	if that comes back not-ok (a brand-new Firebase user with no profile yet), it calls `/api/profile/create` with `role: "user"` and `user_type: "public"`, then re-fetches.
+	if that comes back not-ok (a brand-new Firebase user with no profile yet), it calls `/api/profile/create` with `organisation: null`, no `student_id`, `role: "user"` and `user_type: "public"`, then re-fetches.
+	`/api/profile/create` returns the existing profile unchanged when one already exists for the uid, so a repeated call never overwrites stored values.
 	`register()` follows the same hardcoded role/type — the `RegisterData` type only allows `role: "user"` and `user_type: "public"`, so there's currently no sign-up path that creates a `staff` or `admin` account, or any `user_type` other than `"public"`.
-	`organisation` is the one profile field that isn't hardcoded: the register form (`app/login/register/page.tsx`) has an optional "Organisation" input, passed straight through to `register()` and saved as entered.
+	`organisation` and `student_id` are the profile fields the sign-up form controls.
+	The register form (`app/login/register/page.tsx`) has a required Organisation dropdown (`Fed Uni` or `Other`); choosing `Fed Uni` reveals a required Student ID input, and `student_id` is passed to `register()` only in that case.
+	`register()` posts both fields to `/api/profile/create`, which stores them as given (empty values become `null`) and always writes `role: "user"` and `user_type: "public"`, whatever the request body contains.
+	`student_id` lives on the `profiles` row and is not shown in the admin user table; it appears only in the quiz-results export (see "Admin: Access Management" below).
 
 `role` forms a hierarchy: `isStaff` is true for `"staff"` or `"admin"`, `isAdmin` is true for `"admin"` only.
 	Since `register()`'s hardcoded values are still the only sign-up path, every value besides `"user"`/`"public"` has to be set by an admin afterwards, through the Edit User modal on `/admin/users` (see "Admin: Access Management" below).
@@ -60,7 +64,7 @@ Two helpers in `lib/` protect API routes using a Firebase ID token rather than t
 
 **Route coverage:**
 - `requireUser`: `/api/modules/progress` (all methods), `/api/quizzes/progress` (all methods), `/api/quizzes/leaderboard` (`GET`), `/api/lab/progress` (all methods), `/api/feedback` (`POST`)
-- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/{uid}` (`PATCH`), `/api/admin/users/{uid}/progress` (`GET`), `/api/admin/feedback` (`GET`), `/api/modules/save-module` (`POST`), `/api/modules/video` (`PUT`/`DELETE`), `/api/quizzes/save-quiz` (`POST`), `/api/lab/video` (`PUT`/`DELETE`)
+- `requireAdmin`: `/api/admin/users` (`GET`), `/api/admin/users/export` (`GET`), `/api/admin/users/{uid}` (`PATCH`, `DELETE`), `/api/admin/users/{uid}/progress` (`GET`), `/api/admin/feedback` (`GET`), `/api/modules/save-module` (`POST`), `/api/modules/video` (`PUT`/`DELETE`), `/api/quizzes/save-quiz` (`POST`), `/api/lab/video` (`PUT`/`DELETE`)
 - No guard: `/api/lab/load-hotspots`, `/api/lab/load-image`, `/api/lab/load-module-options`, `/api/modules/load-modules` (`GET`s, intentionally public reads), `/api/profile/get`, `/api/profile/create` (bootstrap routes, see above).
 	`/api/lab/save-hotspots` and `/api/lab/upload-image` also call no guard — see `BUG_REPORT.md`, since these are writes rather than reads.
 	`/api/profile/get` and `/api/profile/create` also take no steps to confirm the caller owns the `uid` they pass, so either route can be used to read or create a profile for an arbitrary uid — see `BUG_REPORT.md`.
@@ -73,6 +77,7 @@ Status-code handling for a caught auth failure isn't perfectly uniform across `r
 	it can't know at build time what a request's `Authorization` header will contain, so without this export `npm run build` fails with a "Dynamic server usage" error the first time it reaches such a route.
 	`POST`/`PATCH`/`DELETE` handlers are exempt — Next treats them as dynamic automatically, since there's no meaningful "build-time version" of a request with a body.
 	Every `GET` route listed under `requireUser`/`requireAdmin` above declares this export.
+	
 ---
 
 ## API Routes Reference
@@ -101,7 +106,9 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 | `/api/feedback`                   | `POST`          | `requireUser`                | `feedback`, `profiles` (email lookup)                    | `app/feedback/page.tsx`                                                                                                |
 | `/api/admin/feedback`             | `GET`           | `requireAdmin`               | `feedback`                                               | `app/admin/feedback/page.tsx`                                                                                          |
 | `/api/admin/users`                | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`                       | `app/admin/users/page.tsx`                                                                                             |
-| `/api/admin/users/{uid}`          | `PATCH`         | `requireAdmin`               | `profiles`                                               | `EditUserModal.tsx`                                                                                                    |
+| `/api/admin/users/export`         | `GET`           | `requireAdmin`               | `profiles`, `user_quiz_progress`                         | `app/admin/users/page.tsx` (Export Excel button)                                                                       |
+| `/api/admin/users/{uid}`          | `PATCH`         | `requireAdmin`               | `profiles`, `user_quiz_progress`,                        | `EditUserModal.tsx`, `app/admin/users/page.tsx` (Delete button)                                                        |
+| ^^^^^                             | `DELETE`        | ^^^^^                        | `user_lab_progress`, `user_module_progress`              | ^^^^^                                                                                                                  |
 | `/api/admin/users/{uid}/progress` | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`, `user_quiz_progress` | `app/admin/users/[uid]/progress/page.tsx`, and `app/admin/users/page.tsx` (one fetch per learner, see `BUG_REPORT.md`) |
 | `/api/profile/get`                | `GET`           | public — see `BUG_REPORT.md` | `profiles`                                               | `AuthContext.tsx` (profile bootstrap on every auth-state change)                                                       |
 | `/api/profile/create`             | `POST`          | public — see `BUG_REPORT.md` | `profiles`                                               | `AuthContext.tsx` (bootstrap for a brand-new Firebase user), `register()` (called from `app/login/register/page.tsx`)  |
@@ -398,6 +405,23 @@ Unlike `/quizzes/hazards`, `/lab`, and the module reader pages, `/feedback` does
 **Search:** a single client-side text filter across `email`, `display_name`, `organisation`, `role`, and `user_type` — no server-side query, so it only filters the already-loaded list.
 
 **Editing a user:** the Edit button on each row opens `EditUserModal.tsx`, which edits `role`, `user_type`, and `organisation` (email shown read-only) and saves via `PATCH /api/admin/users/{uid}` (`requireAdmin`-gated) with `{ role, user_type, organisation }`.
+
+**Deleting a user:** every row except the signed-in admin's own has a Delete button.
+	After a `window.confirm`, it calls `DELETE /api/admin/users/{uid}` (`requireAdmin`-gated) and, on success, removes the row from the loaded list.
+	The Users and Administrators stat cards follow the list immediately; Training Completed and Average Progress are recalculated by Refresh.
+	The route rejects a request for the caller's own uid (`400`) and returns `404` when no `profiles` row matches.
+	It then deletes the user's `user_quiz_progress` rows, their `user_lab_progress` rows, and the `profiles` row — which removes their `user_module_progress` rows through the `on delete cascade` on `fk_user_progress` — and finally deletes the Firebase Authentication account with `adminAuth.deleteUser`.
+	These steps run one after another rather than in a single transaction, and `feedback` rows the user submitted are not touched; see `BUG_REPORT.md`.
+
+**Exporting quiz results:** the toolbar has an organisation dropdown (`Fed Uni` or `Other`) and an Export Excel button.
+	The button calls `GET /api/admin/users/export?organisation=...` (`requireAdmin`-gated) with a Firebase bearer token and downloads the returned workbook; any other `organisation` value is rejected with `400`.
+	The route reads every `profiles` row together with its `user_quiz_progress` rows in one query (the embed relies on the foreign key from `user_quiz_progress.uid` to `profiles.uid`), keeps the profiles whose trimmed `organisation` equals the selected value, and builds a single-sheet workbook ("Quiz Results") with `exceljs`, a dependency in `package.json`.
+	Columns are Student ID, Name, Email, Score, Attempts, Passed (`Yes`/`No`), and Last Attempted At (formatted with the `en-AU` locale on the server). The header row is bold and frozen.
+	Every profile in the selected organisation gets one row, drawn from its progress for the quiz with `quiz_id` `"hydrogen-hazards"` (`QUIZ_ID` in the route).
+	A user who has not attempted the quiz still appears, with Attempts `0` and Score, Passed and Last Attempted At blank.
+	Student ID comes from `profiles.student_id`, which the register form collects only for Fed Uni accounts, so the `Other` export's Student ID column is blank throughout.
+	The download is named `hydrogen-quiz-results-Fed-Uni.xlsx` or `hydrogen-quiz-results-Other.xlsx` and is served with `Cache-Control: no-store`.
+	Profiles whose organisation is neither `Fed Uni` nor `Other` appear in neither export; see `BUG_REPORT.md`.
 
 **Viewing a user's module progress:** the Progress button on each row links to `/admin/users/{uid}/progress`, a read-only training-record view for a single user, backed by `GET /api/admin/users/{uid}/progress` (`requireAdmin`-gated).
 

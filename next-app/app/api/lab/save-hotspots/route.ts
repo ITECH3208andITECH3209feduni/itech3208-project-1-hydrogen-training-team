@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         const hotspotData = (body.hotspotData ?? {}) as Record<string, HotspotDataEntry>;
 
-        // Step 1 — delete existing rows
+        // Step 1 â€” delete existing rows
         const { error: deleteError } = await supabaseServer
             .from("hotspots")
             .delete()
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
             throw deleteError;
         }
 
-        // Step 2 — recreate current hotspot set
+        // Step 2 â€” recreate current hotspot set
         if (hotspots.length > 0) {
             const rows = hotspots.map((hotspot, index) => {
                 const info = hotspotData[hotspot.type];

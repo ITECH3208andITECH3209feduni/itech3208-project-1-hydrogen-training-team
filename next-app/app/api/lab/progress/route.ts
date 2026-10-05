@@ -1,4 +1,4 @@
-// app/api/lab/progress/route.ts
+﻿// app/api/lab/progress/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
@@ -195,3 +195,5 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+

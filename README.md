@@ -59,13 +59,13 @@ hydrogen-lab/
 │   │   ├── auth.css					# Shared styles for login and register pages
 │   │   ├── page.tsx					# Login page (/login)
 │   │   ├── register/
-│   │   │   └── page.tsx				# Register page (/login/register)
+│   │   │   └── page.tsx				# Register page (/login/register) — Organisation dropdown (Fed Uni / Other), plus a Student ID field for Fed Uni
 │   │   └── forgot-password/
 │   │       └── page.tsx				# Forgot-password page (/login/forgot-password)
 │   ├── admin/
 │   │   ├── page.tsx					# Admin hub (/admin) — cards linking to User Management and Learner Feedback
 │   │   ├── users/
-│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal
+│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal, delete, quiz-results Excel export
 │   │   │   ├── admin.css				# Styles for the admin users page — table, modal, stat cards, admin module cards
 │   │   │   ├── [uid]/
 │   │   │   │   └── progress/
@@ -145,8 +145,10 @@ hydrogen-lab/
 │       ├── admin/
 │       │   ├── users/
 │       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
+│       │   │   ├── export/
+│       │   │   │   └── route.ts		# GET — quiz results for one organisation as an Excel (.xlsx) download (`requireAdmin`-gated)
 │       │   │   └── [uid]/
-│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
+│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (no value validation); DELETE — removes a user, their progress and their Firebase account (both `requireAdmin`-gated)
 │       │   │       └── progress/
 │       │   │           └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
 │       │   └── feedback/
@@ -166,7 +168,7 @@ hydrogen-lab/
 │           ├── get/
 │           │   └── route.ts			# GET — loads a user profile by Firebase uid (no auth guard)
 │           └── create/
-│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
+│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid; role/user_type are always `user`/`public` (no auth guard)
 ├── components/
 │   ├── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
 │   ├── EditModeToggle.tsx				# Toggle switch to enter/exit edit mode; expands into the banner text when on.
@@ -245,7 +247,7 @@ hydrogen-lab/
 | Route                         | File                                      | Description                                                                                 |
 |-------------------------------|-------------------------------------------|---------------------------------------------------------------------------------------------|
 | `/`                           | `app/page.tsx`                            | Public landing page introducing the platform — no login required                            |
-| `/dashboard`                  | `app/dashboard/page.tsx`                  | Dashboard with modules, simulations, quizzes, and training progress                           |
+| `/dashboard`                  | `app/dashboard/page.tsx`                  | Dashboard with modules, simulations, quizzes, and training progress                         |
 | `/about`                      | `app/about/page.tsx`                      | Public "About" page — project background, platform features, tech stack; no login required  |
 | `/login`                      | `app/login/page.tsx`                      | Email and password login                                                                    |
 | `/login/register`             | `app/login/register/page.tsx`             | New account registration                                                                    |
@@ -262,7 +264,7 @@ hydrogen-lab/
 | `/certificate`                | `app/certificate/page.tsx`                | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
 | `/feedback`                   | `app/feedback/page.tsx`                   | Feedback form — star rating, category, free-text message                                    |
 | `/admin`                      | `app/admin/page.tsx`                      | Admin-only hub — cards linking to User Management and Learner Feedback                      |
-| `/admin/users`                | `app/admin/users/page.tsx`                | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
+| `/admin/users`                | `app/admin/users/page.tsx`                | Admin-only "User Management" page — user table, edit, delete, quiz-results Excel export     |
 | `/admin/users/[uid]/progress` | `app/admin/users/[uid]/progress/page.tsx` | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
 | `/admin/feedback`             | `app/admin/feedback/page.tsx`             | Admin-only feedback dashboard — rating summary and the full list of submissions             |
 
@@ -362,7 +364,7 @@ Styles are split across several files to keep page-specific rules isolated:
 ## Authentication & Permissions
 
 Firebase handles authentication (sign-in, sign-up, session state).
-	Each user also has a **profile** — role, user type, organisation — stored separately in Supabase and managed through two API routes:
+	Each user also has a **profile** — role, user type, organisation, and student ID (Fed Uni users only) — stored separately in Supabase and managed through two API routes:
 - `GET /api/profile/get?uid=...` — loads the profile matching a Firebase uid
 - `POST /api/profile/create`     — creates a profile record
 
@@ -425,10 +427,11 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hotspots`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_lab_progress`, and `feedback` tables (in dependency order, with the `hotspots`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
-	It also creates all the Row Level Security policies and grants those tables and the bucket need.
-	(public `anon` read + `service_role` read/write for `hotspots`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
+	It creates the `hotspots`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_lab_progress`, and `feedback` tables (in dependency order, with each table's foreign keys declared inline), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
+	It also creates all the Row Level Security policies and grants those tables and the storage buckets need.
+	(public `anon` read + `service_role` read/write for `hotspots`/`modules`/`module_sections`/`quizzes`/`quiz_questions` (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
 	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`user_lab_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
+	The three storage buckets are public and serve files through their public URLs, so they have no read policy; `storage.objects` carries only `service_role` insert and update policies per bucket, plus delete for `module-videos` and `lab-videos`.
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
