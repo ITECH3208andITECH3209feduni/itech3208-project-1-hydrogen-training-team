@@ -241,7 +241,7 @@ export default function UserProgressPage() {
                 <h1>Training Progress</h1>
                 <p>
                     Viewing training record for user:
-                    <strong>{" "}{uid}</strong>
+                    <strong className="admin-user-id">{" "}{uid}</strong>
                 </p>
             </div>
 
@@ -291,13 +291,9 @@ export default function UserProgressPage() {
             {/* Training Modules */}
             <div className="page-header">
                 <h2>Hydrogen Safety Modules</h2>
-                <p>
-                    Administrator View
-                    (Read Only)
-                </p>
             </div>
 
-            <div className="modules-grid">
+            <div className="card-grid">
                 {modulesWithProgress.map((module, index) => (
                     <AdminModuleCard
                         key={module.id}

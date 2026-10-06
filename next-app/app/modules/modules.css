@@ -44,13 +44,6 @@
 	color: var(--navy);
 }
 
-/* Modules grid */
-.modules-grid {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 20px;
-}
-
 /* ─── Module reader ─────────────────────────────────────────────────────── */
 .back-crumb {
 	font-size: 0.9rem;
@@ -453,7 +446,6 @@
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-	.modules-grid          { grid-template-columns: 1fr; }
 	.module-hero           { flex-direction: column; align-items: flex-start; }
 	.module-field-grid     { grid-template-columns: 1fr; }
 	.module-field-span-2   { grid-column: auto; }

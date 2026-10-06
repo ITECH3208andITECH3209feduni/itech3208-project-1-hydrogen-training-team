@@ -274,7 +274,7 @@ This action cannot be undone.`
 
   return (
     <main className="main">
-      <div className="greeting">
+      <div className="greeting admin-greeting">
         <div>
           <h1>
             User{" "}
@@ -296,7 +296,7 @@ This action cannot be undone.`
       </div>
 
       <div className="admin-stat-cards">
-        <div className="stat-card users-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
               <span className="label-icon">Users</span>
@@ -306,7 +306,7 @@ This action cannot be undone.`
             <div className="sub">Registered Accounts</div>
           </div>
         </div>
-        <div className="stat-card admin-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
               <span className="label-icon">Administrators</span>
@@ -317,7 +317,7 @@ This action cannot be undone.`
           </div>
         </div>
         
-        <div className="stat-card completed-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
               <span className="label-icon">Training Completed</span>
@@ -328,7 +328,7 @@ This action cannot be undone.`
           </div>
         </div>
 
-        <div className="stat-card progress-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
               <span className="label-icon">Average Progress</span>

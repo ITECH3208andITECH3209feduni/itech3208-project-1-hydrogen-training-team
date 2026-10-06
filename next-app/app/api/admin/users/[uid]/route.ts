@@ -122,7 +122,7 @@ export async function DELETE(
       );
     }
 
-    // Delete hazard/lab progress
+    // Delete hazard/scenario progress
     const { error: hazardProgressError } = await supabaseServer
       .from("user_lab_progress")
       .delete()
@@ -130,7 +130,7 @@ export async function DELETE(
 
     if (hazardProgressError) {
       throw new Error(
-        `Failed to delete lab progress: ${hazardProgressError.message}`
+        `Failed to delete scenario progress: ${hazardProgressError.message}`
       );
     }
 

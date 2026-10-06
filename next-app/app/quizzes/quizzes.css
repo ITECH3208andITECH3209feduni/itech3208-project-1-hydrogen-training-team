@@ -36,6 +36,12 @@
 	background: rgba(255,190,80,0.12);
 	margin-bottom: 16px;
 }
+.quiz-card-icon--teal {
+	background: rgba(0, 180, 216, 0.28);
+}
+.quiz-card:hover .quiz-card-icon--teal {
+	background: rgba(251,146,60,0.28);
+}
 
 .quiz-card-body { flex: 1; }
 .quiz-card-title {

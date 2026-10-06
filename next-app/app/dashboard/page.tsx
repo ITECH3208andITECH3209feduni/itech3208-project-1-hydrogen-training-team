@@ -92,7 +92,7 @@ export default function Dashboard() {
 
                 const token = await user.getIdToken();
 
-                const response = await fetch("/api/lab/progress", {
+                const response = await fetch("/api/scenarios/progress", {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}`, },
                     cache: "no-store",
@@ -173,16 +173,16 @@ export default function Dashboard() {
 
             {/* Top Stat Cards */}
             <div className="stat-cards">
-                {/* Simulations */}
+                {/* Scenarios */}
                 <Link
-                    href="/lab"
+                    href="/scenarios"
                     className="stat-card"
                 >
-                    <div className="stat-icon simulations">&#128300;</div>
+                    <div className="stat-icon scenarios">&#128300;</div>
 
                     <div className="stat-info">
                         <div className="label">
-                            Simulations
+                            Scenarios
                         </div>
 
                         <div className="count">
@@ -205,7 +205,7 @@ export default function Dashboard() {
                 
                 {/* Modules */}
                 <Link
-                    href="/modules/hazards"
+                    href="/modules"
                     className="stat-card"
                 >
                     <div className="stat-icon modules">&#128218;</div>

@@ -1,4 +1,4 @@
-// app/lab/page.tsx  –  Interactive Hydrogen Lab
+// app/scenarios/hazards/page.tsx  –  Interactive Hydrogen Lab
 // Edit mode entered/exited via toggle switch (only visible to admins)
 
 'use client';
@@ -8,14 +8,14 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import Popup from './components/Popup';
+import Popup from '../components/Popup';
 import EditModeToggle from '@/components/EditModeToggle';
-import HotspotEditor from './components/HotspotEditor';
+import HotspotEditor from '../components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
-import { useHotspots } from '@/hooks/lab/useHotspots';
-import { useHotspotEditor } from '@/hooks/lab/useHotspotEditor';
-import { useHotspotProgress } from '@/hooks/lab/useHotspotProgress';
-import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
+import { useHotspots } from '@/hooks/scenarios/useHotspots';
+import { useHotspotEditor } from '@/hooks/scenarios/useHotspotEditor';
+import { useHotspotProgress } from '@/hooks/scenarios/useHotspotProgress';
+import { useModuleOptions } from '@/hooks/scenarios/useModuleOptions';
 import { useLeaveWarning } from '@/hooks/unsavedChanges/useLeaveWarning';
 
 export default function LabPage() {

@@ -1,10 +1,10 @@
-// app/lab/components/HotspotEditor.tsx
+// app/scenarios/components/HotspotEditor.tsx
 // Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position/video editor on the right
 
 import { useRef } from 'react';
-import { EditableHotspot } from '@/hooks/lab/useHotspots';
-import { UploadStatus } from '@/hooks/lab/useHotspotEditor';
-import { ModuleTopicOptions } from '@/hooks/lab/useModuleOptions';
+import { EditableHotspot } from '@/hooks/scenarios/useHotspots';
+import { UploadStatus } from '@/hooks/scenarios/useHotspotEditor';
+import { ModuleTopicOptions } from '@/hooks/scenarios/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import VideoEditorPanel from '@/components/VideoEditorPanel';
 

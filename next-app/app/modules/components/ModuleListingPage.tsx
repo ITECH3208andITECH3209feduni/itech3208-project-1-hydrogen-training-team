@@ -83,7 +83,7 @@ export default function ModuleListingPage({
 			</div>
 			
 			{/* Module grid */}
-			<div className="modules-grid">
+			<div className="card-grid">
 				{visible.map((item, i) => (
 					<ModuleCard
 						key={item.id}

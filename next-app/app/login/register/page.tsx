@@ -78,7 +78,7 @@ export default function RegisterPage() {
 		<div className="auth-page">
 			<div className="auth-card">
 				<div className="auth-logo">
-					<span className="auth-logo-icon">âš—ï¸</span>
+					<span className="auth-logo-icon">⚗️</span>
 					<h1 className="auth-logo-title">Hydrogen Lab</h1>
 					<p className="auth-logo-sub">Create your account</p>
 				</div>
@@ -173,7 +173,7 @@ export default function RegisterPage() {
 
 					{/* Register Button */}
 					<button className="auth-btn" disabled={loading}>
-						{loading ? "Creating accountâ€¦" : "Create account"}
+						{loading ? "Creating account…" : "Create account"}
 					</button>
 				</form>
 

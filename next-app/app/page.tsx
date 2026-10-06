@@ -38,7 +38,7 @@ export default function IntroPage() {
 					<Link href="/dashboard" className="intro-cta">
 						{ctaLabel} →
 					</Link>
-					<Link href="/modules/hazards" className="intro-outline">
+					<Link href="/modules" className="intro-outline">
 						Learn the Basics
 					</Link>
 				</div>
@@ -80,7 +80,7 @@ export default function IntroPage() {
 					</div>
 					<div className="intro-card">
 						<div className="intro-card-icon">🧪</div>
-						<p className="intro-card-title">Lab Simulations</p>
+						<p className="intro-card-title">Lab Scenarios</p>
 						<p className="intro-card-text">
 							Explore virtual hydrogen lab and industrial environments. Identify hazards in a safe digital space.
 						</p>

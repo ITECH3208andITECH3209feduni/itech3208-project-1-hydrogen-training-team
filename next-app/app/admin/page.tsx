@@ -35,14 +35,7 @@ export default function AdminPage() {
                     href="/admin/users"
                     className="quiz-card"
                 >
-                    <div
-                        className="quiz-card-icon"
-                        style={{
-                            background: "rgba(0, 180, 216, 0.12)",
-                        }}
-                    >
-                        👥
-                    </div>
+                    <div className="quiz-card-icon quiz-card-icon--teal">👤</div>
 
                     <div className="quiz-card-body">
                         <div className="quiz-card-title">
@@ -63,14 +56,7 @@ export default function AdminPage() {
                     href="/admin/feedback"
                     className="quiz-card"
                 >
-                    <div
-                        className="quiz-card-icon"
-                        style={{
-                            background: "rgba(0, 180, 216, 0.12)",
-                        }}
-                    >
-                        💬
-                    </div>
+                    <div className="quiz-card-icon quiz-card-icon--teal">💬</div>
 
                     <div className="quiz-card-body">
                         <div className="quiz-card-title">

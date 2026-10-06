@@ -1,5 +1,5 @@
-// app/api/lab/video/route.ts
-// Admin-only API for adding, replacing and removing videos from individual lab hotspots.
+// app/api/scenarios/video/route.ts
+// Admin-only API for adding, replacing and removing videos from individual scenario hotspots.
 // Shares logic with app/api/modules/video/route.ts via lib/video.ts.
 
 import { NextRequest, NextResponse } from "next/server";

@@ -15,7 +15,7 @@ Both the lab and every module reader page have an in-app edit mode, visible only
 
 Hotspot positions and text are stored in Supabase and can be edited directly in the browser via edit mode.
 
-**To enter edit mode:** navigate to `/lab` and click the switch at the top-left of the page.
+**To enter edit mode:** navigate to `/scenarios/hazards` and click the switch at the top-left of the page.
 	It expands into a banner confirming edit mode is active while it's on. Click it again to exit.
 
 **Hotspots:**
@@ -40,7 +40,7 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 Module content (title, description, sections, key takeaway, and more — see "Customising Module Content" below for the full field list) can also be edited directly in the browser, in addition to editing Supabase rows by hand.
 
-**To enter edit mode:** open any module reader page (e.g. `/modules/hazards/1`) and click the switch at the top of the page. As on `/lab`, it expands into a banner while active; click it again to exit.
+**To enter edit mode:** open any module reader page (e.g. `/modules/hazards/1`) and click the switch at the top of the page. As on `/scenarios/hazards`, it expands into a banner while active; click it again to exit.
 	Exiting edit mode this way does not discard unsaved changes — they're kept in the editor until you either save or click Reset to Defaults, or navigate to a different module (via ← Previous/Next →, or back to the listing).
 
 **While editing**, everything above the editor panel — the hero, every section, and the key takeaway — previews your unsaved changes live, so you can see how they'll look before saving.

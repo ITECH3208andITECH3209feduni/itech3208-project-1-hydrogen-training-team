@@ -9,26 +9,26 @@
 .admin-feedback-back {
     display: inline-block;
     margin-bottom: 20px;
-    color: var(--teal);
-    font-size: 0.8rem;
+    color: var(--accent);
+    font-size: 0.88rem;
     font-weight: 600;
     text-decoration: none;
 }
 
-.admin-feedback-back:hover { color: var(--white); }
+.admin-feedback-back:hover { color: var(--accent-hover); text-decoration: underline; }
 .admin-feedback-heading { margin-bottom: 28px; }
 
 .admin-feedback-heading h1 {
     margin: 0 0 6px;
     color: var(--white);
-    font-family: 'Exo 2', sans-serif;
-    font-size: 2rem;
+    font-family: var(--font-heading);
+    font-size: 2.1rem;
 }
 
 .admin-feedback-heading p {
     margin: 0;
     color: var(--muted);
-    font-size: 0.88rem;
+    font-size: 0.95rem;
 }
 
 .feedback-summary {
@@ -48,8 +48,9 @@
 .summary-label {
     display: block;
     margin-bottom: 8px;
-    color: var(--muted);
-    font-size: 0.72rem;
+    color: var(--teal);
+    font-weight: 600;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.8px;
 }
@@ -57,13 +58,13 @@
 .feedback-summary-card strong {
     display: block;
     color: var(--white);
-    font-family: 'Exo 2', sans-serif;
-    font-size: 1.8rem;
+    font-family: var(--font-heading);
+    font-size: 1.9rem;
 }
 
 .summary-stars {
     color: var(--teal);
-    font-size: 0.85rem;
+    font-size: 0.92rem;
     letter-spacing: 2px;
 }
 
@@ -87,14 +88,14 @@
 
 .admin-feedback-panel-header h2 {
     margin: 0;
-    color: var(--teal);
-    font-family: 'Exo 2', sans-serif;
-    font-size: 1rem;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-size: 1.08rem;
 }
 
 .admin-feedback-panel-header span {
     color: var(--muted);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
 }
 
 .rating-breakdown { padding: 22px; }
@@ -106,10 +107,15 @@
     gap: 10px;
     margin-bottom: 10px;
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
 }
 
 .rating-row:last-child { margin-bottom: 0; }
+
+.rating-label--highest {
+    color: var(--accent);
+    font-weight: 700;
+}
 
 .rating-bar {
     height: 7px;
@@ -123,8 +129,15 @@
     border-radius: inherit;
     background: var(--teal);
 }
+.rating-bar-fill--highest {
+    background: var(--accent);
+}
 
 .rating-count { text-align: right; }
+.rating-count--highest {
+    color: var(--accent);
+    font-weight: 700;
+}
 
 .feedback-list {
     display: flex;
@@ -147,8 +160,8 @@
 
 .feedback-rating {
     margin-bottom: 7px;
-    color: var(--teal);
-    font-size: 0.9rem;
+    color: var(--accent);
+    font-size: 0.98rem;
     letter-spacing: 2px;
 }
 
@@ -159,31 +172,31 @@
     border-radius: 20px;
     background: rgba(0,180,216,0.06);
     color: var(--teal);
-    font-size: 0.7rem;
+    font-size: 0.78rem;
 }
 
 .feedback-item-top time {
     flex-shrink: 0;
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.8rem;
 }
 
 .feedback-message {
     margin: 16px 0 12px;
     color: var(--white);
-    font-size: 0.84rem;
+    font-size: 0.92rem;
     line-height: 1.6;
 }
 
 .feedback-user {
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.8rem;
 }
 
 .feedback-state {
     padding: 40px 20px;
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     text-align: center;
 }
 

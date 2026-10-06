@@ -1,4 +1,4 @@
-// app/api/lab/load-hotspots/route.ts
+// app/api/scenarios/load-hotspots/route.ts
 // Returns all hotspot data from Supabase.
 // Note: "left" is quoted because it is a reserved word.
 

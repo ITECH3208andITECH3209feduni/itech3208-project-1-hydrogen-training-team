@@ -1,4 +1,4 @@
-// hooks/lab/useModuleOptions.ts
+// hooks/scenarios/useModuleOptions.ts
 // Supplies the "Linked Module" topic/id dropdown options for HotspotEditor.tsx.
 
 import { useState, useEffect } from 'react';
@@ -29,7 +29,7 @@ export function useModuleOptions(): ModuleTopicOptions[] {
 
 		async function load() {
 			try {
-				const res = await fetch('/api/lab/load-module-options', { cache: 'no-store' });
+				const res = await fetch('/api/scenarios/load-module-options', { cache: 'no-store' });
 				const json = await res.json();
 				if (cancelled) return;
 

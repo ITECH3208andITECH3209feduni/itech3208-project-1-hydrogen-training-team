@@ -67,16 +67,16 @@ export default function Navbar() {
                 {/* Authenticated users only */}
                 {user && (
                     <>
-                        {/* Simulations */}
+                        {/* Scenarios */}
                         <Link
                             href="/scenarios"
                             className={`nav-link ${
-                                pathname === "/scenarios"
+                                pathname.startsWith("/scenarios")
                                     ? "active"
                                     : ""
                             }`}
                         >
-                            Simulations
+                            Scenarios
                         </Link>
                         
                         {/* Modules */}

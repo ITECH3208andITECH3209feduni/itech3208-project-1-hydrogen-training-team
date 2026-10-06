@@ -1,5 +1,5 @@
-// hooks/lab/useHotspotEditor.ts
-// Manages the /lab editor: edit mode, the draft hotspots, dragging, save/reset, lab image upload and per-hotspot embedded video.
+// hooks/scenarios/useHotspotEditor.ts
+// Manages the /scenarios/hazards editor: edit mode, the draft hotspots, dragging, save/reset, lab image upload and per-hotspot embedded video.
 // Live data comes from useHotspots (its `item`); this hook never loads anything itself.
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -202,7 +202,7 @@ export function useHotspotEditor(
 			const formData = new FormData();
 			formData.append('image', file);
 
-			const res = await fetch('/api/lab/upload-image', {
+			const res = await fetch('/api/scenarios/upload-image', {
 				method: 'POST',
 				body: formData,
 			});
@@ -247,7 +247,7 @@ export function useHotspotEditor(
 			formData.append('videoType', 'youtube');
 			formData.append('videoUrl', videoDraftYoutubeUrl.trim());
 
-			const res = await fetch('/api/lab/video', {
+			const res = await fetch('/api/scenarios/video', {
 				method: 'PUT',
 				headers: { Authorization: `Bearer ${token}` },
 				body: formData,
@@ -279,7 +279,7 @@ export function useHotspotEditor(
 			formData.append('videoType', 'mp4');
 			formData.append('file', videoDraftFile);
 
-			const res = await fetch('/api/lab/video', {
+			const res = await fetch('/api/scenarios/video', {
 				method: 'PUT',
 				headers: { Authorization: `Bearer ${token}` },
 				body: formData,
@@ -311,7 +311,7 @@ export function useHotspotEditor(
 			setVideoSaving(true);
 			const token = await user.getIdToken();
 
-			const res = await fetch('/api/lab/video', {
+			const res = await fetch('/api/scenarios/video', {
 				method: 'DELETE',
 				headers: {
 					'Content-Type': 'application/json',
@@ -352,7 +352,7 @@ export function useHotspotEditor(
 		}
 		setSaveStatus('saving');	// Updated over course of function to show progress
 		try {
-			const res = await fetch('/api/lab/save-hotspots', {
+			const res = await fetch('/api/scenarios/save-hotspots', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

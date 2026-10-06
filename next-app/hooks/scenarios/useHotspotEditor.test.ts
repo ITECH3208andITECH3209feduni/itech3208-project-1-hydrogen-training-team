@@ -1,4 +1,4 @@
-// hooks/lab/useHotspotEditor.test.ts
+// hooks/scenarios/useHotspotEditor.test.ts
 // Unit + integration tests for functions in useHotspotEditor.ts & related API calls
 // Note: several of the unit tests below set up API mocks, but only to test derived state or guard clauses, not the API calls themselves.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -352,7 +352,7 @@ describe('10. hasUnsavedChanges', () => {
 
   it('10.6 stays true after a failed save', async () => {
     server.use(
-      http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
+      http.post('/api/scenarios/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
     const { result } = renderEditor(loadedItem);
     act(() => { result.current.updateInfo(0, 'title', 'Edited'); });
@@ -365,7 +365,7 @@ describe('10. hasUnsavedChanges', () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
     server.use(
-      http.post('/api/lab/save-hotspots', async () => {
+      http.post('/api/scenarios/save-hotspots', async () => {
         await gate;
         return HttpResponse.json({ ok: true });
       })
@@ -439,7 +439,7 @@ describe('12. save-hotspots', () => {
 
   it('12.2 sets saveStatus to error if the save request fails', async () => {
     server.use(
-      http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
+      http.post('/api/scenarios/save-hotspots', () => HttpResponse.json({ ok: false, error: 'Save failed' }, { status: 500 }))
     );
 
     const { result } = renderEditor(loadedItem);
@@ -450,7 +450,7 @@ describe('12. save-hotspots', () => {
   it('12.3 sends the full hotspots + hotspotData payload', async () => {
     let capturedBody: any = null;
     server.use(
-      http.post('/api/lab/save-hotspots', async ({ request }) => {
+      http.post('/api/scenarios/save-hotspots', async ({ request }) => {
         capturedBody = await request.json();
         return HttpResponse.json({ ok: true });
       })
@@ -479,7 +479,7 @@ describe('12. save-hotspots', () => {
   it('12.4 sets saveStatus to error and skips the API call when hasInvalidModuleLink is true', async () => {
     let called = false;
     server.use(
-      http.post('/api/lab/save-hotspots', () => {
+      http.post('/api/scenarios/save-hotspots', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
@@ -500,7 +500,7 @@ describe('12. save-hotspots', () => {
   it('12.5 proceeds with the save once the module link is valid again', async () => {
     let called = false;
     server.use(
-      http.post('/api/lab/save-hotspots', () => {
+      http.post('/api/scenarios/save-hotspots', () => {
         called = true;
         return HttpResponse.json({ ok: true });
       })
@@ -538,7 +538,7 @@ describe('13. upload-image', () => {
   it('13.2 sets uploadStatus to error, and does not call onImageUploaded, if the upload fails', async () => {
     const onImageUploaded = vi.fn();
     server.use(
-      http.post('/api/lab/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
+      http.post('/api/scenarios/upload-image', () => HttpResponse.json({ ok: false, error: 'Upload failed' }))
     );
 
     const { result } = renderEditor(loadedItem, { onImageUploaded });
@@ -567,7 +567,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
     mockUseAuth.mockReturnValue({ user: null, loading: false });
     let called = false;
     server.use(
-      http.put('/api/lab/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
+      http.put('/api/scenarios/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
     );
 
     const { result } = renderEditor(loadedItem);
@@ -582,7 +582,7 @@ describe('14. saveHotspotYoutubeVideo', () => {
   it('14.3 alerts and leaves the hotspot unchanged on a failed save', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
-      http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Invalid URL' }, { status: 400 }))
+      http.put('/api/scenarios/video', () => HttpResponse.json({ ok: false, error: 'Invalid URL' }, { status: 400 }))
     );
 
     const { result } = renderEditor(loadedItem);
@@ -616,7 +616,7 @@ describe('15. uploadHotspotMp4Video', () => {
   it('15.2 alerts and leaves the hotspot unchanged on a failed upload', async () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
-      http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Upload failed' }, { status: 500 }))
+      http.put('/api/scenarios/video', () => HttpResponse.json({ ok: false, error: 'Upload failed' }, { status: 500 }))
     );
 
     const { result } = renderEditor(loadedItem);
@@ -653,7 +653,7 @@ describe('16. removeHotspotVideo', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     let called = false;
     server.use(
-      http.delete('/api/lab/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
+      http.delete('/api/scenarios/video', () => { called = true; return HttpResponse.json({ ok: true, hazard: {} }); })
     );
 
     const { result } = renderEditor(videoItem);
@@ -669,7 +669,7 @@ describe('16. removeHotspotVideo', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     server.use(
-      http.delete('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Removal failed' }, { status: 500 }))
+      http.delete('/api/scenarios/video', () => HttpResponse.json({ ok: false, error: 'Removal failed' }, { status: 500 }))
     );
 
     const { result } = renderEditor(videoItem);
@@ -694,7 +694,7 @@ describe('17. onSaved', () => {
 
   it('17.2 is not called after a failed save, or when the module link is invalid', async () => {
     const onSaved = vi.fn();
-    server.use(http.post('/api/lab/save-hotspots', () => HttpResponse.json({ ok: false }, { status: 500 })));
+    server.use(http.post('/api/scenarios/save-hotspots', () => HttpResponse.json({ ok: false }, { status: 500 })));
     const { result } = renderEditor(loadedItem, { onSaved });
 
     await act(async () => { await result.current.saveToSupabase(); });
@@ -714,7 +714,7 @@ describe('17. onSaved', () => {
     await act(async () => { await result.current.removeHotspotVideo(); });
     expect(onSaved).toHaveBeenCalledTimes(1);
 
-    server.use(http.put('/api/lab/video', () => HttpResponse.json({ ok: false, error: 'Nope' }, { status: 400 })));
+    server.use(http.put('/api/scenarios/video', () => HttpResponse.json({ ok: false, error: 'Nope' }, { status: 400 })));
     act(() => { result.current.changeVideoDraftYoutubeUrl('https://www.youtube.com/watch?v=xyz'); });
     await act(async () => { await result.current.saveHotspotYoutubeVideo(); });
     expect(onSaved).toHaveBeenCalledTimes(1);   // unchanged

@@ -102,7 +102,7 @@ export default function AdminModuleCard({ item, animationDelay = 0, adminProgres
 
     return (
         <div
-            className="module-card"
+            className="module-card module-card--static"
             style={{ animationDelay: `${animationDelay}s`, }}
         >
             <div className={`card-top-bar ${meta.barClass}`}/>

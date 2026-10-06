@@ -17,7 +17,7 @@ export default function ScenariosPage() {
                 if (!loading && !user) router.replace('/login');
         }, [user, loading, router]);
 
-        if (loading) return <div>LoadingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</div>;
+        if (loading) return <div>Loading...</div>;
         if (!user) return null;
 
         return (
@@ -29,7 +29,7 @@ export default function ScenariosPage() {
 
                         <div className="scenarios-grid">
                                 {/* Interactive Hydrogen Lab */}
-                                <Link href="/lab" className="scenario-card">
+                                <Link href="/scenarios/hazards" className="scenario-card">
                                         <div className="scenario-card-icon">&#x1F9EA;</div>
 
                                         <div className="scenario-card-body">

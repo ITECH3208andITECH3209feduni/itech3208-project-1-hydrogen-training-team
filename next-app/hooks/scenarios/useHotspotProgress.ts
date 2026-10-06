@@ -1,5 +1,5 @@
-// hooks/lab/useHotspotProgress.ts
-// Records that the signed-in learner has clicked a hotspot on /lab.
+// hooks/scenarios/useHotspotProgress.ts
+// Records that the signed-in learner has clicked a hotspot on /scenarios/hazards.
 
 import { useCallback } from 'react';
 import type { User } from 'firebase/auth';
@@ -16,7 +16,7 @@ export function useHotspotProgress({ user }: UseHotspotProgressProps) {
 		try {
 			const token = await user.getIdToken();
 
-			const response = await fetch('/api/lab/progress', {
+			const response = await fetch('/api/scenarios/progress', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-// hooks/lab/useHotspots.ts
+// hooks/scenarios/useHotspots.ts
 // Loads the lab's live hotspot data and image URL from Supabase, with fallback to the bundled defaults in lib/hazards.ts.
 // Editing/saving lives in useHotspotEditor.ts, per-user click tracking in useHotspotProgress.ts.
 
@@ -53,7 +53,7 @@ export function useHotspots() {
 		async function loadHotspots() {
 			try {
 				// Fetch hotspots from Supabase
-				const res  = await fetch('/api/lab/load-hotspots', { cache: 'no-store' });
+				const res  = await fetch('/api/scenarios/load-hotspots', { cache: 'no-store' });
 				const json = await res.json();
 				if (cancelled) return;
 				
@@ -115,7 +115,7 @@ export function useHotspots() {
 	useEffect(() => {
 		async function loadImage() {
 			try {
-				const res = await fetch('/api/lab/load-image', { cache: 'no-store' });
+				const res = await fetch('/api/scenarios/load-image', { cache: 'no-store' });
 				const json = await res.json();
 				if (json.ok && json.url) {
 					// Append timestamp to bust browser cache on each load

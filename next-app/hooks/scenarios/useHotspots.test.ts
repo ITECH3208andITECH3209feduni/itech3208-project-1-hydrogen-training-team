@@ -1,4 +1,4 @@
-// hooks/lab/useHotspots.test.ts
+// hooks/scenarios/useHotspots.test.ts
 // Unit + integration tests for functions in useHotspots.ts & related API calls
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
@@ -68,7 +68,7 @@ describe('3. load-hotspots', () => {
   // Test if uses default info when API returns empty
   it('3.2 falls back to defaults when API returns empty', async () => {
     server.use(
-      http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [] }))
+      http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({ ok: true, data: [] }))
     );
 
     const { result } = renderHook(() => useHotspots());
@@ -84,7 +84,7 @@ describe('3. load-hotspots', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     server.use(
-      http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
+      http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({ ok: false, error: 'Supabase error' }, { status: 500 }))
     );
 
     const { result } = renderHook(() => useHotspots());
@@ -101,7 +101,7 @@ describe('3. load-hotspots', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     server.use(
-      http.get('/api/lab/load-hotspots', () => HttpResponse.error())
+      http.get('/api/scenarios/load-hotspots', () => HttpResponse.error())
     );
 
     const { result } = renderHook(() => useHotspots());
@@ -115,7 +115,7 @@ describe('3. load-hotspots', () => {
   // Test if a hotspot with no linked module doesn't show values for module_topic/module_id (doesn't use default values from hazards.ts)
   it('3.5 passes through module_topic/module_id as null when the hotspot has no linked module', async () => {
     server.use(
-      http.get('/api/lab/load-hotspots', () => HttpResponse.json({
+      http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({
         ok: true,
         data: [
           {
@@ -154,7 +154,7 @@ describe('4. load-image', () => {
 
   // Test if uses default when API returns empty
   it('4.2 keeps the default image when no image exists in the API', async () => {
-    server.use(http.get('/api/lab/load-image', () => HttpResponse.json({ ok: true, url: null })));
+    server.use(http.get('/api/scenarios/load-image', () => HttpResponse.json({ ok: true, url: null })));
 
     const { result } = renderHook(() => useHotspots());
 
@@ -166,7 +166,7 @@ describe('4. load-image', () => {
   // Test if uses default when API responds with an error (bad query, policy rejection, data issue, etc.)
   it('4.3 keeps the default image when API responds with an error', async () => {
     server.use(
-      http.get('/api/lab/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
+      http.get('/api/scenarios/load-image', () => HttpResponse.json({ ok: false, error: 'Storage error' }, { status: 500 }))
     );
 
     const { result } = renderHook(() => useHotspots());
@@ -188,7 +188,7 @@ describe('5. reload', () => {
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
     expect(result.current.hotspots[0].info.title).toBe('Loaded Title');
 
-    server.use(http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [row] })));
+    server.use(http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({ ok: true, data: [row] })));
     act(() => { result.current.reload(); });
 
     expect(result.current.loadStatus).toBe('ready');
@@ -200,7 +200,7 @@ describe('5. reload', () => {
     const { result } = renderHook(() => useHotspots());
     await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
 
-    server.use(http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: false, error: 'Boom' }, { status: 500 })));
+    server.use(http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({ ok: false, error: 'Boom' }, { status: 500 })));
     act(() => { result.current.reload(); });
 
     await waitFor(() => expect(consoleSpy).toHaveBeenCalledWith('load-hotspots API error:', 'Boom'));
@@ -213,7 +213,7 @@ describe('5. reload', () => {
     const { result } = renderHook(() => useHotspots());
     await waitFor(() => expect(result.current.hotspots).toHaveLength(1));
 
-    server.use(http.get('/api/lab/load-hotspots', () => HttpResponse.json({ ok: true, data: [] })));
+    server.use(http.get('/api/scenarios/load-hotspots', () => HttpResponse.json({ ok: true, data: [] })));
     act(() => { result.current.reload(); });
 
     await waitFor(() => expect(result.current.hotspots).toEqual(buildDefaultHotspots()));

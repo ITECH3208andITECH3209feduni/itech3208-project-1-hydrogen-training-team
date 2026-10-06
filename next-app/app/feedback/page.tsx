@@ -7,9 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import "./feedback.css";
 
 const categories = [
-    "Training Modules",
-    "Simulations",
-    "Quizzes",
+    "Safety Scenarios",
+    "Learning Modules",
+    "Knowledge Quizzes",
     "Website / Navigation",
     "Technical Issue",
     "Other",

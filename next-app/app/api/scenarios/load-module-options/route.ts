@@ -1,5 +1,5 @@
-// app/api/lab/load-module-options/route.ts
-// Returns a list of modules to connect to a hotspot for the lab page's edit-mode.
+// app/api/scenarios/load-module-options/route.ts
+// Returns a list of modules to connect to a hotspot for the scenario/hazards page's edit-mode.
 // GET /api/load-module-options
 
 import { NextResponse } from 'next/server';

@@ -4,8 +4,8 @@ import { http, HttpResponse } from 'msw';
 
 // Put a successful response in each route (for fail cases, override in test file)
 export const handlers = [
-    // Lab page routes
-    http.get('/api/lab/load-hotspots', () => {
+    // Scenario page routes
+    http.get('/api/scenarios/load-hotspots', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -23,16 +23,16 @@ export const handlers = [
             ],
         });
     }),
-    http.get('/api/lab/load-image', () => {
+    http.get('/api/scenarios/load-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/lab-photo.jpg' });
     }),
-    http.post('/api/lab/save-hotspots', () => {
+    http.post('/api/scenarios/save-hotspots', () => {
         return HttpResponse.json({ ok: true });
     }),
-    http.post('/api/lab/upload-image', () => {
+    http.post('/api/scenarios/upload-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/mock-image.jpg' });
     }),
-    http.get('/api/lab/load-module-options', () => {
+    http.get('/api/scenarios/load-module-options', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -43,7 +43,7 @@ export const handlers = [
             ],
         });
     }),
-    http.put('/api/lab/video', async ({ request }) => {
+    http.put('/api/scenarios/video', async ({ request }) => {
         const formData = await request.formData();
         const videoType = formData.get('videoType');
 
@@ -60,13 +60,13 @@ export const handlers = [
             },
         });
     }),
-    http.delete('/api/lab/video', () => {
+    http.delete('/api/scenarios/video', () => {
         return HttpResponse.json({
             ok: true,
             hazard: { type: 'gas', title: 'Mock Title', video_url: null, video_type: null },
         });
     }),
-    http.get('/api/lab/progress', () => {
+    http.get('/api/scenarios/progress', () => {
         return HttpResponse.json({
             ok: true,
             progress: [{ hotspot_id: 'gas', first_clicked_at: '2026-01-01T00:00:00.000Z' }],
@@ -74,7 +74,7 @@ export const handlers = [
             totalHotspots: 4,
         });
     }),
-    http.post('/api/lab/progress', () => {
+    http.post('/api/scenarios/progress', () => {
         return HttpResponse.json({ ok: true, message: 'Hotspot progress recorded' });
     }),
     

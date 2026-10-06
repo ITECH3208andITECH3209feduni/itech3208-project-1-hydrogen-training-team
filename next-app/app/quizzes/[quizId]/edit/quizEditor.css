@@ -52,6 +52,14 @@
 	font-family: inherit;
 }
 
+.quiz-editor-fields input:focus,
+.quiz-editor-fields textarea:focus,
+.quiz-editor-question-detail input[type='text']:focus,
+.quiz-editor-question-detail textarea:focus {
+	outline: none;
+	border-color: var(--accent);
+}
+
 /* Textareas resize vertically only, so they can't be dragged wider than the panel */
 .quiz-editor-fields textarea,
 .quiz-editor-question-detail textarea {
@@ -206,7 +214,7 @@
 .quiz-editor-core-toggle input[type='checkbox'] {
 	width: 16px;
 	height: 16px;
-	accent-color: var(--teal);
+	accent-color: var(--accent);
 	cursor: pointer;
 	flex-shrink: 0;
 	margin: 0;

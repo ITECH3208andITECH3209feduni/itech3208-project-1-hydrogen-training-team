@@ -1,4 +1,4 @@
-// app/lab/components/Popup.tsx
+// app/scenarios/components/Popup.tsx
 // Modal popup shown when a hotspot is clicked.
 
 "use client";
