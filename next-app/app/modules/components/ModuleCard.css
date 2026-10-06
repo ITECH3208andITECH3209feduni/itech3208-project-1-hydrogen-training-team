@@ -16,8 +16,8 @@
 }
 .module-card:hover {
 	transform: translateY(-4px);
-	border-color: var(--teal);
-	background: rgba(0,180,216,0.07);
+	border-color: var(--accent);
+	background: var(--accent-glow);
 }
 
 /* Coloured top bar */
@@ -51,12 +51,12 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 1.4rem;
+	font-size: 1.5rem;
 	flex-shrink: 0;
 }
 
 .status-badge {
-	font-size: 0.72rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 	padding: 3px 10px;
 	border-radius: var(--radius-pill);
@@ -66,14 +66,14 @@
 .badge-todo     { background: rgba(255,255,255,0.07); color: var(--muted); }
 
 .card-title {
-	font-family: 'Exo 2', sans-serif;
-	font-size: 1rem;
+	font-family: var(--font-heading);
+	font-size: 1.08rem;
 	font-weight: 700;
-	color: var(--white);
+	color: var(--accent);
 	margin-bottom: 6px;
 }
 .card-desc {
-	font-size: 0.82rem;
+	font-size: 0.9rem;
 	color: var(--muted);
 	line-height: 1.5;
 	margin-bottom: 16px;
@@ -96,7 +96,7 @@
 .card-meta {
 	display: flex;
 	justify-content: space-between;
-	font-size: 0.75rem;
+	font-size: 0.85rem;
 	color: var(--muted);
 }
 
@@ -107,13 +107,14 @@
 	gap: 6px;
 	padding: 10px;
 	border-top: 1px solid var(--border);
-	font-size: 0.82rem;
+	font-size: 0.9rem;
 	font-weight: 600;
-	color: var(--teal);
+	color: var(--white);
 	transition: background 0.2s;
 }
 .module-card:hover .card-link {
-	background: rgba(0,180,216,0.08);
+	background: var(--accent-glow);
+	color: var(--accent);
 }
 
 /* Module number badge (top-left of card) */
@@ -129,8 +130,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 0.68rem;
+	font-size: 0.75rem;
 	font-weight: 700;
 	color: white;
-	font-family: 'Exo 2', sans-serif;
+	font-family: var(--font-heading);
 }

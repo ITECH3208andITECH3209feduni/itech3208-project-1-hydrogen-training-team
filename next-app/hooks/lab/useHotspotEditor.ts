@@ -1,42 +1,23 @@
-// hooks/lab/useHazards.ts
-// Manages all hotspot state, Supabase load/save, drag logic, edit mode, lab image URL state and upload, and per-hotspot video embeds
+// hooks/lab/useHotspotEditor.ts
+// Manages the /lab editor: edit mode, the draft hotspots, dragging, save/reset, lab image upload and per-hotspot embedded video.
+// Live data comes from useHotspots (its `item`); this hook never loads anything itself.
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { MAX_MP4_BYTES } from '@/lib/video/video';
-import {
-	HazardType,
-	hazardData as defaultHazardData,
-	hotspots as defaultHotspots,
-	HotspotConfig,
-	HazardInfo,
-} from '@/lib/hazards';   // Given "default" prefix as are fallbacks from hazards.ts, not the live data from Supabase
+import { useUnsavedChanges } from '@/hooks/unsavedChanges/useUnsavedChanges';
+import { HazardInfo } from '@/lib/hazards';
+import { EditableHotspot, VideoType, buildDefaultHotspots } from './useHotspots';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-// Bundles hazard info together with hotspot position for easier state management
-export interface EditableHotspot extends Omit<HotspotConfig, 'type'> {
-	type: string;
-	info: HazardInfo;
-}
-
-// Export save, load and upload states, and video types so page file can use them
 export type SaveStatus =   'idle' | 'saving' | 'saved' | 'error';
-export type LoadStatus =   'loading' | 'ready' | 'error';
 export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'error';
-export type VideoType =    'youtube' | 'mp4';
 
-// ─── Constants ──────────────────────────────────────────────────────
-const DEFAULT_IMAGE = '/lab.jpg';	// Default name of image file
+interface UseHotspotEditorOptions {
+	onSaved?:         () => void;              // Called once something has been persisted (a save, or a video change), so live data can refresh
+	onImageUploaded?: (url: string) => void;   // Called with the new (cache-busted) image URL after a successful upload
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-// Combines position data from defaultHotspots & text from defaultHazardData into editable array
-export function buildDefaultHotspots(): EditableHotspot[] {
-	return defaultHotspots.map((hs) => ({
-		...hs,
-		info: { ...defaultHazardData[hs.type] },
-	}));
-}
-
 // Prevents dragging hotspots outside image boundaries
 export function clamp(val: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, val));
@@ -46,117 +27,74 @@ export function clamp(val: number, min: number, max: number) {
 export function generateType(existing: EditableHotspot[]): string {
 	const existingTypes = new Set(existing.map((hs) => hs.type));
 	let i = 1;
-	while (existingTypes.has(`hazard_${i}`)) i++;
-	return `hazard_${i}`;
+	while (existingTypes.has(`hotspot_${i}`)) i++;
+	return `hotspot_${i}`;
+}
+
+// Make a snapshot of the current hotspots to compare against what was last loaded/saved. Used for warnings about unsaved changes
+export function snapshotHotspots(hotspots: EditableHotspot[]): string {
+	return JSON.stringify(
+		hotspots.map((hs) => ({
+			type: hs.type,
+			top: hs.top,
+			left: hs.left,
+			title: hs.info.title,
+			text: hs.info.text,
+			moduleTopic: hs.info.moduleTopic ?? null,
+			moduleId: hs.info.moduleId ?? null,
+		}))
+	);
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
-export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>) {
+// containerRef: the image container, so drag logic knows its position & size.
+// item: the live hotspots from useHotspots — seeds the draft. Pass a stable reference (state), not a fresh array each render.
+export function useHotspotEditor(
+	containerRef: React.RefObject<HTMLDivElement | null>,
+	item: EditableHotspot[],
+	{ onSaved, onImageUploaded }: UseHotspotEditorOptions = {}
+) {
 	const { user } = useAuth();
-	
-	// States
-	const [hotspots, setHotspots]     = useState<EditableHotspot[]>(buildDefaultHotspots);   // Live array of hotspot data
-	const [loadStatus, setLoadStatus] = useState<LoadStatus>('loading');                     // Tracks status of Supabase fetch
-	const [editMode, setEditMode]     = useState(false);                                     // Whether edit mode is active
-	const [selected, setSelected]     = useState<number | null>(null);                       // Index of hotspot currently being edited
-	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');                        // Handles appearance of save button in edit mode
-	
-	// Image state — starts with the local fallback, replaced by Supabase URL after load
-	const [imageUrl, setImageUrl]         = useState<string>(DEFAULT_IMAGE);
-	const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
-	
-	// Video editor state ─ Only one hotspot is ever being edited at a time.
-	const [videoDraftType, setVideoDraftType]             = useState<VideoType>('youtube');
-	const [videoDraftYoutubeUrl, setVideoDraftYoutubeUrl] = useState('');
-	const [videoDraftFile, setVideoDraftFile]             = useState<File | null>(null);
-	const [videoSaving, setVideoSaving]                   = useState(false);
 
-	// ── Load hazards from Supabase on mount ─────────────────────────────────────────
-	// Runs once when page first loads
+	// States
+	const [draft, setDraft]           = useState<EditableHotspot[]>(item);   // Hotspots being edited
+	const [editMode, setEditMode]     = useState(false);                     // Whether edit mode is active
+	const [selected, setSelected]     = useState<number | null>(null);       // Index of hotspot currently being edited
+	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');        // Handles appearance of save button in edit mode
+
+	// Whether the draft differs from what's stored, plus how to tell it what's now stored (see useUnsavedChanges)
+	const { hasUnsavedChanges, markSaved } = useUnsavedChanges(draft, item, snapshotHotspots);
+	// Unsaved-changes flag, stops background refreshes of live data overwriting in-progress edits.
+	const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+	hasUnsavedChangesRef.current = hasUnsavedChanges;
+
+	// Image upload state
+	const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+
+	// Video editor state ─ Only one hotspot video is ever being edited at a time.
+	const [videoDraftType, setVideoDraftType]               = useState<VideoType>('youtube');
+	const [videoDraftYoutubeUrl, setVideoDraftYoutubeUrl]   = useState('');
+	const [videoDraftFile, setVideoDraftFile]               = useState<File | null>(null);
+	const [videoSaving, setVideoSaving]                     = useState(false);
+
+	// ── Keep the draft in step with the live data ────────────────────────────────
+	// Maintain unsaved edits until they are saved or reverted; otherwise follow the live data.
 	useEffect(() => {
-		async function loadHazards() {
-			try {
-				// Fetch hazards from Supabase
-				const res  = await fetch('/api/lab/load-hazards', { cache: 'no-store' });
-				const json = await res.json();
-				
-				// If fetch fails or table empty, use hazards.ts instead
-				if (!json.ok) {
-  					console.error('load-hazards API error:', json.error);
-  					setLoadStatus('error');
-  					return;
-				}
-				
-				if (!json.data?.length) {
-  					setLoadStatus('ready');
-  					return;
-				}
-				
-				// If rows returned from fetch, maps into hotspot objects
-				const loaded: EditableHotspot[] = json.data.map(
-					(row: {
-						type:           string;
-						top:            string;
-						left:           string;
-						title:          string;
-						text:           string;
-						module_topic:   string | null;
-						module_id:      string | null;
-						video_url:      string | null;
-						video_type:     string | null;
-					}) => ({
-						type: row.type as HazardType,
-						top:  row.top,
-						left: row.left,
-						info: {
-							title:         row.title,
-							text:          row.text,
-							moduleId:      row.module_id,
-							moduleTopic:   row.module_topic,
-							videoUrl:      row.video_url,
-							videoType:     row.video_type as VideoType | null,
-						},
-					})
-				);
-				
-				setHotspots(loaded);	// Replace defaults
-				setLoadStatus('ready');
-			} catch {
-				console.error('Failed to load hazards from Supabase — using defaults');
-				setLoadStatus('error');
-			}
-		}
-		loadHazards();
-	}, []);
-	
-	// ── Load image URL from Supabase on mount ──────────────────────
-	useEffect(() => {
-		async function loadImage() {
-			try {
-				const res = await fetch('/api/lab/load-image', { cache: 'no-store' });
-				const json = await res.json();
-				if (json.ok && json.url) {
-					// Append timestamp to bust browser cache on each load
-					setImageUrl(`${json.url}?t=${Date.now()}`);
-				} // If no image in storage yet, keep the local /lab.jpg fallback
-			} catch {
-				console.error('Failed to load image URL — using default');
-			}
-		}
-		loadImage();
-	}, []);
+		if (!hasUnsavedChangesRef.current) setDraft(item);
+		markSaved(item);
+	}, [item, markSaved]);
 
 	// ── Keep video draft in sync with the selected hotspot ──────────────────
 	// Maintains edits to embedded video for each hotspot
 	useEffect(() => {
 		if (selected === null) return;
-		const hs = hotspots[selected];
+		const hs = draft[selected];
 		if (!hs) return;
 		setVideoDraftType(hs.info.videoType === 'mp4' ? 'mp4' : 'youtube');
 		setVideoDraftYoutubeUrl(hs.info.videoType === 'youtube' ? hs.info.videoUrl ?? '' : '');
 		setVideoDraftFile(null);
 	}, [selected]);
-	
+
 	// ── Edit mode toggle ────────────────────────────────────────────────────
 	// A toggle switch for edit mode, only seen if the user is an admin.
 	const toggleEditMode = useCallback(() => {
@@ -165,7 +103,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			return !v;
 		});
 	}, []);
-	
+
 	// ── Drag logic ──────────────────────────────────────────────────────────
 	// Attaches listeners to a hotspot for dragging it around the image (after clicking and holding on it)
 	const handleDragStart = useCallback(
@@ -173,18 +111,18 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			if (!editMode) return;   // If edit mode not active, does nothing
 			e.preventDefault();      // Stops browser's default drag behaviour
 			setSelected(index);      // Highlights selected hotspot
-			
+
 			const container = containerRef.current;
 			if (!container) return;
 			const rect = container.getBoundingClientRect();   // Measures image container's position & size for reference
-			
+
 			// Upon moving the mouse, calculate the mouse's position relative to the lab image
 			const onMouseMove = (ev: MouseEvent) => {
 				// Calculate position of hotspot as percentage values
 				const topPct  = clamp(((ev.clientY - rect.top)  / rect.height) * 100, 0, 95);
 				const leftPct = clamp(((ev.clientX - rect.left) / rect.width)  * 100, 0, 95);
 				// Update the hotspot's position (toFixed(1) rounds to one decimal place)
-				setHotspots((prev) =>
+				setDraft((prev) =>
 					prev.map((hs, i) =>
 						i === index
 						? { ...hs, top: `${topPct.toFixed(1)}%`, left: `${leftPct.toFixed(1)}%` }
@@ -192,55 +130,52 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 					)
 				);
 			};
-			
+
 			// Upon releasing the mouse (i.e. not holding down the click), remove the listeners (Otherwise drag would continue)
 			const onMouseUp = () => {
 				window.removeEventListener('mousemove', onMouseMove);
 				window.removeEventListener('mouseup', onMouseUp);
 			};
-			
+
 			// Attach listeners to window for better performance (i.e. Drag is smooth regardless of mouse speed)
 			window.addEventListener('mousemove', onMouseMove);
 			window.addEventListener('mouseup', onMouseUp);
 		},
 		[editMode, containerRef]
 	);
-	
+
 	// ── Hotspot editing ────────────────────────────────────────────────────────
-	// Updates either the title or text field for a chosen hotspot in state (i.e. not yet saved to Supabase)
+	// Updates a field of a chosen hotspot's info in the draft (i.e. not yet saved to Supabase)
 	const updateInfo = useCallback((index: number, field: keyof HazardInfo, value: string | null) => {
-		setHotspots((prev) =>
+		setDraft((prev) =>
 			prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, [field]: value } } : hs))
 		);
 	}, []);
-	
-	// Updates the position of a chosen hotspot in state (i.e. not yet saved to Supabase)
+
+	// Updates the position of a chosen hotspot in the draft
 	const updatePosition = useCallback((index: number, field: 'top' | 'left', value: string) => {
-		setHotspots((prev) =>
+		setDraft((prev) =>
 			prev.map((hs, i) => (i === index ? { ...hs, [field]: value } : hs))
 		);
 	}, []);
 
-	// Updates the linked modules for a chosen hotspot in state (i.e. not yet saved to Supabase).
-	const updateModuleLink = useCallback(
-		(index: number, moduleTopic: string | null, moduleId: string | null) => {
-			setHotspots((prev) =>
-				prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, moduleTopic, moduleId } } : hs))
-			);
-		},
-		[]
-	);
-	
+	// Updates the linked module for a chosen hotspot in the draft
+	const updateModuleLink = useCallback((index: number, moduleTopic: string | null, moduleId: string | null) => {
+        setDraft((prev) =>
+            prev.map((hs, i) => (i === index ? { ...hs, info: { ...hs.info, moduleTopic, moduleId } } : hs))
+        );
+    }, []);
+
 	// ── Add hotspot ─────────────────────────────────────────────────────────
 	const addHotspot = useCallback(() => {
-		setHotspots((prev) => {
+		setDraft((prev) => {
 			const newHotspot: EditableHotspot = {
 				type: generateType(prev),
 				top:  '50%',
 				left: '50%',
 				info: {
-					title: '⚠️ New Hazard',
-					text:  'Describe this hazard here.',
+					title: '⚠️ New Hotspot',
+					text:  'Describe this hotspot here.',
 					moduleId: null,
 					moduleTopic: null,
 					videoUrl: null,
@@ -253,30 +188,30 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			return next;
 		});
 	}, []);
-	
+
 	// ── Delete hotspot ──────────────────────────────────────────────────────
 	const deleteHotspot = useCallback((index: number) => {
-		setHotspots((prev) => prev.filter((_, i) => i !== index));
+		setDraft((prev) => prev.filter((_, i) => i !== index));
 		setSelected(null);
 	}, []);
-	
+
 	// ── Upload image ────────────────────────────────────────────────────────
 	const uploadImage = useCallback(async (file: File) => {
 		setUploadStatus('uploading');
 		try {
 			const formData = new FormData();
 			formData.append('image', file);
-			
+
 			const res = await fetch('/api/lab/upload-image', {
 				method: 'POST',
 				body: formData,
 			});
-			
+
 			const json = await res.json();
 			if (!json.ok) throw new Error(json.error);
-			
-			// Update the displayed image immediately, with cache-busting timestamp
-			setImageUrl(`${json.url}?t=${Date.now()}`);
+
+			// Hand the new URL (with cache-busting timestamp) to whoever owns the displayed image
+			onImageUploaded?.(`${json.url}?t=${Date.now()}`);
 			setUploadStatus('uploaded');
 			setTimeout(() => setUploadStatus('idle'), 2500);
 		} catch (err) {
@@ -284,8 +219,8 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			setUploadStatus('error');
 			setTimeout(() => setUploadStatus('idle'), 3000);
 		}
-	}, []);
-	
+	}, [onImageUploaded]);
+
 	// ── Video editing ────────────────────────────────────────────────────────
 	const changeVideoDraftType = useCallback((type: VideoType) => setVideoDraftType(type), []);
 	const changeVideoDraftYoutubeUrl = useCallback((url: string) => setVideoDraftYoutubeUrl(url), []);
@@ -302,7 +237,7 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 	// Save an embedded video to Supabase as a YouTube link
 	const saveHotspotYoutubeVideo = useCallback(async () => {
 		if (!user || selected === null || !videoDraftYoutubeUrl.trim()) return;
-		const hs = hotspots[selected];
+		const hs = draft[selected];
 
 		try {
 			setVideoSaving(true);
@@ -322,18 +257,19 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 
 			updateInfo(selected, 'videoUrl', json.hazard.video_url);
 			updateInfo(selected, 'videoType', json.hazard.video_type);
+			onSaved?.();   // Videos persist immediately, so the live data needs to catch up
 		} catch (err) {
 			console.error('SAVE HOTSPOT YOUTUBE VIDEO ERROR:', err);
 			alert(err instanceof Error ? err.message : 'Unable to save YouTube video.');
 		} finally {
 			setVideoSaving(false);
 		}
-	}, [user, selected, hotspots, videoDraftYoutubeUrl, updateInfo]);
+	}, [user, selected, draft, videoDraftYoutubeUrl, updateInfo, onSaved]);
 
 	// Upload an embedded video to Supabase as an mp4 file
 	const uploadHotspotMp4Video = useCallback(async () => {
 		if (!user || selected === null || !videoDraftFile) return;
-		const hs = hotspots[selected];
+		const hs = draft[selected];
 
 		try {
 			setVideoSaving(true);
@@ -354,18 +290,19 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			updateInfo(selected, 'videoUrl', json.hazard.video_url);
 			updateInfo(selected, 'videoType', json.hazard.video_type);
 			setVideoDraftFile(null);
+			onSaved?.();
 		} catch (err) {
 			console.error('UPLOAD HOTSPOT MP4 VIDEO ERROR:', err);
 			alert(err instanceof Error ? err.message : 'Unable to upload MP4 video.');
 		} finally {
 			setVideoSaving(false);
 		}
-	}, [user, selected, hotspots, videoDraftFile, updateInfo]);
+	}, [user, selected, draft, videoDraftFile, updateInfo, onSaved]);
 
 	// Delete the embedded video from Supabase (no matter the type)
 	const removeHotspotVideo = useCallback(async () => {
 		if (!user || selected === null) return;
-		const hs = hotspots[selected];
+		const hs = draft[selected];
 
 		const confirmed = window.confirm('Remove this video from the hotspot?');
 		if (!confirmed) return;
@@ -390,22 +327,22 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 			setVideoDraftYoutubeUrl('');
 			setVideoDraftFile(null);
 			setVideoDraftType('youtube');
+			onSaved?.();
 		} catch (err) {
 			console.error('REMOVE HOTSPOT VIDEO ERROR:', err);
 			alert(err instanceof Error ? err.message : 'Unable to remove video.');
 		} finally {
 			setVideoSaving(false);
 		}
-	}, [user, selected, hotspots, updateInfo]);
+	}, [user, selected, draft, updateInfo, onSaved]);
 
 	// ── Linked-module validity ───────────────────────────────────────────────────
 	// Hotspots must have both a topic and module set, or neither.
-	const hasInvalidModuleLink = hotspots.some(
+	const hasInvalidModuleLink = draft.some(
 		(hs) => (hs.info.moduleTopic === null) !== (hs.info.moduleId === null)
 	);
 
-	// ── Save hazards to Supabase ────────────────────────────────────────────────────
-	// Save current hotspots to Supabase
+	// ── Save hotspots to Supabase ────────────────────────────────────────────────────
 	const saveToSupabase = useCallback(async () => {
 		// Cancel save if any hotspots have an invalid module link
 		if (hasInvalidModuleLink) {
@@ -415,42 +352,38 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		}
 		setSaveStatus('saving');	// Updated over course of function to show progress
 		try {
-			const res = await fetch('/api/lab/save-hazards', {
+			const res = await fetch('/api/lab/save-hotspots', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					hotspots:   hotspots.map(({ type, top, left }) => ({ type, top, left })),
-					hazardData: Object.fromEntries(hotspots.map((hs) => [hs.type, hs.info])),
+					hotspots:   draft.map(({ type, top, left }) => ({ type, top, left })),
+					hotspotData: Object.fromEntries(draft.map((hs) => [hs.type, hs.info])),
 				}),
 			});
 			if (!res.ok) throw new Error('API error');
+			markSaved(draft);   // `draft` is the closure value that was sent, so edits made while saving stay unsaved
 			setSaveStatus('saved');
 			setTimeout(() => setSaveStatus('idle'), 2500);
+			onSaved?.();
 		} catch {
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [hotspots]);
-	
+	}, [draft, hasInvalidModuleLink, markSaved, onSaved]);
+
 	// ── Reset ───────────────────────────────────────────────────────────────
 	// Rebuild hotspots from hazards.ts and discard unsaved edits
 	const resetDefaults = useCallback(() => {
-		setHotspots(buildDefaultHotspots());
+		setDraft(buildDefaultHotspots());
 		setSelected(null);
 	}, []);
-	
-	// ── live hazard info map for popup ──────────────────────────────────────
-	// Converts hotspots array into a key-value map that the program can directly lookup hotspots from
-	const liveHazardData: Record<string, HazardInfo> = Object.fromEntries(
-		hotspots.map((hs) => [hs.type, hs.info])
-	);
-	
+
 	return {
-		hotspots,
-		loadStatus,
+		draft,
 		editMode,
-		selected,
 		toggleEditMode,
+		hasUnsavedChanges,
+		selected,
 		setSelected,
 		saveStatus,
 		handleDragStart,
@@ -460,12 +393,10 @@ export function useHazards(containerRef: React.RefObject<HTMLDivElement | null>)
 		hasInvalidModuleLink,
 		addHotspot,
 		deleteHotspot,
-		imageUrl,
 		uploadStatus,
 		uploadImage,
 		saveToSupabase,
 		resetDefaults,
-		liveHazardData,
 		videoDraftType,
 		videoDraftYoutubeUrl,
 		videoDraftFile,

@@ -11,7 +11,6 @@ import { getYouTubeVideoId, getStoragePath, validateMp4File, safeFileName } from
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_TOPIC = "hazards";
 const VIDEO_BUCKET = "module-videos";
 
 // PUT
@@ -27,8 +26,8 @@ export async function PUT(request: NextRequest) {
         if (!moduleId) {
             return NextResponse.json({ ok: false, error: "Module ID is required." }, { status: 400 });
         }
-        if (topic !== ALLOWED_TOPIC) {
-            return NextResponse.json({ ok: false, error: "Invalid module topic." }, { status: 400 });
+        if (!topic) {
+            return NextResponse.json({ ok: false, error: "Module topic is required." }, { status: 400 });
         }
         if (videoType !== "youtube" && videoType !== "mp4") {
             return NextResponse.json({ ok: false, error: "Video type must be youtube or mp4." }, { status: 400 });
@@ -155,8 +154,8 @@ export async function DELETE(request: NextRequest) {
         if (!moduleId) {
             return NextResponse.json({ ok: false, error: "Module ID is required." }, { status: 400 });
         }
-        if (topic !== ALLOWED_TOPIC) {
-            return NextResponse.json({ ok: false, error: "Invalid module topic." }, { status: 400 });
+        if (!topic) {
+            return NextResponse.json({ ok: false, error: "Module topic is required." }, { status: 400 });
         }
 
         const { data: existingModule, error: findError } = await supabaseServer

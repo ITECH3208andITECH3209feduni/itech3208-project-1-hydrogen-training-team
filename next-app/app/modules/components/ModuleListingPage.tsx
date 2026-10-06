@@ -95,7 +95,7 @@ export default function ModuleListingPage({
 
 				{/* If no modules available/match filter, show instead */}
 				{visible.length === 0 && (
-					<p style={{ color: 'var(--muted)', fontSize: '0.9rem', padding: '20px 0' }}>
+					<p className="modules-empty-message">
 						{emptyMessage}
 					</p>
 				)}

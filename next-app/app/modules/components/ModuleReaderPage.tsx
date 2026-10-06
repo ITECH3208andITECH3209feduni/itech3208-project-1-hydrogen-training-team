@@ -10,23 +10,24 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ModuleData, getModuleById } from "@/lib/modules/moduleTypes";
 import SectionBlock from "./SectionBlock";
-import ModuleVideo from "@/components/ModuleVideo";
+import EmbeddedVideo from "@/components/EmbeddedVideo";
 import ModuleEditor from "./ModuleEditor";
 import EditModeToggle from "@/components/EditModeToggle";
 import SaveBar from "@/components/SaveBar";
 import { useModuleProgress } from "@/hooks/modules/useModuleProgress";
 import { useModuleEditor } from "@/hooks/modules/useModuleEditor";
-import { MAX_MP4_BYTES } from "@/lib/video/video";
+import { useLeaveWarning } from "@/hooks/unsavedChanges/useLeaveWarning";
 
 interface ModuleReaderPageProps {
-    item: ModuleData | undefined;
-    topic: string;
-    basePath: string;
-    badgeLabel?: string;
-    heroHint: string;
-    backLabel?: string;
+    item:           ModuleData | undefined;
+    topic:          string;
+    basePath:       string;
+    badgeLabel?:    string;
+    heroHint:       string;
+    backLabel?:     string;
     usingDefaults?: boolean;
-    defaults?: ModuleData[];   // Used for reverting to default in edit mode
+    defaults?:      ModuleData[];   // Used for reverting to default in edit mode
+    reload?:        () => void
 }
 
 export default function ModuleReaderPage({
@@ -38,15 +39,10 @@ export default function ModuleReaderPage({
     backLabel = "Back",
     usingDefaults = false,
     defaults,
+    reload,
 }: ModuleReaderPageProps) {
     const { user, loading, permissions } = useAuth();
     const router = useRouter();
-
-    // Video editor state
-    const [videoType, setVideoType] = useState<"youtube" | "mp4">("youtube");
-    const [youtubeUrl, setYoutubeUrl] = useState("");
-    const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
-    const [videoSaving, setVideoSaving] = useState(false);
 
     const {
         currentProgress,
@@ -67,6 +63,7 @@ export default function ModuleReaderPage({
     const {
         editMode,
         toggleEditMode,
+        hasUnsavedChanges,
         draft,
         selectedSection,
         setSelectedSection,
@@ -82,170 +79,19 @@ export default function ModuleReaderPage({
         saveToSupabase,
         resetToDefaults,
         canReset,
-    } = useModuleEditor(topic, item, fallbackItem);
+        videoDraftType,
+        videoDraftYoutubeUrl,
+        videoDraftFile,
+        videoSaving,
+        changeVideoDraftType,
+        changeVideoDraftYoutubeUrl,
+        selectVideoDraftFile,
+        saveYoutubeVideo,
+        uploadMp4Video,
+        removeModuleVideo,
+    } = useModuleEditor(topic, item, fallbackItem, { onSaved: reload });
 
-    // Keep video controls in sync with the current module
-    useEffect(() => {
-        if (!item) return;
-
-        setVideoType(item.videoType === "mp4" ? "mp4" : "youtube");
-        setYoutubeUrl(
-            item.videoType === "youtube"
-                ? item.videoUrl ?? ""
-                : ""
-        );
-        setSelectedVideoFile(null);
-    }, [item?.id, item?.videoUrl, item?.videoType]);
-
-    // Save or replace a YouTube video
-    const saveYoutubeVideo = async () => {
-        if (!user || !draft || !youtubeUrl.trim()) return;
-
-        try {
-            setVideoSaving(true);
-
-            const token = await user.getIdToken();
-            const formData = new FormData();
-
-            formData.append("moduleId", draft.id);
-            formData.append("topic", topic);
-            formData.append("videoType", "youtube");
-            formData.append("videoUrl", youtubeUrl.trim());
-
-            const response = await fetch("/api/modules/video", {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: formData,
-            });
-
-            const json = await response.json();
-
-            if (!response.ok || !json.ok) {
-                throw new Error(json.error ?? "Unable to save video.");
-            }
-
-            updateField("videoUrl", json.module.video_url);
-            updateField("videoType", json.module.video_type);
-        } catch (error) {
-            console.error("SAVE YOUTUBE VIDEO ERROR:", error);
-
-            alert(
-                error instanceof Error
-                    ? error.message
-                    : "Unable to save YouTube video."
-            );
-        } finally {
-            setVideoSaving(false);
-        }
-    };
-
-    // Upload or replace an MP4 video
-    const uploadMp4Video = async () => {
-        if (!user || !draft || !selectedVideoFile) return;
-
-        try {
-            setVideoSaving(true);
-
-            const token = await user.getIdToken();
-            const formData = new FormData();
-
-            formData.append("moduleId", draft.id);
-            formData.append("topic", topic);
-            formData.append("videoType", "mp4");
-            formData.append("file", selectedVideoFile);
-
-            const response = await fetch("/api/modules/video", {
-                method: "PUT",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: formData,
-            });
-
-            const json = await response.json();
-
-            if (!response.ok || !json.ok) {
-                throw new Error(json.error ?? "Unable to upload video.");
-            }
-
-            updateField("videoUrl", json.module.video_url);
-            updateField("videoType", json.module.video_type);
-            setSelectedVideoFile(null);
-        } catch (error) {
-            console.error("UPLOAD MP4 VIDEO ERROR:", error);
-
-            alert(
-                error instanceof Error
-                    ? error.message
-                    : "Unable to upload MP4 video."
-            );
-        } finally {
-            setVideoSaving(false);
-        }
-    };
-
-    // Remove an existing module video
-    const removeModuleVideo = async () => {
-        if (!user || !draft) return;
-
-        const confirmed = window.confirm(
-            "Remove this video from the module?"
-        );
-
-        if (!confirmed) return;
-
-        try {
-            setVideoSaving(true);
-
-            const token = await user.getIdToken();
-
-            const response = await fetch("/api/modules/video", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    moduleId: draft.id,
-                    topic,
-                }),
-            });
-
-            const json = await response.json();
-
-            if (!response.ok || !json.ok) {
-                throw new Error(json.error ?? "Unable to remove video.");
-            }
-
-            updateField("videoUrl", null);
-            updateField("videoType", null);
-
-            setYoutubeUrl("");
-            setSelectedVideoFile(null);
-            setVideoType("youtube");
-        } catch (error) {
-            console.error("REMOVE MODULE VIDEO ERROR:", error);
-
-            alert(
-                error instanceof Error
-                    ? error.message
-                    : "Unable to remove video."
-            );
-        } finally {
-            setVideoSaving(false);
-        }
-    };
-
-    // Reject oversized files before they ever reach the upload route
-    const handleSelectVideoFile = (file: File | null) => {
-        if (file && file.size > MAX_MP4_BYTES) {
-            alert("MP4 videos must be smaller than 50MB.");
-            return;
-        }
-        setSelectedVideoFile(file);
-    };
+    useLeaveWarning(hasUnsavedChanges);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -379,8 +225,8 @@ export default function ModuleReaderPage({
                 </div>
             ))}
 
-            {/* Module Video */}
-            <ModuleVideo
+            {/* Embedded Video */}
+            <EmbeddedVideo
                 videoUrl={displayed.videoUrl}
                 videoType={displayed.videoType}
             />
@@ -460,13 +306,13 @@ export default function ModuleReaderPage({
                     onUpdateSectionItem={updateSectionItem}
                     onAddSectionItem={addSectionItem}
                     onDeleteSectionItem={deleteSectionItem}
-                    videoType={videoType}
-                    youtubeUrl={youtubeUrl}
-                    selectedVideoFile={selectedVideoFile}
+                    videoType={videoDraftType}
+                    youtubeUrl={videoDraftYoutubeUrl}
+                    selectedVideoFile={videoDraftFile}
                     videoSaving={videoSaving}
-                    onChangeVideoType={setVideoType}
-                    onChangeYoutubeUrl={setYoutubeUrl}
-                    onSelectVideoFile={handleSelectVideoFile}
+                    onChangeVideoType={changeVideoDraftType}
+                    onChangeYoutubeUrl={changeVideoDraftYoutubeUrl}
+                    onSelectVideoFile={selectVideoDraftFile}
                     onSaveYoutubeVideo={saveYoutubeVideo}
                     onUploadMp4Video={uploadMp4Video}
                     onRemoveVideo={removeModuleVideo}

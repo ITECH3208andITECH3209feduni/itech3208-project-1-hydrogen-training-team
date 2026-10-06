@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabase";
 
 const VALID_CATEGORIES = [
     "Training Modules",
-    "Scenarios / Simulations",
+    "Simulations",
     "Quizzes",
     "Website / Navigation",
     "Technical Issue",

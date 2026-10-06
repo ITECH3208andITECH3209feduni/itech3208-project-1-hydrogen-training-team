@@ -46,6 +46,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="logo">
                 <span>Hydrogen Lab Safety</span>
+                <img src="/logo/Logo_Navy_NoBackground.png" alt="Hydrogen Training Logo" className="logo-img" />
             </Link>
 
             <div className="nav-links">
@@ -66,6 +67,18 @@ export default function Navbar() {
                 {/* Authenticated users only */}
                 {user && (
                     <>
+                        {/* Simulations */}
+                        <Link
+                            href="/scenarios"
+                            className={`nav-link ${
+                                pathname === "/scenarios"
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Simulations
+                        </Link>
+                        
                         {/* Modules */}
                         <Link
                             href="/modules"
@@ -76,18 +89,6 @@ export default function Navbar() {
                             }`}
                         >
                             Modules
-                        </Link>
-
-                        {/* Scenarios */}
-                        <Link
-                            href="/scenarios"
-                            className={`nav-link ${
-                                (pathname === "/scenarios" || pathname === "/lab")
-                                    ? "active"
-                                    : ""
-                            }`}
-                        >
-                            Scenarios
                         </Link>
 
                         {/* Quizzes */}

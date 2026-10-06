@@ -26,7 +26,7 @@ Prof Bhavna Antony
 # Hydrogen Lab Safety – Next.js
 
 A **Next.js 14 App Router** application with TypeScript for hydrogen technology training.
-	Features an interactive lab safety simulation, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these modules, scenarios, and quizzes.
+	Features an interactive lab safety simulation, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these modules, simulations, and quizzes.
 
 This README covers project structure and getting the app running.
 	Known bugs and inconsistencies are tracked in [`BUG_REPORT.md`](./BUG_REPORT.md);
@@ -48,7 +48,7 @@ hydrogen-lab/
 │   ├── page.tsx              			# Public landing/intro page (/) — root, no login required
 │   ├── intro.css						# Landing-page-specific styles
 │   ├── dashboard/
-│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and lab-hazard progress from the API for the signed-in user
+│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and simulation progress from the API for the signed-in user
 │   │   └── dashboard.css				# Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
@@ -59,13 +59,13 @@ hydrogen-lab/
 │   │   ├── auth.css					# Shared styles for login and register pages
 │   │   ├── page.tsx					# Login page (/login)
 │   │   ├── register/
-│   │   │   └── page.tsx				# Register page (/login/register)
+│   │   │   └── page.tsx				# Register page (/login/register) — Organisation dropdown (Fed Uni / Other), plus a Student ID field for Fed Uni
 │   │   └── forgot-password/
 │   │       └── page.tsx				# Forgot-password page (/login/forgot-password)
 │   ├── admin/
 │   │   ├── page.tsx					# Admin hub (/admin) — cards linking to User Management and Learner Feedback
 │   │   ├── users/
-│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal
+│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal, delete, quiz-results Excel export
 │   │   │   ├── admin.css				# Styles for the admin users page — table, modal, stat cards, admin module cards
 │   │   │   ├── [uid]/
 │   │   │   │   └── progress/
@@ -81,22 +81,22 @@ hydrogen-lab/
 │   │   ├── lab.css						# Lab-specific styles
 │   │   └── components/
 │   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, embedded video, lab image and linked module
-│   │       └── HazardPopup.tsx			# Modal popup for hazard info (+ embedded video & learn more link, if set)
+│   │       └── Popup.tsx				# Modal popup shown when a hotspot is clicked (+ embedded video & learn more link, if set)
 │   ├── modules/
-│   │   ├── modules.css					# Shared styles for every section under app/modules/
+│   │   ├── modules.css					# Shared styles for every topic under app/modules/
 │   │   ├── components/
 │   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
 │   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — progress tracking & in-app editing
 │   │   │   ├── ModuleEditor.tsx		# Edit panel for a module's fields, sections and embedded video, rendered by ModuleReaderPage
-│   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every section)
+│   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every topic)
 │   │   │   ├── ModuleCard.css			# Styles for ModuleCard, shared with AdminModuleCard (app/admin/users/components/)
 │   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page — body supports embedded HTML
-│   │   ├── hazard-modules/
-│   │   │   ├── page.tsx				# Hazard module listing (/modules/hazard-modules)
+│   │   ├── hazards/
+│   │   │   ├── page.tsx				# Hazard module listing (/modules/hazards)
 │   │   │   └── [id]/
-│   │   │       └── page.tsx			# Hazard module reader (/modules/hazard-modules/1 … 5)
+│   │   │       └── page.tsx			# Hazard module reader (/modules/hazards/1 … 5)
 │   │   └── guides/
-│   │       ├── page.tsx				# Example second section (/modules/guides) — template, not linked in nav
+│   │       ├── page.tsx				# Example second topic (/modules/guides) — template, not linked in nav
 │   │       └── [id]/
 │   │           └── page.tsx			# Example reader page
 │   ├── quizzes/
@@ -120,7 +120,7 @@ hydrogen-lab/
 │   └── api/
 │       ├── modules/
 │       │   ├── load-modules/
-│       │   │   └── route.ts			# GET — loads module content + sections from Supabase for a given section (public read)
+│       │   │   └── route.ts			# GET — loads module content + sections from Supabase for a given topic (public read)
 │       │   ├── video/
 │       │   │   └── route.ts			# PUT/DELETE — sets, replaces, or removes a module's embedded video (`requireAdmin`-gated); backs the reader-page editor's Video panel
 │       │   ├── progress/
@@ -128,16 +128,16 @@ hydrogen-lab/
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
 │       ├── lab/
-│       │   ├── load-hazards/
-│       │   │   └── route.ts			# GET — loads hazard data from Supabase (anon client; public read, no auth guard)
-│       │   ├── save-hazards/
-│       │   │   └── route.ts			# POST — saves hazard data to Supabase (delete-all, then re-insert); no auth guard
+│       │   ├── load-hotspots/
+│       │   │   └── route.ts			# GET — loads hotspot data from Supabase (anon client; public read, no auth guard)
+│       │   ├── save-hotspots/
+│       │   │   └── route.ts			# POST — saves hotspot data to Supabase (delete-all, then re-insert); no auth guard
 │       │   ├── load-image/
 │       │   │   └── route.ts			# GET — returns lab image URL from Supabase Storage, or `null` if none uploaded yet (public read)
 │       │   ├── upload-image/
 │       │   │   └── route.ts			# POST — uploads lab image to Supabase Storage, always as `lab.jpg` (overwrites); no auth guard
 │       │   ├── load-module-options/
-│       │   │   └── route.ts			# GET — flat list across all sections, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
+│       │   │   └── route.ts			# GET — flat list across all topics, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
 │       │   ├── progress/
 │       │   │   └── route.ts			# GET/POST — per-user hotspot-click progress for `/lab` (`requireUser`-gated)
 │       │   └── video/
@@ -145,8 +145,10 @@ hydrogen-lab/
 │       ├── admin/
 │       │   ├── users/
 │       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
+│       │   │   ├── export/
+│       │   │   │   └── route.ts		# GET — quiz results for one organisation as an Excel (.xlsx) download (`requireAdmin`-gated)
 │       │   │   └── [uid]/
-│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
+│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (no value validation); DELETE — removes a user, their progress and their Firebase account (both `requireAdmin`-gated)
 │       │   │       └── progress/
 │       │   │           └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
 │       │   └── feedback/
@@ -166,7 +168,7 @@ hydrogen-lab/
 │           ├── get/
 │           │   └── route.ts			# GET — loads a user profile by Firebase uid (no auth guard)
 │           └── create/
-│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
+│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid; role/user_type are always `user`/`public` (no auth guard)
 ├── components/
 │   ├── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
 │   ├── EditModeToggle.tsx				# Toggle switch to enter/exit edit mode; expands into the banner text when on.
@@ -178,21 +180,33 @@ hydrogen-lab/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
 │   ├── lab/							# Hooks for the interactive lab page (/lab)
-│   │   ├── useHazards.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
-│   │   ├── useHazards.test.ts			# Unit + integration tests for useHazards.ts
-│   │   ├── useModuleOptions.ts			# Hook — flat Supabase (section, id, title, badgeNum) list, grouped per section
+│   │   ├── useHotspots.ts				# Loads live hotspots + lab image URL from Supabase, falling back to lib/hazards.ts
+│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHotspots.ts
+│   │   ├── useHotspotEditor.ts			# Edit-mode/draft/save state for the lab's in-app editor — drag, image upload, linked module, embedded video
+│   │   ├── useHotspotEditor.test.ts	# Unit + integration tests for useHotspotEditor.ts
+│   │   ├── useHotspotProgress.ts		# Records a signed-in learner's hotspot clicks
+│   │   ├── useHotspotProgress.test.ts	# Unit + integration tests for useHotspotProgress.ts
+│   │   ├── useModuleOptions.ts			# Hook — flat Supabase (topic, id, title, badgeNum) list, grouped per topic
 │   │   └── useModuleOptions.test.ts	# Integration tests for useModuleOptions.ts
-│   ├── modules/						# Hooks shared by every app/modules/ section (listing + reader pages)
-│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ section
+│   ├── modules/						# Hooks shared by every app/modules/ topic (listing + reader pages)
+│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ topic; exposes reload()
 │   │   ├── useModules.test.ts			# Unit + integration tests for useModules.ts
 │   │   ├── useModuleProgress.ts		# Per-user progress/time tracking for the reader page
-│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor
+│   │   ├── useModuleProgress.test.ts	# Unit + integration tests for useModuleProgress.ts
+│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor, including its embedded video
 │   │   └── useModuleEditor.test.ts		# Unit + integration tests for useModuleEditor.ts
-│   └── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
-│       ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
-│       ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
-│       ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
-│       └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   ├── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
+│   │   ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
+│   │   ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
+│   │   ├── useQuizProgress.ts			# Per-user quiz-attempt progress for /quizzes/hazards — saving a result, and loading/updating the leaderboard opt-in
+│   │   ├── useQuizProgress.test.ts		# Unit + integration tests for useQuizProgress.ts
+│   │   ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
+│   │   └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   └── unsavedChanges/					# Hooks shared by every in-app editor (lab, module reader pages, quiz editor)
+│       ├── useUnsavedChanges.ts		# Tracks whether an editor's draft differs from what's stored; each editor supplies its own snapshot function
+│       ├── useUnsavedChanges.test.ts	# Unit tests for useUnsavedChanges.ts
+│       ├── useLeaveWarning.ts			# Warns before leaving the page (tab close/reload, in-app link clicks) while there are unsaved changes
+│       └── useLeaveWarning.test.ts		# Unit tests for useLeaveWarning.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
@@ -205,10 +219,10 @@ hydrogen-lab/
 │   │   ├── firebaseAdmin.ts			# Firebase Admin SDK init — server-side, used to verify ID tokens
 │   │   ├── authUser.ts					# requireUser(request) — verifies a Bearer ID token, returns the caller's uid
 │   │   └── adminAuth.ts				# requireAdmin(request) — verifies a Bearer ID token + checks role='admin' in Supabase
-│   ├── modules/						# Bundled module content + shared types for the app/modules/ sections
-│   │   ├── moduleTypes.ts				# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ section
+│   ├── modules/						# Bundled module content + shared types for the app/modules/ topics
+│   │   ├── moduleTypes.ts				# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ topic
 │   │   ├── hazards.ts					# Static content for the 5 hazard modules (bundled at build time)
-│   │   └── guides.ts					# Example second section's data — not linked in nav
+│   │   └── guides.ts					# Example second topic's data — not linked in nav
 │   └── video/							# Shared video helpers for the modules and lab video routes
 │       ├── video.ts					# YouTube URL parsing, Storage path parsing, mp4 validation, 50MB size limit
 │       └── video.test.ts				# Unit tests for lib/video/video.ts
@@ -230,32 +244,32 @@ hydrogen-lab/
 
 ## Pages
 
-| Route                            | File                                       | Description                                                                                 |
-|----------------------------------|--------------------------------------------|---------------------------------------------------------------------------------------------|
-| `/`                              | `app/page.tsx`                             | Public landing page introducing the platform — no login required                            |
-| `/dashboard`                     | `app/dashboard/page.tsx`                   | Dashboard with modules, scenarios, quizzes, and training progress                           |
-| `/about`                         | `app/about/page.tsx`                       | Public "About" page — project background, platform features, tech stack; no login required  |
-| `/login`                         | `app/login/page.tsx`                       | Email and password login                                                                    |
-| `/login/register`                | `app/login/register/page.tsx`              | New account registration                                                                    |
-| `/login/forgot-password`         | `app/login/forgot-password/page.tsx`       | Firebase password-reset email request                                                       |
-| `/lab`                           | `app/lab/page.tsx`                         | Interactive lab with clickable hazard hotspots                                              |
-| `/modules/hazard-modules`        | `app/modules/hazard-modules/page.tsx`      | Hazard module listing grid with status filter bar                                           |
-| `/modules/hazard-modules/[id]`   | `app/modules/hazard-modules/[id]/page.tsx` | Hazard module reader — sections, callouts, key takeaway, prev/next nav                      |
-| `/modules/guides`                | `app/modules/guides/page.tsx`              | Example second section built on the same template — not linked in nav                       |
-| `/modules/guides/[id]`           | `app/modules/guides/[id]/page.tsx`         | Example reader page for the guides section                                                  |
-| `/quizzes`                       | `app/quizzes/page.tsx`                     | Quizzes hub — lists the Hazards quiz and links to the Leaderboard                           |
-| `/quizzes/hazards`               | `app/quizzes/hazards/page.tsx`             | Hazards quiz attempt — a random pool of questions with shuffled options, scored, saved      |
-| `/quizzes/leaderboard`           | `app/quizzes/leaderboard/page.tsx`         | Student leaderboard — top scorers who opted in, requires login                              |
-| `/quizzes/[quizId]/edit`         | `app/quizzes/[quizId]/edit/page.tsx`       | Admin-only quiz content editor — quiz details and question bank                             |
-| `/certificate`                   | `app/certificate/page.tsx`                 | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
-| `/feedback`                      | `app/feedback/page.tsx`                    | Feedback form — star rating, category, free-text message                                    |
-| `/admin`                         | `app/admin/page.tsx`                       | Admin-only hub — cards linking to User Management and Learner Feedback                      |
-| `/admin/users`                   | `app/admin/users/page.tsx`                 | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
-| `/admin/users/[uid]/progress`    | `app/admin/users/[uid]/progress/page.tsx`  | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
-| `/admin/feedback`                | `app/admin/feedback/page.tsx`              | Admin-only feedback dashboard — rating summary and the full list of submissions             |
+| Route                         | File                                      | Description                                                                                 |
+|-------------------------------|-------------------------------------------|---------------------------------------------------------------------------------------------|
+| `/`                           | `app/page.tsx`                            | Public landing page introducing the platform — no login required                            |
+| `/dashboard`                  | `app/dashboard/page.tsx`                  | Dashboard with modules, simulations, quizzes, and training progress                         |
+| `/about`                      | `app/about/page.tsx`                      | Public "About" page — project background, platform features, tech stack; no login required  |
+| `/login`                      | `app/login/page.tsx`                      | Email and password login                                                                    |
+| `/login/register`             | `app/login/register/page.tsx`             | New account registration                                                                    |
+| `/login/forgot-password`      | `app/login/forgot-password/page.tsx`      | Firebase password-reset email request                                                       |
+| `/lab`                        | `app/lab/page.tsx`                        | Interactive lab with clickable hazard hotspots                                              |
+| `/modules/hazards`            | `app/modules/hazards/page.tsx`            | Hazard module listing grid with status filter bar                                           |
+| `/modules/hazards/[id]`       | `app/modules/hazards/[id]/page.tsx`       | Hazard module reader — sections, callouts, key takeaway, prev/next nav                      |
+| `/modules/guides`             | `app/modules/guides/page.tsx`             | Example second topic built on the same template — not linked in nav                         |
+| `/modules/guides/[id]`        | `app/modules/guides/[id]/page.tsx`        | Example reader page for the guides topic                                                    |
+| `/quizzes`                    | `app/quizzes/page.tsx`                    | Quizzes hub — lists the Hazards quiz and links to the Leaderboard                           |
+| `/quizzes/hazards`            | `app/quizzes/hazards/page.tsx`            | Hazards quiz attempt — a random pool of questions with shuffled options, scored, saved      |
+| `/quizzes/leaderboard`        | `app/quizzes/leaderboard/page.tsx`        | Student leaderboard — top scorers who opted in, requires login                              |
+| `/quizzes/[quizId]/edit`      | `app/quizzes/[quizId]/edit/page.tsx`      | Admin-only quiz content editor — quiz details and question bank                             |
+| `/certificate`                | `app/certificate/page.tsx`                | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
+| `/feedback`                   | `app/feedback/page.tsx`                   | Feedback form — star rating, category, free-text message                                    |
+| `/admin`                      | `app/admin/page.tsx`                      | Admin-only hub — cards linking to User Management and Learner Feedback                      |
+| `/admin/users`                | `app/admin/users/page.tsx`                | Admin-only "User Management" page — user table, edit, delete, quiz-results Excel export     |
+| `/admin/users/[uid]/progress` | `app/admin/users/[uid]/progress/page.tsx` | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
+| `/admin/feedback`             | `app/admin/feedback/page.tsx`             | Admin-only feedback dashboard — rating summary and the full list of submissions             |
 
 There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
-	The Navbar and dashboard both link straight to `/modules/hazard-modules`.
+	The Navbar and dashboard both link straight to `/modules/hazards`.
 
 All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and `/about` redirect unauthenticated users to `/login`.
 	`/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` are further exceptions:
@@ -267,53 +281,53 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 
 ## Navigation Links
 
-| Page                           | Element                      | Links to                       |
-|--------------------------------|------------------------------|--------------------------------|
-| *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/`                            |
-| *(all pages)*                  | Navbar → Home                | `/dashboard`                   |
-| *(all pages)*                  | Navbar → Modules             | `/modules/hazard-modules`      |
-| *(all pages)*                  | Navbar → Scenarios           | `/lab`                         |
-| *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                     |
-| *(all pages)*                  | Navbar → About               | `/about`                       |
-| *(all pages)*                  | Navbar → Administration      | `/admin`                       |
-| *(all pages)*                  | Navbar → Logout              | `/`                            |
-| `/`                            | Get Started → || Continue →  | `/dashboard`                   |
-| `/`                            | Learn the Basics             | `/modules/hazard-modules`      |
-| `/dashboard`                   | "Modules" card               | `/modules/hazard-modules`      |
-| `/dashboard`                   | "Scenarios/Simulation" card  | `/lab`                         |
-| `/dashboard`                   | "Quizzes" card               | `/quizzes`                     |
-| `/dashboard`                   | Download Certificate →       | `/certificate`                 |
-| `/dashboard`                   | Give Feedback →              | `/feedback`                    |
-| `/modules/hazard-modules`      | 'Module' card                | `/modules/hazard-modules/[id]` |
-| `/modules/hazard-modules/[id]` | ← Hazard Modules             | `/modules/hazard-modules`      |
-| `/modules/hazard-modules/[id]` | ← Previous                   | `/modules/hazard-modules/[id]` |
-| `/modules/hazard-modules/[id]` | Next →                       | `/modules/hazard-modules/[id]` |
-| `/lab`                         | Learn More →                 | `/modules/hazard-modules/[id]` |
-| `/quizzes`                     | "Hydrogen Hazards Quiz" card | `/quizzes/hazards`             |
-| `/quizzes`                     | "Student Leaderboard" card   | `/quizzes/leaderboard`         |
-| `/quizzes`                     | "Edit" tab (admin only)      | `/quizzes/[quizId]/edit`       |
-| `/quizzes/[quizId]/edit`       | ← Back to Quizzes            | `/quizzes`                     |
-| `/quizzes/hazards`             | Get Your Certificate →       | `/certificate`                 |
-| `/quizzes/leaderboard`         | ← Back to Quizzes            | `/quizzes`                     |
-| `/quizzes/leaderboard`         | Take Quiz →                  | `/quizzes/hazards`             |
-| `/quizzes/leaderboard`         | Login → (logged out)         | `/login`                       |
-| `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`             |
-| `/certificate` (blocked state) | Take the Quiz →              | `/quizzes/hazards`             |
-| `/certificate` (blocked state) | Complete Training Modules    | `/modules/hazard-modules`      |
-| `/feedback`                    | ← Back to Dashboard          | `/dashboard`                   |
-| `/feedback`                    | Cancel                       | `/dashboard`                   |
-| `/feedback`                    | Return to Dashboard →        | `/dashboard`                   |
-| `/admin`                       | "User Management" card       | `/admin/users`                 |
-| `/admin`                       | "Learner Feedback" card      | `/admin/feedback`              |
-| `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress`  |
-| `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                 |
-| `/admin/feedback`              | ← Back to Administration     | `/admin`                       |
-| `/login`                       | Sign in                      | `/dashboard`                   |
-| `/login`                       | Forgot Password?             | `/login/forgot-password`       |
-| `/login`                       | Create one                   | `/login/register`              |
-| `/login/forgot-password`       | ← Back to Login              | `/login`                       |
-| `/login/register`              | Create account               | `/dashboard`                   |
-| `/login/register`              | Sign in                      | `/login`                       |
+| Page                           | Element                      | Links to                      |
+|--------------------------------|------------------------------|-------------------------------|
+| *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/`                           |
+| *(all pages)*                  | Navbar → Home                | `/dashboard`                  |
+| *(all pages)*                  | Navbar → Simulations         | `/lab`                        |
+| *(all pages)*                  | Navbar → Modules             | `/modules/hazards`            |
+| *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                    |
+| *(all pages)*                  | Navbar → About               | `/about`                      |
+| *(all pages)*                  | Navbar → Administration      | `/admin`                      |
+| *(all pages)*                  | Navbar → Logout              | `/`                           |
+| `/`                            | Get Started → || Continue →  | `/dashboard`                  |
+| `/`                            | Learn the Basics             | `/modules/hazards`            |
+| `/dashboard`                   | "Simulations" card           | `/lab`                        |
+| `/dashboard`                   | "Modules" card               | `/modules/hazards`            |
+| `/dashboard`                   | "Quizzes" card               | `/quizzes`                    |
+| `/dashboard`                   | Download Certificate →       | `/certificate`                |
+| `/dashboard`                   | Give Feedback →              | `/feedback`                   |
+| `/modules/hazards`             | 'Module' card                | `/modules/hazards/[id]`       |
+| `/modules/hazards/[id]`        | ← Hazard Modules             | `/modules/hazards`            |
+| `/modules/hazards/[id]`        | ← Previous                   | `/modules/hazards/[id]`       |
+| `/modules/hazards/[id]`        | Next →                       | `/modules/hazards/[id]`       |
+| `/lab`                         | Learn More →                 | `/modules/hazards/[id]`       |
+| `/quizzes`                     | "Hydrogen Hazards Quiz" card | `/quizzes/hazards`            |
+| `/quizzes`                     | "Student Leaderboard" card   | `/quizzes/leaderboard`        |
+| `/quizzes`                     | "Edit" tab (admin only)      | `/quizzes/[quizId]/edit`      |
+| `/quizzes/[quizId]/edit`       | ← Back to Quizzes            | `/quizzes`                    |
+| `/quizzes/hazards`             | Get Your Certificate →       | `/certificate`                |
+| `/quizzes/leaderboard`         | ← Back to Quizzes            | `/quizzes`                    |
+| `/quizzes/leaderboard`         | Take Quiz →                  | `/quizzes/hazards`            |
+| `/quizzes/leaderboard`         | Login → (logged out)         | `/login`                      |
+| `/certificate`                 | Retake Quiz                  | `/quizzes/hazards`            |
+| `/certificate` (blocked state) | Take the Quiz →              | `/quizzes/hazards`            |
+| `/certificate` (blocked state) | Complete Training Modules    | `/modules/hazards`            |
+| `/feedback`                    | ← Back to Dashboard          | `/dashboard`                  |
+| `/feedback`                    | Cancel                       | `/dashboard`                  |
+| `/feedback`                    | Return to Dashboard →        | `/dashboard`                  |
+| `/admin`                       | "User Management" card       | `/admin/users`                |
+| `/admin`                       | "Learner Feedback" card      | `/admin/feedback`             |
+| `/admin/users`                 | Progress                     | `/admin/users/[uid]/progress` |
+| `/admin/users/[uid]/progress`  | ← Back to Users              | `/admin/users`                |
+| `/admin/feedback`              | ← Back to Administration     | `/admin`                      |
+| `/login`                       | Sign in                      | `/dashboard`                  |
+| `/login`                       | Forgot Password?             | `/login/forgot-password`      |
+| `/login`                       | Create one                   | `/login/register`             |
+| `/login/forgot-password`       | ← Back to Login              | `/login`                      |
+| `/login/register`              | Create account               | `/dashboard`                  |
+| `/login/register`              | Sign in                      | `/login`                      |
 
 Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/register`, and `/login/forgot-password`.
 
@@ -350,7 +364,7 @@ Styles are split across several files to keep page-specific rules isolated:
 ## Authentication & Permissions
 
 Firebase handles authentication (sign-in, sign-up, session state).
-	Each user also has a **profile** — role, user type, organisation — stored separately in Supabase and managed through two API routes:
+	Each user also has a **profile** — role, user type, organisation, and student ID (Fed Uni users only) — stored separately in Supabase and managed through two API routes:
 - `GET /api/profile/get?uid=...` — loads the profile matching a Firebase uid
 - `POST /api/profile/create`     — creates a profile record
 
@@ -413,10 +427,11 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hazards`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_hazard_progress`, and `feedback` tables (in dependency order, with the `hazards`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
-	It also creates all the Row Level Security policies and grants those tables and the bucket need.
-	(public `anon` read + `service_role` read/write for `hazards`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
-	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`user_hazard_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
+	It creates the `hotspots`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_lab_progress`, and `feedback` tables (in dependency order, with each table's foreign keys declared inline), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
+	It also creates all the Row Level Security policies and grants those tables and the storage buckets need.
+	(public `anon` read + `service_role` read/write for `hotspots`/`modules`/`module_sections`/`quizzes`/`quiz_questions` (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
+	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`user_lab_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
+	The three storage buckets are public and serve files through their public URLs, so they have no read policy; `storage.objects` carries only `service_role` insert and update policies per bucket, plus delete for `module-videos` and `lab-videos`.
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
@@ -491,17 +506,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser — this loa
 
 On first run the Supabase tables are empty, so the app falls back to the bundled defaults in `lib/hazards.ts` and `lib/hazardModules.ts`.
 
-**Seed `modules`/`module_sections` first:** log in as an admin and visit each hazard module reader page in turn (`/modules/hazard-modules/1` through `/modules/hazard-modules/5`), click the **Edit Mode** toggle, and click **Save Changes** without changing anything
+**Seed `modules`/`module_sections` first:** log in as an admin and visit each hazard module reader page in turn (`/modules/hazards/1` through `/modules/hazards/5`), click the **Edit Mode** toggle, and click **Save Changes** without changing anything
 	The page already shows `lib/hazardModules.ts`'s bundled content since Supabase is still empty, so this writes that content into `modules`/`module_sections` as-is.
 
-**Then seed `hazards`:**
+**Then seed `hotspots`:**
 1. Navigate to `/lab`.
 2. Click the **Edit Mode** toggle switch.
 3. Without changing anything, click **Save Changes**.
 
 The default hotspot data will be written to Supabase and loaded on every subsequent visit.
 
-> **Note:** the default hotspots each link to a `hazard-modules` id (`hazards_module_fk` requires that pair to exist as a real row in `modules`), so seeding `hazards` before `modules`/`module_sections` exist for `hazard-modules` fails with a foreign-key violation — hence seeding modules first, above.
+> **Note:** the default hotspots each link to a `hazards` topic id (`hotspots_module_fk` requires that pair to exist as a real row in `modules`), so seeding `hotspots` before `modules`/`module_sections` exist for the `hazards` topic fails with a foreign-key violation — hence seeding modules first, above.
 
 **Seeding `quizzes`/`quiz_questions` follows the same pattern** (see `EDITING_GUIDE.md`): 
 	log in as an admin, open the ✏️ Edit tab on the Hazards quiz card at `/quizzes`, and click **Save Changes** without changing anything — the editor already shows `lib/questionhazards.ts`'s bundled `QUIZ_DEFAULTS` content since Supabase is still empty, so this writes that content into `quizzes`/`quiz_questions` as-is.
@@ -551,6 +566,6 @@ All `NEXT_PUBLIC_` variables are embedded in the client bundle at build time.
 
 ## Extending the app
 
-For adding a new standalone page or a new `app/modules/`-style section, or a full route-by-route reference of every `app/api/` endpoint, see `ADDITIONAL_INFO.md`.
+For adding a new standalone page or a new `app/modules/`-style topic, or a full route-by-route reference of every `app/api/` endpoint, see `ADDITIONAL_INFO.md`.
 
 For customising existing module or hotspot content, see `EDITING_GUIDE.md`.

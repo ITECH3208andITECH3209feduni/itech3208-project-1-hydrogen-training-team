@@ -2,7 +2,7 @@
 // Unit + integration tests for functions in useQuizEditor.ts & related API calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { buildBlankQuestion, nextQuestionId, useQuizEditor } from './useQuizEditor';
+import { buildBlankQuestion, nextQuestionId, useQuizEditor, snapshotQuiz } from './useQuizEditor';
 import { QuizData } from './useQuiz';
 import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
@@ -115,6 +115,7 @@ describe('3. useQuizEditor draft state', () => {
 		rerender({ item: refreshedItem });
 
 		expect(result.current.draft?.title).toBe('Edited Title');   // Check that the edit was not clobbered
+		expect(result.current.hasUnsavedChanges).toBe(true);        // Check it still counts as unsaved against the refreshed data
 	});
 
 	it('3.3 resetToDefaults reverts the draft to the bundled fallback, not the live item', () => {
@@ -125,6 +126,7 @@ describe('3. useQuizEditor draft state', () => {
 
 		expect(result.current.draft?.title).toBe('Default Quiz Title');   // Check that draft now has the default value
 		expect(result.current.draft?.questions).toHaveLength(1);          // Check that questions reset to default (no longer the live item)
+		expect(result.current.hasUnsavedChanges).toBe(true);              // Check the reset counts as unsaved (defaults differ from the live item)
 	});
 
 	it('3.4 canReset is false when no fallback is provided', () => {
@@ -148,6 +150,7 @@ describe('3. useQuizEditor draft state', () => {
 
 		expect(result.current.selectedQuestion).toBeNull();          // Check selection cleared
 		expect(result.current.draft?.title).toBe('New Quiz Item');   // Check draft resynced despite the earlier edit
+		expect(result.current.hasUnsavedChanges).toBe(false);        // Check the switch cleared the unsaved flag
 	});
 
 	it('3.6 a refresh while nothing has been edited still resyncs the draft', () => {
@@ -160,6 +163,7 @@ describe('3. useQuizEditor draft state', () => {
 		rerender({ item: refreshedItem });
 
 		expect(result.current.draft?.title).toBe('Refreshed Title');
+		expect(result.current.hasUnsavedChanges).toBe(false);
 	});
 });
 
@@ -326,11 +330,187 @@ describe('7. hasInvalidPoolSize', () => {
 	});
 });
 
+// 8. Test hasInvalidPassThreshold
+describe('8. hasInvalidPassThreshold', () => {
+	const withThreshold = (passThreshold: number): QuizData => ({ ...liveItem, passThreshold });
+
+	it('8.1 is false for the default valid threshold', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
+		expect(result.current.hasInvalidPassThreshold).toBe(false);
+		expect(result.current.passThresholdError).toBeNull();
+	});
+
+	it.each([0, 1, 70, 100])('8.2 is false for the valid value %i (boundaries included)', (value) => {
+		const { result } = renderHook(() => useQuizEditor('hazards', withThreshold(value), defaultItem));
+		expect(result.current.hasInvalidPassThreshold).toBe(false);
+		expect(result.current.passThresholdError).toBeNull();
+	});
+
+	it.each([-1, 101, 500])('8.3 is true for the out-of-range value %i', (value) => {
+		const { result } = renderHook(() => useQuizEditor('hazards', withThreshold(value), defaultItem));
+		expect(result.current.hasInvalidPassThreshold).toBe(true);
+		expect(result.current.passThresholdError).toMatch(/between 0 and 100/);
+	});
+
+	it('8.4 is true for a non-integer value', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', withThreshold(70.5), defaultItem));
+		expect(result.current.hasInvalidPassThreshold).toBe(true);
+	});
+
+	it('8.5 is true for NaN', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', withThreshold(NaN), defaultItem));
+		expect(result.current.hasInvalidPassThreshold).toBe(true);
+	});
+
+	it('8.6 updates as the field is edited, and clears once corrected', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
+
+		act(() => result.current.updateField('passThreshold', 150));
+		expect(result.current.hasInvalidPassThreshold).toBe(true);
+
+		act(() => result.current.updateField('passThreshold', 100));
+		expect(result.current.hasInvalidPassThreshold).toBe(false);
+	});
+});
+
+// 9. Test snapshotQuiz (the helper behind hasUnsavedChanges)
+describe('9. snapshotQuiz', () => {
+	// Bundled defaults may omit poolSize; Supabase rows return null
+	it('9.1 treats a missing poolSize the same as null', () => {
+		const missingPoolSize = { ...liveItem, poolSize: undefined } as unknown as QuizData;
+		expect(snapshotQuiz(missingPoolSize)).toBe(snapshotQuiz(liveItem));
+	});
+
+	it('9.2 differs when any persisted field differs', () => {
+		const base = snapshotQuiz(liveItem);
+		expect(snapshotQuiz({ ...liveItem, title: 'Other' })).not.toBe(base);
+		expect(snapshotQuiz({ ...liveItem, passThreshold: 99 })).not.toBe(base);
+		expect(snapshotQuiz({ ...liveItem, poolSize: 1 })).not.toBe(base);
+
+		const tweak = (patch: Partial<TestQuizQuestion>): QuizData => ({
+			...liveItem,
+			questions: [{ ...liveItem.questions[0], ...patch }, liveItem.questions[1]],
+		});
+		expect(snapshotQuiz(tweak({ question: 'Changed?' }))).not.toBe(base);
+		expect(snapshotQuiz(tweak({ options: ['C', 'B', 'A'] }))).not.toBe(base);
+		expect(snapshotQuiz(tweak({ correctIndex: 0 }))).not.toBe(base);
+		expect(snapshotQuiz(tweak({ explanation: 'Changed.' }))).not.toBe(base);
+		expect(snapshotQuiz(tweak({ isCore: true }))).not.toBe(base);
+	});
+});
+
+// 10. Test hasUnsavedChanges
+// Note: some of these wait on the save API, but they're testing hasUnsavedChanges, not the API call itself.
+describe('10. hasUnsavedChanges', () => {
+	const renderEditor = () =>
+		renderHook(
+			({ quizId, item }: { quizId: string; item: QuizData }) => useQuizEditor(quizId, item, defaultItem),
+			{ initialProps: { quizId: 'hazards', item: liveItem } }
+		);
+
+	it('10.1 is false before anything is edited, becomes true after an edit, and false again if the edit is reverted', () => {
+		const { result } = renderEditor();
+		expect(result.current.hasUnsavedChanges).toBe(false);
+		act(() => result.current.updateField('title', 'Edited Title'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.updateField('title', 'Live Quiz Title'));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('10.2 is true after a question edit or add, and false again once they are undone', () => {
+		const { result } = renderEditor();
+
+		act(() => result.current.updateQuestion(0, 'question', 'Changed?'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.updateQuestion(0, 'question', 'Question 1?'));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+
+		act(() => result.current.addQuestion());
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.deleteQuestion(result.current.draft!.questions.length - 1));
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('10.3 Reset to Defaults is not unsaved when the live quiz already matches the defaults', () => {
+		const { result } = renderHook(() => useQuizEditor('hazards', defaultItem, defaultItem));
+		act(() => result.current.updateField('title', 'Edited Title'));
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		act(() => result.current.resetToDefaults());
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+
+	it('10.4 becomes false after a successful save, and a later refresh can overwrite the draft again', async () => {
+		const { result, rerender } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+
+		await act(async () => { await result.current.saveToSupabase(); });
+		expect(result.current.saveStatus).toBe('saved');
+		expect(result.current.hasUnsavedChanges).toBe(false);
+
+		rerender({ quizId: 'hazards', item: { ...liveItem, title: 'Refreshed After Save' } });
+		expect(result.current.draft?.title).toBe('Refreshed After Save');
+	});
+
+	it('10.5 stays true after a failed save', async () => {
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		server.use(
+			http.post('/api/quizzes/save-quiz', () =>
+				HttpResponse.json({ ok: false, error: 'Access denied' }, { status: 403 })
+			)
+		);
+
+		const { result } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+		await act(async () => { await result.current.saveToSupabase(); });
+
+		expect(result.current.saveStatus).toBe('error');
+		expect(result.current.hasUnsavedChanges).toBe(true);
+		consoleSpy.mockRestore();
+	});
+
+	it('10.6 keeps edits made while a save is in flight marked as unsaved, and protected from a refresh', async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((resolve) => { release = resolve; });
+		server.use(
+			http.post('/api/quizzes/save-quiz', async () => {
+				await gate;
+				return HttpResponse.json({ ok: true });
+			})
+		);
+
+		const { result, rerender } = renderEditor();
+		act(() => result.current.updateField('title', 'First edit'));
+
+		let savePromise!: Promise<void>;
+		act(() => { savePromise = result.current.saveToSupabase(); });
+		act(() => result.current.updateField('title', 'Second edit'));   // edited while the request is in flight
+
+		await act(async () => { release(); await savePromise; });
+		expect(result.current.hasUnsavedChanges).toBe(true);
+
+		// The draft must still be protected from a background refresh
+		rerender({ quizId: 'hazards', item: { ...liveItem, title: 'Refreshed From Server' } });
+		expect(result.current.draft?.title).toBe('Second edit');
+	});
+
+	// Reverting an edit leaves nothing to protect, so a later refresh is followed (the old "touched" flag used to block it)
+	it('10.7 a refresh after an edit has been reverted follows the refreshed item', () => {
+		const { result, rerender } = renderEditor();
+		act(() => result.current.updateField('title', 'Edited Title'));
+		act(() => result.current.updateField('title', 'Live Quiz Title'));   // Revert
+
+		rerender({ quizId: 'hazards', item: { ...liveItem, title: 'Refreshed Title' } });
+
+		expect(result.current.draft?.title).toBe('Refreshed Title');
+		expect(result.current.hasUnsavedChanges).toBe(false);
+	});
+});
+
 // ─── Integration Tests (test API calls with mock server) ────────────────────────────────────────────────────
 
-// 8. Test save-quiz API call
-describe('8. save-quiz', () => {
-	it('8.1 sets saveStatus to saved on a successful save', async () => {
+// 11. Test save-quiz API call
+describe('11. save-quiz', () => {
+	it('11.1 sets saveStatus to saved on a successful save', async () => {
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
 
 		// Mock a successful save to Supabase
@@ -341,7 +521,7 @@ describe('8. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('saved');   // Check that saveStatus correctly set
 	});
 
-	it('8.2 sets saveStatus to error when the server reports a failure', async () => {
+	it('11.2 sets saveStatus to error when the server reports a failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		// Mock an error response to saving the quiz
@@ -362,7 +542,7 @@ describe('8. save-quiz', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('8.3 sets saveStatus to error on a network failure', async () => {
+	it('11.3 sets saveStatus to error on a network failure', async () => {
 		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
 		server.use(http.post('/api/quizzes/save-quiz', () => HttpResponse.error()));
@@ -377,7 +557,7 @@ describe('8. save-quiz', () => {
 		consoleSpy.mockRestore();
 	});
 
-	it('8.4 does nothing when there is no signed-in user', async () => {
+	it('11.4 does nothing when there is no signed-in user', async () => {
 		mockUseAuth.mockReturnValue({ user: null, loading: false });   // Simulate user being signed out
 
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
@@ -390,7 +570,7 @@ describe('8. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('8.5 does nothing when the draft has an invalid question', async () => {
+	it('11.5 does nothing when the draft has an invalid question', async () => {
 		const { result } = renderHook(() => useQuizEditor('hazards', liveItem, defaultItem));
 
 		act(() => result.current.updateQuestion(0, 'correctIndex', 5));   // Make the draft invalid
@@ -403,7 +583,7 @@ describe('8. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('8.6 does nothing when the draft has an invalid pool size', async () => {
+	it('11.6 does nothing when the draft has an invalid pool size', async () => {
 		const item: QuizData = { ...liveItem, poolSize: 5 }; // exceeds liveItem's 2 questions
 		const { result } = renderHook(() => useQuizEditor('hazards', item, defaultItem));
 
@@ -414,7 +594,7 @@ describe('8. save-quiz', () => {
 		expect(result.current.saveStatus).toBe('idle');
 	});
 
-	it('8.7 sends the full quiz + questions payload', async () => {
+	it('11.7 sends the full quiz + questions payload', async () => {
 		let capturedBody: any = null;
 		// Mock a successful save to Supabase that captures the sent data
 		server.use(

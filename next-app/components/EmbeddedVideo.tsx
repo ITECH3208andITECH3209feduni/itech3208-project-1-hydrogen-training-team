@@ -1,12 +1,12 @@
-// components/ModuleVideo.tsx
-// Compact module video launcher with pop-in video modal.
+// components/EmbeddedVideo.tsx
+// Compact video launcher with pop-in video modal.
 // Supports YouTube and MP4 videos.
 
 "use client";
 
 import { useEffect, useState } from "react";
 
-interface ModuleVideoProps {
+interface EmbeddedVideoProps {
     videoUrl?: string | null;
     videoType?: "youtube" | "mp4" | null;
 }
@@ -41,7 +41,7 @@ function getYouTubeEmbedUrl(url: string): string | null {
     }
 }
 
-export default function ModuleVideo({ videoUrl, videoType, }: ModuleVideoProps) {
+export default function EmbeddedVideo({ videoUrl, videoType, }: EmbeddedVideoProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const embedUrl = videoUrl && videoType === "youtube"
@@ -80,32 +80,27 @@ export default function ModuleVideo({ videoUrl, videoType, }: ModuleVideoProps) 
 
     return (
         <>
-            <section className="module-video">
-                <div className="module-video-heading">
-                    <span>🎥</span>
-                    <h2>Embedded Video</h2>
-                </div>
-
+            <section className="embed-video">
                 <button
                     type="button"
-                    className="module-video-launcher"
+                    className="embed-video-launcher"
                     onClick={openVideo}
                     aria-label="Open embedded video"
                 >
-                    <span className="module-video-play">▶</span>
+                    <span className="embed-video-play">▶</span>
 
-                    <span className="module-video-launcher-text">
+                    <span className="embed-video-launcher-text">
                         <strong>Embedded Video</strong>
                         <span>Click to view</span>
                     </span>
 
-                    <span className="module-video-launch-arrow">→</span>
+                    <span className="embed-video-launch-arrow">→</span>
                 </button>
             </section>
 
             {isOpen && (
                 <div
-                    className="module-video-modal"
+                    className="embed-video-modal"
                     role="dialog"
                     aria-modal="true"
                     aria-label="Embedded Video"
@@ -115,16 +110,16 @@ export default function ModuleVideo({ videoUrl, videoType, }: ModuleVideoProps) 
                         }
                     }}
                 >
-                    <div className="module-video-modal-frame">
-                        <div className="module-video-modal-header">
-                            <div className="module-video-modal-title">
+                    <div className="embed-video-modal-frame">
+                        <div className="embed-video-modal-header">
+                            <div className="embed-video-modal-title">
                                 <span>🎥</span>
                                 <h2>Embedded Video</h2>
                             </div>
 
                             <button
                                 type="button"
-                                className="module-video-close"
+                                className="embed-video-close"
                                 onClick={() => setIsOpen(false)}
                                 aria-label="Close video"
                             >
@@ -132,13 +127,13 @@ export default function ModuleVideo({ videoUrl, videoType, }: ModuleVideoProps) 
                             </button>
                         </div>
 
-                        <div className="module-video-player">
+                        <div className="embed-video-player">
                             {videoType ===
                                 "youtube" &&
                                 embedUrl && (
                                     <iframe
                                         src={embedUrl}
-                                        title="Module training video"
+                                        title="Training video"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                         allowFullScreen
                                     />
@@ -150,7 +145,7 @@ export default function ModuleVideo({ videoUrl, videoType, }: ModuleVideoProps) 
                                     controls
                                     playsInline
                                     preload="metadata"
-                                    className="module-video-native"
+                                    className="embed-video-native"
                                 >
                                     Your browser does not support MP4 video.
                                 </video>

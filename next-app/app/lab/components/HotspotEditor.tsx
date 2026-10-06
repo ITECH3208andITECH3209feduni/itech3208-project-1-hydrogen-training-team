@@ -2,10 +2,10 @@
 // Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position/video editor on the right
 
 import { useRef } from 'react';
-import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHazards';
+import { EditableHotspot } from '@/hooks/lab/useHotspots';
+import { UploadStatus } from '@/hooks/lab/useHotspotEditor';
 import { ModuleTopicOptions } from '@/hooks/lab/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
-import { labelStyle, inputStyle } from '@/components/editorStyles';
 import VideoEditorPanel from '@/components/VideoEditorPanel';
 
 interface HotspotEditorProps {
@@ -149,10 +149,9 @@ export default function HotspotEditor({
 							
 								{/* Type key (read-only) */}
 								<div>
-									<label style={labelStyle}>Type key</label>
+									<label className="editor-label">Type key</label>
 									<input
-										style={inputStyle}
-										className="hotspot-input--readonly"
+										className="editor-input hotspot-input--readonly"
 										value={hotspots[selected].type}
 										readOnly
 									/>
@@ -165,9 +164,9 @@ export default function HotspotEditor({
 								<div className="field-row">
 									{(['top', 'left'] as const).map((field) => (
 										<div key={field} className="field-row-item">
-											<label style={labelStyle}>{field.charAt(0).toUpperCase() + field.slice(1)} (%)</label>
+											<label className="editor-label">{field.charAt(0).toUpperCase() + field.slice(1)} (%)</label>
 											<input
-												style={inputStyle}
+												className="editor-input"
 												value={hotspots[selected][field]}
 												onChange={(e) => onUpdatePosition(selected, field, e.target.value)}
 											/>
@@ -177,9 +176,9 @@ export default function HotspotEditor({
 								
 								{/* Title */}
 								<div>
-									<label style={labelStyle}>Title</label>
+									<label className="editor-label">Title</label>
 									<input
-										style={inputStyle}
+										className="editor-input"
 										value={hotspots[selected].info.title}
 										onChange={(e) => onUpdateInfo(selected, 'title', e.target.value)}
 										placeholder="e.g. ⚠️ Gas Leak Detection"
@@ -188,10 +187,9 @@ export default function HotspotEditor({
 								
 								{/* Description */}
 								<div>
-									<label style={labelStyle}>Description</label>
+									<label className="editor-label">Description</label>
 									<textarea
-										style={inputStyle}
-										className="hotspot-textarea"
+										className="editor-input hotspot-textarea"
 										value={hotspots[selected].info.text}
 										onChange={(e) => onUpdateInfo(selected, 'text', e.target.value)}
 									/>
@@ -199,11 +197,10 @@ export default function HotspotEditor({
 								
 								{/* Linked module */}
 								<div>
-									<label style={labelStyle}>Linked Module</label>
+									<label className="editor-label">Linked Module</label>
 									<div className="field-row">
 										<select
-											className="linked-module-select"
-											style={inputStyle}
+											className="editor-input linked-module-select"
 											value={hotspots[selected].info.moduleTopic ?? ''}
 											onChange={(e) =>
 												onUpdateModuleLink(selected, e.target.value || null, null)
@@ -219,8 +216,7 @@ export default function HotspotEditor({
 										
 										{hotspots[selected].info.moduleTopic && (
 											<select
-												className="linked-module-select"
-												style={inputStyle}
+												className="editor-input linked-module-select"
 												value={hotspots[selected].info.moduleId ?? ''}
 												onChange={(e) =>
 													onUpdateModuleLink(
@@ -244,13 +240,13 @@ export default function HotspotEditor({
 									<p className="field-hint">
 										{hotspots[selected].info.moduleTopic && !hotspots[selected].info.moduleId
 											? '⚠️ Select a module, or set this back to "None" — saving is disabled until then.'
-											: 'Powers the "Learn More" button in this hazard\u2019s popup. Set to "None" to hide it.'}
+											: 'Powers the "Learn More" button in this hotspot\u2019s popup. Set to "None" to hide it.'}
 									</p>
 								</div>
 
 								{/* Embedded Video */}
 								<div>
-									<label style={labelStyle}>Hotspot Video</label>
+									<label className="editor-label">Hotspot Video</label>
 									<VideoEditorPanel
 										currentVideoUrl={hotspots[selected].info.videoUrl}
 										currentVideoType={hotspots[selected].info.videoType}
@@ -264,7 +260,7 @@ export default function HotspotEditor({
 										onSaveYoutubeVideo={onSaveYoutubeVideo}
 										onUploadMp4Video={onUploadMp4Video}
 										onRemoveVideo={onRemoveVideo}
-										noVideoMessage="Shown under this hazard's description in its popup."
+										noVideoMessage="Shown under this hotspot's description in its popup."
 									/>
 								</div>
 

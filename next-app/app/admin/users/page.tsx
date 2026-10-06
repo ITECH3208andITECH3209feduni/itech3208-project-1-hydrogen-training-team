@@ -277,7 +277,7 @@ This action cannot be undone.`
       <div className="greeting">
         <div>
           <h1>
-            Access{" "}
+            User{" "}
             <span className="greeting-accent">Management</span>
           </h1>
 

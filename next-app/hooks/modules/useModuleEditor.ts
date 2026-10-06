@@ -1,11 +1,18 @@
-// hooks/useModuleEditor.ts
-// Manages the editor for a single module's content, including the draft, section order and save/reset.
+// hooks/modules/useModuleEditor.ts
+// Manages the editor for a single module's content: the draft, section order, save/reset, and the module's embedded video.
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
+import { useUnsavedChanges } from '@/hooks/unsavedChanges/useUnsavedChanges';
+import { MAX_MP4_BYTES } from '@/lib/video/video';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+export type VideoType = 'youtube' | 'mp4';
+
+interface UseModuleEditorOptions {
+	onSaved?: () => void;   // Called once something has been persisted (a save, or a video change), so live data can refresh
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 // Renumbers the list of sections after adding/deleting/moving
@@ -22,21 +29,59 @@ export function buildBlankSection(existingCount: number): ModuleSection {
 	};
 }
 
+// Make a snapshot of the current module to compare against what was last loaded/saved. Used for warnings about unsaved changes
+export function snapshotModule(moduleData: ModuleData | undefined): string {
+	if (!moduleData) return '';
+	return JSON.stringify({
+		id: moduleData.id,
+		slug: moduleData.slug ?? null,
+		badgeNum: moduleData.badgeNum != null ? String(moduleData.badgeNum) : null,
+		icon: moduleData.icon,
+		iconBg: moduleData.iconBg,
+		title: moduleData.title,
+		description: moduleData.description,
+		keyTakeaway: moduleData.keyTakeaway,
+		prevId: moduleData.prevId ?? null,
+		nextId: moduleData.nextId ?? null,
+		sections: moduleData.sections.map((s) => ({
+			num: s.num,
+			heading: s.heading,
+			body: s.body,
+			listType: s.listType ?? null,
+			items: s.items?.length ? s.items : null,
+			callout: s.callout ?? null,
+		})),
+	});
+}
+
 // ─── Hook ───────────────────────────────────────────────────────────────────
 // topic: which app/modules/ topic this module belongs to (e.g. 'hazard-modules')
 // item: the live (Supabase-merged) module, from useModuleById — seeds the draft
 // fallback: the bundled lib/ entry for this same id — what "Reset to Defaults" reverts to
-export function useModuleEditor(topic: string, item: ModuleData | undefined, fallback: ModuleData | undefined) {
+export function useModuleEditor(
+	topic: string,
+	item: ModuleData | undefined,
+	fallback: ModuleData | undefined,
+	{ onSaved }: UseModuleEditorOptions = {}
+) {
 	const { user } = useAuth();
 
 	const [editMode, setEditMode] = useState(false);
 	const [draft, setDraft] = useState<ModuleData | undefined>(item);
 	const [selectedSection, setSelectedSection] = useState<number | null>(null);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+	// Whether the draft differs from what's stored, plus how to tell it what's now stored (see useUnsavedChanges)
+	const { hasUnsavedChanges, markSaved } = useUnsavedChanges(draft, item, snapshotModule);
 
-	// Value tracking current edit state
-	const editModeRef = useRef(editMode);
-	editModeRef.current = editMode;
+	// Unsaved-changes flag, readable from the effect below without becoming a dependency
+	const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+	hasUnsavedChangesRef.current = hasUnsavedChanges;
+
+	// Video editor state — only the current draft's video is ever being edited.
+	const [videoDraftType, setVideoDraftType] = useState<VideoType>('youtube');
+	const [videoDraftYoutubeUrl, setVideoDraftYoutubeUrl] = useState('');
+	const [videoDraftFile, setVideoDraftFile] = useState<File | null>(null);
+	const [videoSaving, setVideoSaving] = useState(false);
 
 	// Exit edit mode and discard changes when moving to a different module
 	useEffect(() => {
@@ -45,10 +90,19 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 		setDraft(item);
 	}, [item?.id]);
 
-	// Return current edits when re-entering edit mode
+	// Maintain unsaved edits even if edit mode is toggled off
 	useEffect(() => {
-		if (!editModeRef.current) setDraft(item);
-	}, [item]);
+		if (!hasUnsavedChangesRef.current) setDraft(item);
+		markSaved(item);
+	}, [item, markSaved]);
+
+	// Keep the video controls in sync with the current draft (module switch, or a video change coming back from Supabase)
+	useEffect(() => {
+		if (!draft) return;
+		setVideoDraftType(draft.videoType === 'mp4' ? 'mp4' : 'youtube');
+		setVideoDraftYoutubeUrl(draft.videoType === 'youtube' ? draft.videoUrl ?? '' : '');
+		setVideoDraftFile(null);
+	}, [draft?.id, draft?.videoUrl, draft?.videoType]);
 
 	// Turning edit mode off doesn't discard unsaved changes
 	const toggleEditMode = useCallback(() => {
@@ -181,18 +235,144 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 			});
 			const json = await res.json();
 			if (!res.ok || !json.ok) throw new Error(json.error ?? 'API error');
+			markSaved(draft);   // `draft` is the closure value that was sent, so edits made while saving stay unsaved
 			setSaveStatus('saved');
 			setTimeout(() => setSaveStatus('idle'), 2500);
+			onSaved?.();
 		} catch (err) {
 			console.error('save-module error:', err);
 			setSaveStatus('error');
 			setTimeout(() => setSaveStatus('idle'), 3000);
 		}
-	}, [draft, topic, user]);
+	}, [draft, topic, user, markSaved, onSaved]);
+
+	// ── Video editing ────────────────────────────────────────────────────────
+	const changeVideoDraftType = useCallback((type: VideoType) => setVideoDraftType(type), []);
+	const changeVideoDraftYoutubeUrl = useCallback((url: string) => setVideoDraftYoutubeUrl(url), []);
+
+	// Reject oversized files before they ever reach the upload route
+	const selectVideoDraftFile = useCallback((file: File | null) => {
+		if (file && file.size > MAX_MP4_BYTES) {
+			alert('MP4 videos must be smaller than 50MB.');
+			return;
+		}
+		setVideoDraftFile(file);
+	}, []);
+
+	// Save or replace a YouTube video
+	const saveYoutubeVideo = useCallback(async () => {
+		if (!user || !draft || !videoDraftYoutubeUrl.trim()) return;
+
+		try {
+			setVideoSaving(true);
+			const token = await user.getIdToken();
+			const formData = new FormData();
+
+			formData.append('moduleId', draft.id);
+			formData.append('topic', topic);
+			formData.append('videoType', 'youtube');
+			formData.append('videoUrl', videoDraftYoutubeUrl.trim());
+
+			const response = await fetch('/api/modules/video', {
+				method: 'PUT',
+				headers: { Authorization: `Bearer ${token}` },
+				body: formData,
+			});
+
+			const json = await response.json();
+			if (!response.ok || !json.ok) throw new Error(json.error ?? 'Unable to save video.');
+
+			updateField('videoUrl', json.module.video_url);
+			updateField('videoType', json.module.video_type);
+			onSaved?.();   // Videos persist immediately, so the live data needs to catch up
+		} catch (error) {
+			console.error('SAVE YOUTUBE VIDEO ERROR:', error);
+			alert(error instanceof Error ? error.message : 'Unable to save YouTube video.');
+		} finally {
+			setVideoSaving(false);
+		}
+	}, [user, draft, topic, videoDraftYoutubeUrl, updateField, onSaved]);
+
+	// Upload or replace an MP4 video
+	const uploadMp4Video = useCallback(async () => {
+		if (!user || !draft || !videoDraftFile) return;
+
+		try {
+			setVideoSaving(true);
+			const token = await user.getIdToken();
+			const formData = new FormData();
+
+			formData.append('moduleId', draft.id);
+			formData.append('topic', topic);
+			formData.append('videoType', 'mp4');
+			formData.append('file', videoDraftFile);
+
+			const response = await fetch('/api/modules/video', {
+				method: 'PUT',
+				headers: { Authorization: `Bearer ${token}` },
+				body: formData,
+			});
+
+			const json = await response.json();
+			if (!response.ok || !json.ok) throw new Error(json.error ?? 'Unable to upload video.');
+
+			updateField('videoUrl', json.module.video_url);
+			updateField('videoType', json.module.video_type);
+			setVideoDraftFile(null);
+			onSaved?.();
+		} catch (error) {
+			console.error('UPLOAD MP4 VIDEO ERROR:', error);
+			alert(error instanceof Error ? error.message : 'Unable to upload MP4 video.');
+		} finally {
+			setVideoSaving(false);
+		}
+	}, [user, draft, topic, videoDraftFile, updateField, onSaved]);
+
+	// Remove an existing module video
+	const removeModuleVideo = useCallback(async () => {
+		if (!user || !draft) return;
+
+		const confirmed = window.confirm('Remove this video from the module?');
+		if (!confirmed) return;
+
+		try {
+			setVideoSaving(true);
+			const token = await user.getIdToken();
+
+			const response = await fetch('/api/modules/video', {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					moduleId: draft.id,
+					topic,
+				}),
+			});
+
+			const json = await response.json();
+			if (!response.ok || !json.ok) throw new Error(json.error ?? 'Unable to remove video.');
+
+			updateField('videoUrl', null);
+			updateField('videoType', null);
+
+			setVideoDraftYoutubeUrl('');
+			setVideoDraftFile(null);
+			setVideoDraftType('youtube');
+			onSaved?.();
+		} catch (error) {
+			console.error('REMOVE MODULE VIDEO ERROR:', error);
+			alert(error instanceof Error ? error.message : 'Unable to remove video.');
+		} finally {
+			setVideoSaving(false);
+		}
+	}, [user, draft, topic, updateField, onSaved]);
 
 	return {
 		editMode,
 		toggleEditMode,
+		hasUnsavedChanges,
 		draft,
 		selectedSection,
 		setSelectedSection,
@@ -208,5 +388,15 @@ export function useModuleEditor(topic: string, item: ModuleData | undefined, fal
 		saveToSupabase,
 		resetToDefaults,
 		canReset: !!fallback,
+		videoDraftType,
+		videoDraftYoutubeUrl,
+		videoDraftFile,
+		videoSaving,
+		changeVideoDraftType,
+		changeVideoDraftYoutubeUrl,
+		selectVideoDraftFile,
+		saveYoutubeVideo,
+		uploadMp4Video,
+		removeModuleVideo,
 	};
 }

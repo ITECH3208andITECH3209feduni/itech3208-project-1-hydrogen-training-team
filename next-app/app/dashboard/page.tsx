@@ -21,25 +21,11 @@ export default function Dashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
 
-    const {
-        modules,
-        loadStatus,
-    } = useModules("hazards", hazardModules);
-
-    const [quizProgress, setQuizProgress] =
-        useState<QuizProgress | null>(null);
-
-    const [quizLoading, setQuizLoading] =
-        useState(true);
-
-    const [hazardProgress, setHazardProgress] =
-        useState<{
-            completedHazards: number;
-            totalHazards: number;
-        } | null>(null);
-
-    const [hazardLoading, setHazardLoading] =
-        useState(true);
+    const { modules, loadStatus, } = useModules("hazards", hazardModules);
+    const [quizProgress, setQuizProgress] = useState<QuizProgress | null>(null);
+    const [quizLoading, setQuizLoading] = useState(true);
+    const [simulationProgress, setSimulationProgress] = useState<{completedHotspots: number; totalHotspots: number;} | null>(null);
+    const [simulationLoading, setSimulationLoading] = useState(true);
 
     // Redirect unauthenticated users
     useEffect(() => {
@@ -63,9 +49,7 @@ export default function Dashboard() {
 
                 const response = await fetch("/api/quizzes/progress", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}`, },
                     cache: "no-store",
                 });
 
@@ -73,9 +57,9 @@ export default function Dashboard() {
 
                 if (response.ok && data.ok && data.progress) {
                     setQuizProgress({
-                        score: Number(data.progress.score ?? 0),
-                        passed: Boolean(data.progress.passed),
-                        attempts: Number(data.progress.attempts ?? 0),
+                        score:             Number(data.progress.score ?? 0),
+                        passed:            Boolean(data.progress.passed),
+                        attempts:          Number(data.progress.attempts ?? 0),
                         last_attempted_at: data.progress.last_attempted_at ?? null,
                     });
                 } else {
@@ -95,14 +79,14 @@ export default function Dashboard() {
     }, [user, loading]);
 
 
-    // Load user's interactive lab hazard progress
+    // Load user's interactive lab (simulation)) progress
     useEffect(() => {
-        async function loadHazardProgress() {
+        async function loadSimulationProgress() {
             try {
-                setHazardLoading(true);
+                setSimulationLoading(true);
 
                 if (!user) {
-                    setHazardProgress(null);
+                    setSimulationProgress(null);
                     return;
                 }
 
@@ -110,35 +94,30 @@ export default function Dashboard() {
 
                 const response = await fetch("/api/lab/progress", {
                     method: "GET",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}`, },
                     cache: "no-store",
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.ok) {
-                    setHazardProgress({
-                        completedHazards: Number(data.completedHazards ?? 0),
-                        totalHazards: Number(data.totalHazards ?? 0),
+                    setSimulationProgress({
+                        completedHotspots: Number(data.completedHotspots ?? 0),
+                        totalHotspots:     Number(data.totalHotspots ?? 0),
                     });
                 } else {
-                    setHazardProgress(null);
+                    setSimulationProgress(null);
                 }
             } catch (error) {
-                console.error(
-                    "Failed to load dashboard hazard progress:",
-                    error
-                );
-                setHazardProgress(null);
+                console.error("Failed to load dashboard simulation progress:", error);
+                setSimulationProgress(null);
             } finally {
-                setHazardLoading(false);
+                setSimulationLoading(false);
             }
         }
 
         if (!loading) {
-            loadHazardProgress();
+            loadSimulationProgress();
         }
     }, [user, loading]);
 
@@ -164,7 +143,7 @@ export default function Dashboard() {
     // Training topics
     const trainingTopics = useMemo(() =>
         modules.map((module) => ({
-            id: module.id,
+            id:    module.id,
             title: module.title,
         })), [modules]
     );
@@ -194,6 +173,36 @@ export default function Dashboard() {
 
             {/* Top Stat Cards */}
             <div className="stat-cards">
+                {/* Simulations */}
+                <Link
+                    href="/lab"
+                    className="stat-card"
+                >
+                    <div className="stat-icon simulations">&#128300;</div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Simulations
+                        </div>
+
+                        <div className="count">
+                            {simulationLoading
+                                ? "—"
+                                : `${simulationProgress?.completedHotspots ?? 0}/${simulationProgress?.totalHotspots ?? 0}`
+                            }
+                        </div>
+
+                        <div className="sub">
+                            {simulationLoading
+                                ? "Loading..."
+                                : `${simulationProgress?.completedHotspots ?? 0} items identified`
+                            }
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">&#8594;</div>
+                </Link>
+                
                 {/* Modules */}
                 <Link
                     href="/modules/hazards"
@@ -220,35 +229,6 @@ export default function Dashboard() {
                     </div>
 
                     <div className="stat-arrow">&rarr;</div>
-                </Link>
-                {/* Scenarios / Simulation */}
-                <Link
-                    href="/lab"
-                    className="stat-card"
-                >
-                    <div className="stat-icon scenarios">&#128300;</div>
-
-                    <div className="stat-info">
-                        <div className="label">
-                            Scenarios / Simulation
-                        </div>
-
-                        <div className="count">
-                            {hazardLoading
-                                ? "—"
-                                : `${hazardProgress?.completedHazards ?? 0}/${hazardProgress?.totalHazards ?? 0}`
-                            }
-                        </div>
-
-                        <div className="sub">
-                            {hazardLoading
-                                ? "Loading..."
-                                : `${hazardProgress?.completedHazards ?? 0} hazards identified`
-                            }
-                        </div>
-                    </div>
-
-                    <div className="stat-arrow">&#8594;</div>
                 </Link>
 
                 {/* Quizzes */}

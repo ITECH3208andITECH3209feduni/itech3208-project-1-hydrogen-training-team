@@ -8,7 +8,7 @@ import "./feedback.css";
 
 const categories = [
     "Training Modules",
-    "Scenarios / Simulations",
+    "Simulations",
     "Quizzes",
     "Website / Navigation",
     "Technical Issue",

@@ -19,263 +19,23 @@
     display: inline-block;
     padding: 6px 18px;
     border-radius: var(--radius-pill);
-    background: var(--teal-glow);
-    border: var(--border-rule);
-    color: var(--teal);
-    font-size: 0.82rem;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent-border);
+    color: var(--accent);
+    font-size: 0.9rem;
     margin-bottom: 16px;
 }
 
 .leaderboard-header h1 {
-    font-family: "Exo 2", sans-serif;
-    font-size: 2.2rem;
+    font-family: var(--font-heading);
+    font-size: 2.3rem;
     color: var(--white);
     margin-bottom: 10px;
 }
 
 .leaderboard-header p {
     color: var(--muted);
-    font-size: 0.92rem;
-}
-
-.leaderboard-podium {
-    display: grid;
-    grid-template-columns: 1fr 1.15fr 1fr;
-    align-items: end;
-    gap: 0;
-    margin: 34px auto 28px;
-    max-width: 760px;
-    min-height: 300px;
-}
-
-/*
- * The JSX renders students in rank order:
- * 1st, 2nd, 3rd.
- *
- * CSS repositions them visually into:
- *
- *          1st
- *     2nd       3rd
- */
-/* ---------------------------------------------------------
-   PODIUM PLATFORM EFFECT
-   --------------------------------------------------------- */
-
-.podium-card {
-    position: relative;
-    overflow: visible;
-}
-
-/* Gold podium top */
-.podium-1::after {
-    content: "";
-    position: absolute;
-    top: -10px;
-    left: 7%;
-    right: 7%;
-    height: 20px;
-
-    background: linear-gradient(
-        90deg,
-        #b8860b,
-        #ffd700,
-        #fff3a0,
-        #ffd700,
-        #b8860b
-    );
-
-    border-radius: 50%;
-    box-shadow: 0 3px 8px rgba(255, 215, 0, 0.35);
-    z-index: 1;
-}
-
-/* Silver podium top */
-.podium-2::after {
-    content: "";
-    position: absolute;
-    top: -9px;
-    left: 7%;
-    right: 7%;
-    height: 18px;
-
-    background: linear-gradient(
-        90deg,
-        #808080,
-        #d9d9d9,
-        #ffffff,
-        #d9d9d9,
-        #808080
-    );
-
-    border-radius: 50%;
-    box-shadow: 0 3px 8px rgba(220, 220, 220, 0.3);
-    z-index: 1;
-}
-
-/* Bronze podium top */
-.podium-3::after {
-    content: "";
-    position: absolute;
-    top: -8px;
-    left: 7%;
-    right: 7%;
-    height: 17px;
-
-    background: linear-gradient(
-        90deg,
-        #7a421d,
-        #b87333,
-        #e0a06a,
-        #b87333,
-        #7a421d
-    );
-
-    border-radius: 50%;
-    box-shadow: 0 3px 8px rgba(205, 127, 50, 0.3);
-    z-index: 1;
-}
-
-/* Make the podium bodies more solid */
-.podium-1 {
-    background: linear-gradient(
-        to bottom,
-        #252525 0%,
-        #111111 70%,
-        #080808 100%
-    );
-
-    box-shadow:
-        inset 0 -12px 0 rgba(255, 215, 0, 0.22),
-        0 14px 30px rgba(0, 0, 0, 0.45);
-}
-
-.podium-2 {
-    background: linear-gradient(
-        to bottom,
-        #252525 0%,
-        #111111 70%,
-        #080808 100%
-    );
-
-    box-shadow:
-        inset 0 -12px 0 rgba(192, 192, 192, 0.18),
-        0 14px 30px rgba(0, 0, 0, 0.45);
-}
-
-.podium-3 {
-    background: linear-gradient(
-        to bottom,
-        #252525 0%,
-        #111111 70%,
-        #080808 100%
-    );
-
-    box-shadow:
-        inset 0 -12px 0 rgba(205, 127, 50, 0.20),
-        0 14px 30px rgba(0, 0, 0, 0.45);
-}
-
-/* Keep the contents above the podium top */
-.podium-rank,
-.podium-name,
-.podium-score,
-.podium-attempts {
-    position: relative;
-    z-index: 3;
-}
-.podium-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    background: linear-gradient(
-        to bottom,
-        var(--card-bg),
-        rgba(255, 255, 255, 0.025)
-    );
-    border: var(--border-rule);
-    border-radius: 12px 12px 4px 4px;
-    padding: 22px 14px 20px;
-    text-align: center;
-    transition:
-        transform 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-/* First place — centre and tallest */
-.podium-1 {
-    order: 2;
-    min-height: 150px;
-    border-color: rgba(255, 215, 0, 0.65);
-    box-shadow:
-        0 0 28px rgba(255, 215, 0, 0.12),
-        inset 0 -5px 0 rgba(255, 215, 0, 0.35);
-    z-index: 2;
-}
-
-/* Second place — left and medium height */
-.podium-2 {
-    order: 1;
-    min-height: 190px;
-    border-color: rgba(192, 192, 192, 0.55);
-    box-shadow:
-        0 0 20px rgba(192, 192, 192, 0.08),
-        inset 0 -5px 0 rgba(192, 192, 192, 0.28);
-}
-
-/* Third place — right and shortest */
-.podium-3 {
-    order: 3;
-    min-height: 150px;
-    border-color: rgba(205, 127, 50, 0.55);
-    box-shadow:
-        0 0 20px rgba(205, 127, 50, 0.08),
-        inset 0 -5px 0 rgba(205, 127, 50, 0.28);
-}
-
-.podium-card:hover {
-    transform: translateY(-6px);
-    border-color: var(--teal);
-}
-
-.podium-rank {
-    font-size: 2.5rem;
-    line-height: 1;
-    margin-bottom: 14px;
-}
-
-.podium-1 .podium-rank {
-    font-size: 3.2rem;
-}
-
-.podium-name {
-    color: var(--white);
-    font-family: "Exo 2", sans-serif;
     font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-}
-
-.podium-score {
-    color: var(--teal);
-    font-family: "Exo 2", sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
-}
-
-.podium-1 .podium-score {
-    font-size: 2.4rem;
-    color: #ffd700;
-}
-
-.podium-attempts {
-    color: var(--muted);
-    font-size: 0.78rem;
-    margin-top: 6px;
 }
 
 .leaderboard-list {
@@ -297,7 +57,7 @@
 .leaderboard-list-header {
     background: rgba(0, 180, 216, 0.08);
     color: var(--teal);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -310,7 +70,12 @@
 }
 
 .leaderboard-row:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--accent-glow);
+}
+
+.leaderboard-row:hover .rank-number,
+.leaderboard-row:hover .student-score {
+    color: var(--accent);
 }
 
 .rank-number {
@@ -325,7 +90,7 @@
 
 .student-score {
     color: var(--teal);
-    font-family: "Exo 2", sans-serif;
+    font-family: var(--font-heading);
     font-weight: 700;
 }
 
@@ -343,13 +108,13 @@
 }
 
 .empty-icon {
-    font-size: 3rem;
+    font-size: 3.2rem;
     margin-bottom: 14px;
 }
 
 .leaderboard-empty h2 {
     color: var(--white);
-    font-family: "Exo 2", sans-serif;
+    font-family: var(--font-heading);
     margin-bottom: 8px;
 }
 
@@ -381,8 +146,8 @@
     padding: 12px 24px;
     border-radius: 8px;
     text-decoration: none;
-    font-family: "Exo 2", sans-serif;
-    font-size: 0.88rem;
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
     font-weight: 600;
     transition: all 0.2s ease;
 }
@@ -407,27 +172,18 @@
 .leaderboard-secondary-button:hover {
     transform: translateY(-2px);
 }
+.leaderboard-button:hover {
+    background: var(--accent);
+    color: var(--navy);
+    box-shadow: 0 6px 24px var(--accent-shadow);
+}
+.leaderboard-secondary-button:hover {
+    border-color: var(--accent-border);
+    background: var(--accent-glow);
+    color: var(--accent);
+}
 
 @media (max-width: 700px) {
-    .leaderboard-podium {
-        grid-template-columns: 1fr;
-        gap: 14px;
-        min-height: auto;
-        margin-top: 24px;
-    }
-
-    .podium-card,
-    .podium-1,
-    .podium-2,
-    .podium-3 {
-        min-height: 150px;
-        order: initial;
-    }
-
-    .podium-1 { order: 1; }
-    .podium-2 { order: 2; }
-    .podium-3 { order: 3; }
-
     .leaderboard-list-header, .leaderboard-row { grid-template-columns: 60px 1fr 80px; }
 
     .leaderboard-list-header span:last-child, .student-attempts { display: none; }
@@ -443,8 +199,7 @@
 }
 
 /* =========================================================
-   FINAL PODIUM DESIGN
-   Compact award-style podium
+   PODIUM DESIGN
    ========================================================= */
 .leaderboard-podium {
     display: grid;
@@ -480,6 +235,7 @@
     border-radius: 4px 4px 2px 2px;
     text-align: center;
     padding: 46px 12px 18px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
     box-shadow:
         inset 7px 0 10px rgba(255, 255, 255, 0.025),
@@ -606,18 +362,18 @@
    Medals
    --------------------------------------------------------- */
 .podium-rank {
-    font-size: 1.8rem;
+    font-size: 1.9rem;
     line-height: 1;
     margin-bottom: 8px;
 }
-.podium-1 .podium-rank { font-size: 2.2rem; }
+.podium-1 .podium-rank { font-size: 2.3rem; }
 
 /* ---------------------------------------------------------
    Student names
    --------------------------------------------------------- */
 .podium-name {
     color: var(--white);
-    font-family: "Exo 2", sans-serif;
+    font-family: var(--font-heading);
     font-size: 0.95rem;
     font-weight: 700;
     line-height: 1.2;
@@ -631,7 +387,7 @@
    --------------------------------------------------------- */
 .podium-score {
     color: var(--teal);
-    font-family: "Exo 2", sans-serif;
+    font-family: var(--font-heading);
     font-size: 1.8rem;
     font-weight: 700;
     line-height: 1.1;
@@ -647,7 +403,7 @@
    --------------------------------------------------------- */
 .podium-attempts {
     color: var(--muted);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     margin-top: 5px;
 }
 
