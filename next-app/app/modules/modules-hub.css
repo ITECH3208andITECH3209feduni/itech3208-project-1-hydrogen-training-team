@@ -1,0 +1,69 @@
+/* app/modules/modules-hub.css - styles for the modules hub */
+
+.module-hub-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+}
+
+.module-hub-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.25s;
+        animation: fadeUp 0.5s ease both;
+}
+
+.module-hub-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--teal);
+        background: rgba(0,180,216,0.07);
+}
+
+.module-hub-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: rgba(255,190,80,0.12);
+        margin-bottom: 16px;
+}
+
+.module-hub-body {
+        flex: 1;
+}
+
+.module-hub-title {
+        font-family: 'Exo 2', sans-serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--white);
+        margin-bottom: 6px;
+}
+
+.module-hub-desc {
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.5;
+}
+
+.module-hub-link {
+        margin-top: 18px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--teal);
+}
+
+@media (max-width: 900px) {
+        .module-hub-grid {
+                grid-template-columns: 1fr;
+        }
+}
