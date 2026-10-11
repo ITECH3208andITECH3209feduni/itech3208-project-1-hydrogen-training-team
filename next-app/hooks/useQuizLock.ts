@@ -48,6 +48,12 @@ export function useQuizLock(quizId: string, user: User | null, loading: boolean)
 
 				if (cancelled) return;
 
+				// Surface a broken requirements lookup (missing table, bad env vars) instead of
+				// silently unlocking — the quiz still fails open, but the cause shows in the console.
+				if (!reqJson.ok) {
+					console.error(`Quiz lock: /api/quiz-requirements failed (${reqRes.status}) — quiz unlocked:`, reqJson.error);
+				}
+
 				if (!row) {
 					setRequirement(null);
 					return;

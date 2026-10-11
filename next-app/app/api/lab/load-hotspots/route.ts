@@ -5,6 +5,9 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
+// Always query live — otherwise a production build can freeze the response at build time.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
 	const { data, error } = await supabase
 		.from('hotspots')

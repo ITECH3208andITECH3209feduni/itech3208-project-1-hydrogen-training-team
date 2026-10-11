@@ -61,7 +61,11 @@ export async function isQuizLockedForUser(uid: string, quizId: string): Promise<
 		.eq('quiz_id', quizId)
 		.maybeSingle();
 
-	if (reqError || !requirement) return false;
+	if (reqError) {
+		console.error('isQuizLockedForUser requirement lookup error (failing open):', reqError);
+		return false;
+	}
+	if (!requirement) return false;
 
 	const { data, error } = await supabaseServer
 		.from('user_module_progress')

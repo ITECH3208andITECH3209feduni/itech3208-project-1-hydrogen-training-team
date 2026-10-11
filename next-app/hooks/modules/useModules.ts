@@ -143,6 +143,8 @@ export function useModules(topic: string, defaults: ModuleData[]) {
 				    }
 				}
 
+				if (cancelled) return;
+
 				const progressMap = new Map(
 				    progressRecords.map((record) => [
 				        String(record.module_id),
