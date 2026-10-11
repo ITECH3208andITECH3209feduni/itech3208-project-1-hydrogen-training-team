@@ -50,35 +50,41 @@ export async function isModuleLockedForUser(
 	return (data?.status ?? 'todo') !== 'done';
 }
 
-// True if this quiz's required module isn't done yet for this user.
-// Fails open if quiz_requirements has no row for this quiz — including when
-// the table doesn't exist yet, before the migration in supabase_setup.sql
-// has been run.
-export async function isQuizLockedForUser(uid: string, quizId: string): Promise<boolean> {
-	const { data: requirement, error: reqError } = await supabase
-		.from('quiz_requirements')
-		.select('required_module_id, topic')
-		.eq('quiz_id', quizId)
-		.maybeSingle();
+// Module ids that make up a topic, preferring admin-authored Supabase content
+// over the static defaults — same source the client-side quiz lock uses.
+async function resolveTopicModuleIds(topic: string): Promise<string[]> {
+	const { data, error } = await supabase
+		.from('modules')
+		.select('id')
+		.eq('topic', topic);
 
-	if (reqError) {
-		console.error('isQuizLockedForUser requirement lookup error (failing open):', reqError);
-		return false;
-	}
-	if (!requirement) return false;
+	if (!error && data?.length) return data.map((row) => String(row.id));
+
+	return topic === 'hazards' ? hazardModules.map((m) => String(m.id)) : [];
+}
+
+// True unless every module in the quiz's topic is done for this user.
+// Fails closed (locked) on a lookup error, matching hooks/useQuizLock.ts.
+export async function isQuizLockedForUser(uid: string, topic: string): Promise<boolean> {
+	const moduleIds = await resolveTopicModuleIds(topic);
+	if (!moduleIds.length) return false;
 
 	const { data, error } = await supabaseServer
 		.from('user_module_progress')
-		.select('status')
+		.select('module_id, status, progress')
 		.eq('uid', uid)
-		.eq('topic', requirement.topic)
-		.eq('module_id', requirement.required_module_id)
-		.maybeSingle();
+		.eq('topic', topic);
 
 	if (error) {
-		console.error('isQuizLockedForUser lookup error:', error);
-		return false;
+		console.error('isQuizLockedForUser lookup error (failing closed):', error);
+		return true;
 	}
 
-	return (data?.status ?? 'todo') !== 'done';
+	const doneIds = new Set(
+		(data ?? [])
+			.filter((row) => row.status === 'done' || Number(row.progress ?? 0) >= 100)
+			.map((row) => String(row.module_id))
+	);
+
+	return moduleIds.some((id) => !doneIds.has(id));
 }

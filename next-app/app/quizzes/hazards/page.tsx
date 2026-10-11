@@ -9,10 +9,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useQuiz, drawQuizPool } from '@/hooks/quizzes/useQuiz';
 import { useQuizLock } from '@/hooks/useQuizLock';
 import { hazardModules } from '@/lib/modules/hazards';
-import { getModuleById } from '@/lib/modules/moduleTypes';
 import {
     QUIZ_SLUG,
-    QUIZ_ID,
+    QUIZ_TOPIC,
     QUIZ_DEFAULTS,
     QuizQuestion,
 } from '@/lib/questionhazards';
@@ -55,10 +54,7 @@ function shuffleOptions(questions: QuizQuestion[]): QuizQuestion[] {
 export default function HazardsQuizPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const { locked, ready: lockReady, requiredModuleId } = useQuizLock(QUIZ_ID, user, loading);
-    const requiredModuleTitle = requiredModuleId
-        ? getModuleById(hazardModules, requiredModuleId)?.title
-        : undefined;
+    const { locked, ready: lockReady, doneCount, totalCount } = useQuizLock(QUIZ_TOPIC, hazardModules, user, loading);
 
     useEffect(() => {
         if (!loading && user && lockReady && locked) {
@@ -156,9 +152,8 @@ export default function HazardsQuizPage() {
                 <div className="quiz-blocked">
                     <h1>This quiz is locked</h1>
                     <p>
-                        {requiredModuleTitle
-                            ? `Complete "${requiredModuleTitle}" to unlock this quiz.`
-                            : 'Complete the required module to unlock this quiz.'}{' '}
+                        Complete all {totalCount} hazards modules to unlock this quiz
+                        ({doneCount} of {totalCount} done).{' '}
                         Redirecting you back to Quizzes…
                     </p>
                 </div>

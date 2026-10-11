@@ -11,16 +11,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useQuiz } from '@/hooks/quizzes/useQuiz';
 import { useQuizLock } from '@/hooks/useQuizLock';
 import { hazardModules } from '@/lib/modules/hazards';
-import { getModuleById } from '@/lib/modules/moduleTypes';
-import { QUIZ_SLUG, QUIZ_ID, QUIZ_DEFAULTS } from '@/lib/questionhazards';
+import { QUIZ_SLUG, QUIZ_TOPIC, QUIZ_DEFAULTS } from '@/lib/questionhazards';
 
 export default function QuizzesPage() {
         const { user, loading, permissions } = useAuth();
         const router = useRouter();
-        const { locked, requiredModuleId } = useQuizLock(QUIZ_ID, user, loading);
-        const requiredModuleTitle = requiredModuleId
-                ? getModuleById(hazardModules, requiredModuleId)?.title
-                : undefined;
+        const { locked, doneCount, totalCount } = useQuizLock(QUIZ_TOPIC, hazardModules, user, loading);
+        const lockMessage = `Complete all ${totalCount} hazards modules to unlock this quiz (${doneCount} of ${totalCount} done).`;
 
         const { quizData, usingDefaults } = useQuiz(QUIZ_SLUG, QUIZ_DEFAULTS);
 
@@ -42,7 +39,7 @@ export default function QuizzesPage() {
 
                                 <div className="quiz-card-desc">
                                         {locked
-                                                ? `Complete "${requiredModuleTitle ?? 'the required module'}" to unlock this quiz.`
+                                                ? lockMessage
                                                 : `${quizData.description} — ${quizData.questions.length} questions.`}
                                 </div>
 
@@ -68,7 +65,7 @@ export default function QuizzesPage() {
                                         {locked ? (
                                                 <div
                                                         className="quiz-card quiz-card-locked"
-                                                        title={`Complete "${requiredModuleTitle ?? 'the required module'}" to unlock this quiz`}
+                                                        title={lockMessage}
                                                         aria-disabled="true"
                                                 >
                                                         {hazardsCardBody}

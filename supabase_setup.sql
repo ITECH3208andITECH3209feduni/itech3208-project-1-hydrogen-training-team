@@ -143,19 +143,6 @@ create table public.user_quiz_progress (
   constraint user_quiz_progress_uid_quiz_unique unique (uid, quiz_id)
 );
 
--- quiz_requirements: maps each quiz to the module that must be completed
--- before it unlocks. Public read (checked client-side and server-side
--- before a quiz attempt is accepted), service-role write.
-create table public.quiz_requirements (
-  quiz_id             text not null,
-  required_module_id  text not null,
-  topic               text not null default 'hazards',
-  constraint quiz_requirements_pkey primary key (quiz_id)
-);
-
-insert into public.quiz_requirements (quiz_id, required_module_id, topic)
-values ('hydrogen-hazards', '1', 'hazards');
-
 create table public.user_lab_progress (
   id                uuid not null default gen_random_uuid(),
   uid               text not null,
@@ -264,27 +251,6 @@ grant select on public.modules to service_role;
 grant select on public.module_sections to service_role;
 grant insert, update, delete on public.modules to service_role;
 grant insert, update, delete on public.module_sections to service_role;
-
--- quiz_requirements: public read, service-role write.
-alter table public.quiz_requirements enable row level security;
-
-create policy "Allow public read"
-on public.quiz_requirements
-for select
-to anon
-using (true);
-
-create policy "Allow service role write"
-on public.quiz_requirements
-for all
-to service_role
-using (true)
-with check (true);
-
-grant select on public.quiz_requirements to anon;
-grant select on public.quiz_requirements to service_role;
-grant insert, update, delete on public.quiz_requirements to service_role;
-
 
 -- quizzes / quiz_questions: public read, service-role read/write.
 alter table public.quizzes enable row level security;

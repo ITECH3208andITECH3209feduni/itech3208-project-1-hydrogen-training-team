@@ -13,10 +13,9 @@ export interface QuizQuestion {
 export const QUIZ_TITLE = 'Hydrogen Hazards Quiz';
 export const QUIZ_SLUG = 'hazards';
 export const QUIZ_DESCRIPTION = 'Flammability, storage, buoyancy, and detection';
-// Matches the quiz_id used in the user_quiz_progress and quiz_requirements
-// tables (see app/api/quizzes/progress/route.ts and supabase_setup.sql) —
-// not the same as QUIZ_SLUG, which is only the URL segment.
-export const QUIZ_ID = 'hydrogen-hazards';
+// The quiz unlocks once every module in this app/modules/ topic is done
+// (see hooks/useQuizLock.ts and lib/progressLock.ts).
+export const QUIZ_TOPIC = 'hazards';
 export const PASS_THRESHOLD = 70;               // percent required to pass
 export const POOL_SIZE: number | null = null;   // null = use the full bank
 
