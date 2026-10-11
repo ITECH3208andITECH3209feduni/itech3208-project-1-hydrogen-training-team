@@ -4,7 +4,8 @@ import { http, HttpResponse } from 'msw';
 
 // Put a successful response in each route (for fail cases, override in test file)
 export const handlers = [
-    http.get('/api/load-hazards', () => {
+    // Lab page routes
+    http.get('/api/lab/load-hotspots', () => {
         return HttpResponse.json({
             ok: true,
             data: [
@@ -14,22 +15,60 @@ export const handlers = [
                     left: '30.0%',
                     title: 'Loaded Title',
                     text: 'Loaded description text.',
-                    module_section: 'hazard-modules',
+                    module_topic: 'hazards',
                     module_id: '1',
+                    video_url: null,
+                    video_type: null,
                 },
             ],
         });
     }),
-    http.get('/api/load-image', () => {
+    http.get('/api/lab/load-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/lab-photo.jpg' });
     }),
-    http.post('/api/save-hazards', () => {
+    http.post('/api/lab/save-hotspots', () => {
         return HttpResponse.json({ ok: true });
     }),
-    http.post('/api/upload-image', () => {
+    http.post('/api/lab/upload-image', () => {
         return HttpResponse.json({ ok: true, url: '/uploads/mock-image.jpg' });
     }),
-    http.get('/api/load-modules', () => {
+    http.get('/api/lab/load-module-options', () => {
+        return HttpResponse.json({
+            ok: true,
+            data: [
+                { topic: 'hazards', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
+                { topic: 'hazards', id: '2', badge_num: 2, title: 'Ventilation System' },
+                { topic: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
+                { topic: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
+            ],
+        });
+    }),
+    http.put('/api/lab/video', async ({ request }) => {
+        const formData = await request.formData();
+        const videoType = formData.get('videoType');
+
+        return HttpResponse.json({
+            ok: true,
+            hazard: {
+                type: formData.get('hazardType'),
+                title: 'Mock Title',
+                video_url:
+                    videoType === 'youtube'
+                        ? formData.get('videoUrl')
+                        : '/uploads/mock-video.mp4',
+                video_type: videoType,
+            },
+        });
+    }),
+    http.delete('/api/lab/video', () => {
+        return HttpResponse.json({
+            ok: true,
+            hazard: { type: 'gas', title: 'Mock Title', video_url: null, video_type: null },
+        });
+    }),
+    
+    // Module page routes
+    http.get('/api/modules/load-modules', () => {
         return HttpResponse.json({
             ok: true,  
             data: [
@@ -44,6 +83,8 @@ export const handlers = [
                     key_takeaway: 'key takeaway',
                     prev_id: null,
                     next_id: '2',
+                    video_url: null,
+                    video_type: null,
                     module_sections: [
                         {
                             num: '01',
@@ -74,17 +115,6 @@ export const handlers = [
             ],
         });
     }),
-    http.get('/api/load-module-options', () => {
-        return HttpResponse.json({
-            ok: true,
-            data: [
-                { section: 'hazard-modules', id: '1', badge_num: 1, title: 'Gas Leak Detection' },
-                { section: 'hazard-modules', id: '2', badge_num: 2, title: 'Ventilation System' },
-                { section: 'guides', id: '1', badge_num: null, title: 'Sample Guide One' },
-                { section: 'guides', id: '2', badge_num: null, title: 'Sample Guide Two' },
-            ],
-        });
-    }),
     http.post('/api/modules/save-module', () => {
         return HttpResponse.json({ ok: true });
     }),
@@ -93,5 +123,40 @@ export const handlers = [
             ok: true,
             progress: [{ module_id: '1', progress: 100, status: 'done' }],
         });
+    }),
+
+    // Quiz page routes
+    http.get('/api/quizzes/load-quiz', () => {
+        return HttpResponse.json({
+            ok: true,
+            data: {
+                quiz_id: 'hazards',
+                title: 'Loaded Quiz Title',
+                description: 'Loaded quiz description.',
+                pass_threshold: 70,
+                pool_size: null,
+                quiz_questions: [
+                    {
+                        id: 1,
+                        question: 'Loaded question one?',
+                        options: ['Opt A', 'Opt B', 'Opt C'],
+                        correct_index: 1,
+                        explanation: 'Loaded explanation one.',
+                        is_core: false,
+                    },
+                    {
+                        id: 2,
+                        question: 'Loaded question two?',
+                        options: ['Opt X', 'Opt Y'],
+                        correct_index: 0,
+                        explanation: 'Loaded explanation two.',
+                        is_core: false,
+                    },
+                ],
+            }
+        });
+    }),
+    http.post('/api/quizzes/save-quiz', () => {
+        return HttpResponse.json({ ok: true });
     }),
 ];

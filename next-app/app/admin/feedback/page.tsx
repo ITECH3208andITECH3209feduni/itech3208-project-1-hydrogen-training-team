@@ -1,10 +1,11 @@
+// app/admin/feedback/page.tsx
 "use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import "./feedback.css";
+import "./admin-feedback.css";
 
 type FeedbackItem = {
     id: number;

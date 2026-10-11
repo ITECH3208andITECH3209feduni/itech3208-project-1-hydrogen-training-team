@@ -1,3 +1,4 @@
+// context/AuthContext.tsx
 "use client";
 
 import {
@@ -16,7 +17,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 
-import { auth } from "../lib/firebase";
+import { auth } from "../lib/firebase/firebase";
 
 /* ============================================
    User Profile Type

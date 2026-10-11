@@ -1,4 +1,4 @@
-// app/admin/users
+// app/admin/users/page.tsx
 
 "use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.

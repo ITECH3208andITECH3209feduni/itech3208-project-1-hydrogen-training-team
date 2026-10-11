@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ModuleData, ModuleStatus, getModuleById, isModuleLocked } from '@/lib/moduleTypes';
+import { ModuleData, ModuleStatus, getModuleById, isModuleLocked } from '@/lib/modules/moduleTypes';
 import ModuleCard from './ModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;

@@ -1,25 +1,25 @@
 // lib/progressLock.ts
 // Server-side authority for progression locking (AC3). Mirrors the client-side
-// checks in lib/moduleTypes.ts (isModuleLocked) and hooks/useQuizLock.ts, but
+// checks in lib/modules/moduleTypes.ts (isModuleLocked) and hooks/useQuizLock.ts, but
 // runs on the server so a direct API call can't bypass what the UI hides.
 
 import { supabase, supabaseServer } from './supabase';
-import { hazardModules } from './hazardModules';
-import { getModuleById } from './moduleTypes';
+import { hazardModules } from './modules/hazards';
+import { getModuleById } from './modules/moduleTypes';
 
 // Resolves a module's prevId, preferring admin-authored Supabase content over
-// the static defaults — matches the merge hooks/useModules.ts does client-side.
-async function resolvePrevId(section: string, moduleId: string): Promise<string | null> {
+// the static defaults — matches the merge hooks/modules/useModules.ts does client-side.
+async function resolvePrevId(topic: string, moduleId: string): Promise<string | null> {
 	const { data } = await supabase
 		.from('modules')
 		.select('prev_id')
-		.eq('section', section)
+		.eq('topic', topic)
 		.eq('id', moduleId)
 		.maybeSingle();
 
 	if (data) return data.prev_id ?? null;
 
-	const fallback = section === 'hazard-modules' ? getModuleById(hazardModules, moduleId) : undefined;
+	const fallback = topic === 'hazards' ? getModuleById(hazardModules, moduleId) : undefined;
 	return fallback?.prevId ?? null;
 }
 
@@ -28,17 +28,17 @@ async function resolvePrevId(section: string, moduleId: string): Promise<string 
 // a locking bug should never be able to trap someone out of everything.
 export async function isModuleLockedForUser(
 	uid: string,
-	section: string,
+	topic: string,
 	moduleId: string
 ): Promise<boolean> {
-	const prevId = await resolvePrevId(section, moduleId);
+	const prevId = await resolvePrevId(topic, moduleId);
 	if (!prevId) return false;
 
 	const { data, error } = await supabaseServer
 		.from('user_module_progress')
 		.select('status')
 		.eq('uid', uid)
-		.eq('section', section)
+		.eq('topic', topic)
 		.eq('module_id', prevId)
 		.maybeSingle();
 
@@ -57,7 +57,7 @@ export async function isModuleLockedForUser(
 export async function isQuizLockedForUser(uid: string, quizId: string): Promise<boolean> {
 	const { data: requirement, error: reqError } = await supabase
 		.from('quiz_requirements')
-		.select('required_module_id, section')
+		.select('required_module_id, topic')
 		.eq('quiz_id', quizId)
 		.maybeSingle();
 
@@ -67,7 +67,7 @@ export async function isQuizLockedForUser(uid: string, quizId: string): Promise<
 		.from('user_module_progress')
 		.select('status')
 		.eq('uid', uid)
-		.eq('section', requirement.section)
+		.eq('topic', requirement.topic)
 		.eq('module_id', requirement.required_module_id)
 		.maybeSingle();
 

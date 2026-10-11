@@ -1,4 +1,7 @@
-﻿"use client";
+﻿// components/Navbar.tsx
+// Universal navigation header that appears on all pages (some may purposfully hide it)
+
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -63,19 +66,7 @@ export default function Navbar() {
                 {/* Authenticated users only */}
                 {user && (
                     <>
-                        {/* Modules */}
-                        <Link
-                            href="/modules/hazard-modules"
-                            className={`nav-link ${
-                                pathname.startsWith("/modules")
-                                    ? "active"
-                                    : ""
-                            }`}
-                        >
-                            Modules
-                        </Link>
-
-                        {/* Scenarios */}
+                        {/* Simulations */}
                         <Link
                             href="/lab"
                             className={`nav-link ${
@@ -84,7 +75,19 @@ export default function Navbar() {
                                     : ""
                             }`}
                         >
-                            Scenarios
+                            Simulations
+                        </Link>
+                        
+                        {/* Modules */}
+                        <Link
+                            href="/modules/hazards"
+                            className={`nav-link ${
+                                pathname.startsWith("/modules")
+                                    ? "active"
+                                    : ""
+                            }`}
+                        >
+                            Modules
                         </Link>
 
                         {/* Quizzes */}

@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx - Hydrogen Lab Safety Dashboard
+﻿// app/dashboard/page.tsx - Hydrogen Lab Safety Dashboard
 
 "use client";
 
@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useModules } from "@/hooks/useModules";
-import { hazardModules } from "@/lib/hazardModules";
+import { useModules } from "@/hooks/modules/useModules";
+import { hazardModules } from "@/lib/modules/hazards";
 import "./dashboard.css";
 
 type QuizProgress = {
@@ -24,12 +24,21 @@ export default function Dashboard() {
     const {
         modules,
         loadStatus,
-    } = useModules("hazard-modules", hazardModules);
+    } = useModules("hazards", hazardModules);
 
     const [quizProgress, setQuizProgress] =
         useState<QuizProgress | null>(null);
 
     const [quizLoading, setQuizLoading] =
+        useState(true);
+
+    const [simulationProgress, setSimulationProgress] =
+        useState<{
+            completedHotspots: number;
+            totalHotspots: number;
+        } | null>(null);
+
+    const [simulationLoading, setSimulationLoading] =
         useState(true);
 
     // Redirect unauthenticated users
@@ -85,6 +94,54 @@ export default function Dashboard() {
         }
     }, [user, loading]);
 
+
+    // Load user's interactive lab (simulation)) progress
+    useEffect(() => {
+        async function loadSimulationProgress() {
+            try {
+                setSimulationLoading(true);
+
+                if (!user) {
+                    setSimulationProgress(null);
+                    return;
+                }
+
+                const token = await user.getIdToken();
+
+                const response = await fetch("/api/lab/progress", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    cache: "no-store",
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    setSimulationProgress({
+                        completedHotspots: Number(data.completedHotspots ?? 0),
+                        totalHotspots: Number(data.totalHotspots ?? 0),
+                    });
+                } else {
+                    setSimulationProgress(null);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to load dashboard simulation progress:",
+                    error
+                );
+                setSimulationProgress(null);
+            } finally {
+                setSimulationLoading(false);
+            }
+        }
+
+        if (!loading) {
+            loadSimulationProgress();
+        }
+    }, [user, loading]);
+
     // Module statistics
     const totalModules = modules.length;
 
@@ -137,9 +194,39 @@ export default function Dashboard() {
 
             {/* Top Stat Cards */}
             <div className="stat-cards">
+                {/* Simulations */}
+                <Link
+                    href="/lab"
+                    className="stat-card"
+                >
+                    <div className="stat-icon simulations">&#128300;</div>
+
+                    <div className="stat-info">
+                        <div className="label">
+                            Simulations
+                        </div>
+
+                        <div className="count">
+                            {simulationLoading
+                                ? "—"
+                                : `${simulationProgress?.completedHotspots ?? 0}/${simulationProgress?.totalHotspots ?? 0}`
+                            }
+                        </div>
+
+                        <div className="sub">
+                            {simulationLoading
+                                ? "Loading..."
+                                : `${simulationProgress?.completedHotspots ?? 0} items identified`
+                            }
+                        </div>
+                    </div>
+
+                    <div className="stat-arrow">&#8594;</div>
+                </Link>
+                
                 {/* Modules */}
                 <Link
-                    href="/modules/hazard-modules"
+                    href="/modules/hazards"
                     className="stat-card"
                 >
                     <div className="stat-icon modules">&#128218;</div>
@@ -149,7 +236,7 @@ export default function Dashboard() {
 
                         <div className="count">
                             {loadStatus === "loading"
-                                ? "—"
+                                ? "\u2014"
                                 : totalModules
                             }
                         </div>
@@ -157,28 +244,12 @@ export default function Dashboard() {
                         <div className="sub">
                             {loadStatus === "loading"
                                 ? "Loading..."
-                                : `${completedModules} completed · ${inProgressModules} in progress`
+                                : `${completedModules} completed \u00B7 ${inProgressModules} in progress`
                             }
                         </div>
                     </div>
 
-                    <div className="stat-arrow">→</div>
-                </Link>
-
-                {/* Scenarios - static for now */}
-                <Link
-                    href="/lab"
-                    className="stat-card"
-                >
-                    <div className="stat-icon scenarios">&#128300;</div>
-
-                    <div className="stat-info">
-                        <div className="label">Scenarios / Simulation</div>
-                        <div className="count">8</div>
-                        <div className="sub">2 completed · 1 in progress</div>
-                    </div>
-
-                    <div className="stat-arrow">→</div>
+                    <div className="stat-arrow">&rarr;</div>
                 </Link>
 
                 {/* Quizzes */}
@@ -193,10 +264,10 @@ export default function Dashboard() {
 
                         <div className="count">
                             {quizLoading
-                                ? "—"
+                                ? "\u2014"
                                 : quizProgress
                                     ? `${quizProgress.score}%`
-                                    : "—"
+                                    : "\u2014"
                             }
                         </div>
 
@@ -205,14 +276,14 @@ export default function Dashboard() {
                                 ? "Loading..."
                                 : quizProgress
                                     ? quizProgress.passed
-                                        ? "Passed · Final Quiz"
+                                        ? "Passed \u00B7 Final Quiz"
                                         : `${quizProgress.attempts} attempt${quizProgress.attempts === 1 ? "" : "s"}`
                                     : "Not attempted"
                             }
                         </div>
                     </div>
 
-                    <div className="stat-arrow">→</div>
+                    <div className="stat-arrow">&rarr;</div>
                 </Link>
             </div>
 
@@ -227,10 +298,10 @@ export default function Dashboard() {
                         </div>
 
                         <Link
-                            href="/modules/hazard-modules"
+                            href="/modules/hazards"
                             className="panel-link"
                         >
-                            View Modules →
+                            View Modules &rarr;
                         </Link>
                     </div>
 
@@ -238,13 +309,13 @@ export default function Dashboard() {
                         {trainingTopics.length > 0 ? (trainingTopics.map((topic, index) => (
                                     <Link
                                         key={topic.id}
-                                        href={`/modules/hazard-modules/${topic.id}`}
+                                        href={`/modules/hazards/${topic.id}`}
                                         className="topic-item"
                                     >
                                         <span className="topic-number">{String(index + 1).padStart(2, "0")}</span>
                                         <span className="topic-divider" />
                                         <span className="topic-title">{topic.title}</span>
-                                        <span className="topic-arrow">→</span>
+                                        <span className="topic-arrow">&rarr;</span>
                                     </Link>
                         ))) : (
                             <div className="topics-loading">Training topics are loading...</div>
@@ -252,7 +323,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="topics-footer">
-                        <Link href="/modules/hazard-modules">View all modules →</Link>
+                        <Link href="/modules/hazards">View all modules &rarr;</Link>
                     </div>
                 </section>
 
@@ -283,8 +354,8 @@ export default function Dashboard() {
                             className="btn-cert"
                         >
                             {certificateEligible
-                                ? "View Certificate →"
-                                : "Check Eligibility →"
+                                ? "View Certificate \u2192"
+                                : "Check Eligibility \u2192"
                             }
                         </Link>
                     </div>
@@ -310,3 +381,4 @@ export default function Dashboard() {
         </main>
     );
 }
+

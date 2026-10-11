@@ -4,7 +4,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ModuleData, ModuleStatus } from '@/lib/moduleTypes';
+import { ModuleData, ModuleStatus } from '@/lib/modules/moduleTypes';
 import './ModuleCard.css';
 
 const statusMeta: Record<

@@ -1,4 +1,5 @@
-﻿"use client";
+﻿// app/feedback/page.tsx
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -7,7 +8,7 @@ import "./feedback.css";
 
 const categories = [
     "Training Modules",
-    "Scenarios / Simulations",
+    "Simulations",
     "Quizzes",
     "Website / Navigation",
     "Technical Issue",

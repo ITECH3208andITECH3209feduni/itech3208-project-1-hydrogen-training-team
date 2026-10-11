@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/adminAuth";
-import { hazardModules } from "@/lib/hazardModules";
+import { requireAdmin } from "@/lib/firebase/adminAuth";
+import { hazardModules } from "@/lib/modules/hazards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     } = await supabaseServer
       .from("user_module_progress")
       .select("uid, module_id, progress, status")
-      .eq("section", "hazard-modules"); // Scoped to hazard-modules
+      .eq("topic", "hazards"); // Scoped to hazards
 
     if (progressError) {
       console.error(

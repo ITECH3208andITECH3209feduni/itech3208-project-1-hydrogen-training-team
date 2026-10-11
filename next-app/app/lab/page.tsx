@@ -8,12 +8,12 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import HazardPopup from './components/HazardPopup';
+import Popup from './components/Popup';
 import EditModeToggle from '@/components/EditModeToggle';
 import HotspotEditor from './components/HotspotEditor';
 import SaveBar from '@/components/SaveBar';
-import { useHazards } from '@/hooks/useHazards';
-import { useModuleOptions } from '@/hooks/useModuleOptions';
+import { useHotspots } from '@/hooks/lab/useHotspots';
+import { useModuleOptions } from '@/hooks/lab/useModuleOptions';
 
 export default function LabPage() {
 	// Authentication
@@ -22,7 +22,7 @@ export default function LabPage() {
 
 	// Page constants
 	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
-	const [activeHazard, setActiveHazard] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
+	const [activePopup, setActivePopup] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
 
 	const {
 		hotspots,
@@ -44,8 +44,18 @@ export default function LabPage() {
 		uploadImage,
 		saveToSupabase,
 		resetDefaults,
-		liveHazardData,
-	} = useHazards(containerRef);
+		liveHotspotData,
+		videoDraftType,
+		videoDraftYoutubeUrl,
+		videoDraftFile,
+		videoSaving,
+		changeVideoDraftType,
+		changeVideoDraftYoutubeUrl,
+		selectVideoDraftFile,
+		saveHotspotYoutubeVideo,
+		uploadHotspotMp4Video,
+		removeHotspotVideo,
+	} = useHotspots(containerRef);
 
 	const moduleOptions = useModuleOptions();
 
@@ -61,6 +71,42 @@ export default function LabPage() {
 			toggleEditMode();
 		}
 	}, [editMode, permissions.canManageUsers, toggleEditMode]);
+
+	async function recordHotspotProgress(hotspotId: string) {
+    if (!user) return;
+
+    try {
+        const token = await user.getIdToken();
+
+        const response = await fetch(
+            "/api/lab/progress",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    hotspotId,
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const data = await response.json();
+
+            console.error(
+                "Failed to record hotspot progress:",
+                data.error
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Failed to record hotspot progress:",
+            error
+        );
+    }
+}
 
 	if (loading) {
 		return <div>Loading...</div>;
@@ -113,13 +159,14 @@ export default function LabPage() {
 							key={hs.type}
 							className={`hotspot ${editMode ? (isSelected ? 'hotspot--selected' : 'hotspot--edit') : ''}`}
 							style={{ top: hs.top, left: hs.left }}
-							aria-label={`Inspect ${hs.type} hazard`}
+							aria-label={`Inspect ${hs.type} item`}
 							onMouseDown={editMode ? handleDragStart(index) : undefined}
 							onClick={() => {
 								if (editMode) {
 									setSelected(index);
 								} else {
-									setActiveHazard(hs.type);
+									setActivePopup(hs.type);
+									recordHotspotProgress(hs.type);
 								}
 							}}
 						/>
@@ -141,6 +188,16 @@ export default function LabPage() {
 					onAdd={addHotspot}
 					onDelete={deleteHotspot}
 					onUploadImage={uploadImage}
+					videoType={videoDraftType}
+					youtubeUrl={videoDraftYoutubeUrl}
+					selectedVideoFile={videoDraftFile}
+					videoSaving={videoSaving}
+					onChangeVideoType={changeVideoDraftType}
+					onChangeYoutubeUrl={changeVideoDraftYoutubeUrl}
+					onSelectVideoFile={selectVideoDraftFile}
+					onSaveYoutubeVideo={saveHotspotYoutubeVideo}
+					onUploadMp4Video={uploadHotspotMp4Video}
+					onRemoveVideo={removeHotspotVideo}
 				/>
 			)}
 			
@@ -152,17 +209,15 @@ export default function LabPage() {
 					onReset={resetDefaults}
 					onSave={saveToSupabase}
 					saveDisabled={hasInvalidModuleLink}
-					saveDisabledReason="One or more hotspots have a module section without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
+					saveDisabledReason="One or more hotspots have a module topic without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
 				/>
 			)}
 			
-			{/* Hazard popup - Only appears outside edit mode and if clicked on a hotspot */}
-			{!editMode && activeHazard && (
-				<HazardPopup
-					info={liveHazardData[activeHazard]}
-					onClose={() =>
-						setActiveHazard(null)
-					}
+			{/* Popup - Only appears outside edit mode and if clicked on a hotspot */}
+			{!editMode && activePopup && (
+				<Popup
+					info={liveHotspotData[activePopup]}
+					onClose={() => setActivePopup(null)}
 				/>
 			)}
 		</main>

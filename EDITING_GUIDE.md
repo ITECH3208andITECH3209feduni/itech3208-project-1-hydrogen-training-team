@@ -21,9 +21,11 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 **Hotspots:**
 - Hotspots turn blue — drag them to reposition.
 - Click a hotspot on the image, or select one from the list, to edit its title and description.
+- Once a hotspot is selected, its **Hotspot Video** field lets you attach a YouTube link or upload an mp4 file (max size 50MB) — shown under the description in its popup.
+	Saving or removing a video takes effect immediately, independently of Save Changes/Reset to Defaults for the rest of the hotspot's fields.
 - Position values update automatically as you drag (clamped to 0–95% on each axis, so a hotspot can't be dragged fully off the image), or can be typed directly.
-- Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image, titled "⚠️ New Hazard" with no linked module, and is auto-selected for editing.
-	Its `type` is auto-generated as `hazard_N`, using the first number not already in use (so deleting `hazard_2` and adding a new hotspot reuses `hazard_2` rather than continuing to `hazard_4`).
+- Click **+** in the hotspot list header to add a new hotspot — it appears at the centre of the image, titled "⚠️ New Hotspot" with no linked module, and is auto-selected for editing.
+	Its `type` is auto-generated as `hotspot_N`, using the first number not already in use (so deleting `hotspot_2` and adding a new hotspot reuses `hotspot_2` rather than continuing to `hotspot_4`).
 - Click **✕** next to a hotspot in the list to delete it.
 - Click **Save Changes** to write all hotspot changes to Supabase — changes persist everywhere immediately.
 - Click **Reset to Defaults** to revert hotspots to the values in `lib/hazards.ts` (does not affect the lab image).
@@ -38,13 +40,17 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 Module content (title, description, sections, key takeaway, and more — see "Customising Module Content" below for the full field list) can also be edited directly in the browser, in addition to editing Supabase rows by hand.
 
-**To enter edit mode:** open any module reader page (e.g. `/modules/hazard-modules/1`) and click the switch at the top of the page. As on `/lab`, it expands into a banner while active; click it again to exit.
+**To enter edit mode:** open any module reader page (e.g. `/modules/hazards/1`) and click the switch at the top of the page. As on `/lab`, it expands into a banner while active; click it again to exit.
 	Exiting edit mode this way does not discard unsaved changes — they're kept in the editor until you either save or click Reset to Defaults, or navigate to a different module (via ← Previous/Next →, or back to the listing).
 
 **While editing**, everything above the editor panel — the hero, every section, and the key takeaway — previews your unsaved changes live, so you can see how they'll look before saving.
 
 **Module fields:** title, description, icon, icon background colour, slug, badge number, and the previous/next module IDs are all free-text fields in the "Module Details" panel.
 	The module's `id` itself is shown but can't be changed here, since routes are built from it.
+
+**Video:** each module can have one embedded video, set from the **Video** panel — either a YouTube link or an uploaded mp4 file (max size 50MB).
+	Learners see it as a launcher card that opens in a modal player.
+	Saving or removing a video takes effect immediately, independently of Save Changes/Reset to Defaults for the rest of the module.
 
 **Sections:** the "Sections" panel lists every section on the left; click one to edit its heading, body, list (none/bulleted/numbered, with items you can add/edit/remove), and callout on the right.
 - Click **+** in the section list header to add a new section at the end.
@@ -54,39 +60,90 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 
 **Saving and resetting:**
 - Click **Save Changes** to write the module's fields and sections to Supabase — changes persist everywhere immediately, including for a module that only existed as bundled fallback content before.
-- Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/` entry (e.g. `lib/hazardModules.ts`). This button is disabled, with an explanatory tooltip, for any section that doesn't have bundled defaults wired up.
+- Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/modules/` entry (e.g. `lib/modules/hazards.ts`). This button is disabled, with an explanatory tooltip, for any topic that doesn't have bundled defaults wired up.
 
 ---
 
 ## Customising Module Content
 
-Hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `section = 'hazard-modules'`.
+Hazard module content lives in Supabase, in the `modules`/`module_sections` tables under `topic = 'hazards'`.
 	It can be changed either through each module's in-app editor (see "Module Reader Pages" under "Edit Mode" above) or by editing rows in the `modules`/`module_sections` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
 
-> **Note:** `guides` also has rows in these tables (seeded to match `lib/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `hazard-modules` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
-	`guides` is a template section not linked from navigation, so day-to-day editing here is mainly relevant for keeping the dropdown's options in sync with any real section you build from it.
+> **Note:** `guides` also has rows in these tables (seeded to match `lib/modules/guides.ts`), and `/modules/guides` follows the same live-loading pattern as `/modules/hazards` — editing a `guides` row here changes what both the hotspot editor's Linked Module dropdown and `/modules/guides` itself show.
+	`guides` is a template topic not linked from navigation, so day-to-day editing here is mainly relevant for keeping the dropdown's options in sync with any real topic you build from it.
 
-`lib/hazardModules.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the section is empty (see `ADDITIONAL_INFO.md` for how `hooks/useModules.ts` merges the two).
+`lib/modules/hazards.ts` supplies the bundled `ModuleData[]` array used as `defaults`: what's shown before the Supabase fetch resolves, and the fallback if it fails or the topic is empty (see `ADDITIONAL_INFO.md` for how `hooks/modules/useModules.ts` merges the two).
 
-Each entry — whether in `lib/hazardModules.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/moduleTypes.ts`):
+Each entry — whether in `lib/modules/hazards.ts` or a `modules`/`module_sections` row — maps onto the shared `ModuleData` shape (defined in `lib/modules/moduleTypes.ts`):
 - `id` — numeric string matching the URL segment (e.g. `'1'`) — this is the stable, permanent key; routes are built from it, not `slug`
 - `slug` — optional stable identifier (e.g. `'gas-leak-detection'`); not currently used for routing, exposed as a `data-slug` attribute on the card and reader for things like analytics or test selectors.
-	It is also under consideration for replacing the current url scheme, going from '/section/id' to '/section/slug'.
-- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this section); a section can omit it entirely if it doesn't need a badge — see `lib/guides.ts`
+	It is also under consideration for replacing the current url scheme, going from '/topic/id' to '/topic/slug'.
+- `badgeNum` — optional numbered badge shown on the card and reader hero (the hazard number, for this topic); a topic can omit it entirely if it doesn't need a badge — see `lib/modules/guides.ts`
 - `title`, `icon`, `iconBg`, `description` — used by the listing card
 - `status`, `progress` — used by the listing card; live per-user values come from the separate `user_module_progress` table, merged in by `useModules` for a signed-in user.
-	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/` file (e.g. `lib/hazardModules.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
+	Not a column on `modules`/`module_sections` itself — the value set on the entry in the bundled `lib/modules/` file (e.g. `lib/modules/hazards.ts`) is only used as the fallback when there's no live per-user record (see `ADDITIONAL_INFO.md` for how the merge works)
 - `sections` — array of `{ num, heading, body, listType?, items?, callout? }` objects;
 	in Supabase this is the `module_sections` table (one row per section, foreign-keyed to its parent `modules` row, deleted automatically via `on delete cascade` if the module is deleted)
 	- `num` must stay sequential (`'01'`, `'02'`, `'03'`, …) matching each section's position — it drives progress tracking positionally (see `ADDITIONAL_INFO.md`), so an out-of-sequence value throws off a learner's progress percentage.
 		The in-app editor manages this automatically; editing `module_sections` rows directly in Supabase means keeping it in sync by hand.
 	- `callout` text gets a 💡 prefix added automatically by the reader.
 - `keyTakeaway` — displayed at the bottom of the reader
-- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/hazardModules.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
+- `prevId` / `nextId` — optional; controls the previous/next navigation buttons — omit the key entirely (in `lib/modules/hazards.ts`) or leave the column `null` (in Supabase) for the first module's `prevId` and the last module's `nextId`, rather than setting it to an empty string
+- `videoUrl` / `videoType` — the module's embedded video, if any (`videoType` is `'youtube'` or `'mp4'`, or both `null`/absent for no video).
+	Like other fields, a bundled `lib/modules/` entry's video is used as a fallback when Supabase hasn't set one yet.
 
-Changes to `lib/hazardModules.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
+Changes to `lib/modules/hazards.ts` require a redeployment to take effect, but since it's the fallback rather than the live source, most day-to-day content edits happen either via the in-app editor or in Supabase instead and take effect immediately, without a deploy.
 
-To add a whole new section rather than another hazard module, see "Adding a new `app/modules/`-style section" in `ADDITIONAL_INFO.md`.
+To add a whole new topic rather than another hazard module, see "Adding a new `app/modules/`-style topic" in `ADDITIONAL_INFO.md`.
+
+---
+
+## Customising Quiz Content
+
+Quiz content lives in Supabase, in the `quizzes` table (one row per quiz — `title`, `description`, `pass_threshold`, `pool_size`) and the `quiz_questions` table (one row per question foreign-keyed to `quizzes` via `quiz_id`, deleted automatically via `on delete cascade` if the quiz row is deleted).
+
+It can be changed either through the in-app quiz editor (see below) or by editing rows in the `quizzes`/`quiz_questions` tables directly via the Supabase dashboard or SQL Editor — both change the same underlying rows and take effect immediately.
+
+### Quiz Editor
+
+**To enter the editor:** from `/quizzes`, admins (users with the `canManageUsers` permission) see a small ✏️ Edit tab attached to the bottom edge of a quiz's card — click it to open `/quizzes/[quizId]/edit`. Non-admins don't see this tab at all.
+	Unlike the lab and module reader pages, the quiz editor is a separate page rather than an in-place edit mode — there's no toggle switch, since navigating to the page is itself the edit mode.
+
+**Editing:**
+- Title, Description, and Pass Threshold are free-text/number fields at the top of the page.
+- Pool Size is a number field controlling how many questions are drawn per attempt; leave it blank to present every question in the bank.
+- The Questions panel lists every question on the left; click one to edit its question text, options, and explanation on the right.
+- Click **+** in the question list header to add a new question — it's numbered using the first id not already in use (so deleting question 2 and adding a new one reuses id 2 rather than continuing to 4).
+- Use **↑**/**↓** next to a question to reorder it, **✕** to delete it.
+- Each question needs at least 2 options. Click the radio button next to an option to mark it correct;
+	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option; deleting an earlier option shifts the correct answer's position down to match);
+	click **+ Add option** to add one.
+- A Core checkbox in the question detail panel marks that question to always appear in every drawn pool, regardless of Pool Size's random selection for the rest.
+- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected, or if Pool Size is below 1, below the number of core questions, or above the total number of questions.
+
+**Saving and resetting:**
+- Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.
+- Click **Reset to Defaults** to revert every field and question back to the quiz's bundled `lib/questionhazards.ts` entry.
+	Only the Hazards quiz currently has bundled defaults wired up; a quiz without them shows this button disabled with an explanatory tooltip, the same as a module topic with no bundled defaults.
+
+**Leaving with unsaved changes:** the editor warns before losing an edit in progress — on closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet.
+	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
+
+**`quiz_questions` columns:**
+- `quiz_id` — which quiz this question belongs to; part of the composite primary key with `id`.
+- `id` — numeric question id, unique within the quiz.
+- `question` — the question text.
+- `options` — a JSON array of answer strings, in the order they should appear before shuffling.
+- `correct_index` — the zero-based index into `options` of the correct answer.
+- `explanation` — shown after submitting, for questions answered incorrectly.
+- `is_core` — when true, this question is always included in every drawn pool, regardless of `pool_size`.
+- `sort_order` — the question's position; the app loads questions ordered by this column, then shuffles them client-side for each attempt.
+
+**Fallback behaviour:** `lib/questionhazards.ts` exports `QUIZ_DEFAULTS` — `{ title, description, passThreshold, poolSize, questions }`, sourced from that same file's `QUIZ_TITLE`, `QUIZ_DESCRIPTION`, `PASS_THRESHOLD`, `POOL_SIZE`, and `questionhazards` array.
+	This is shown before the Supabase fetch resolves, and used as a whole-quiz fallback whenever the `'hazards'` row in `quizzes` doesn't exist, has zero `quiz_questions` rows, or the fetch fails outright.
+	A live quiz with a title and threshold but no questions yet falls back entirely — title, description, threshold, and questions all come from `QUIZ_DEFAULTS` together, never mixed with whatever partial live data exists.
+	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase, or through the in-app editor above, takes effect immediately.
+	See `ADDITIONAL_INFO.md` for how `hooks/quizzes/useQuiz.ts` implements this fallback, and for how the editor itself works.
 
 ---
 
@@ -102,15 +159,15 @@ To add a new hazard type, add a new entry to both `hotspots` and `hazardData`, a
 
 ## Linking Hotspots to Modules
 
-Each hotspot can optionally link to a module, via its `moduleId`/`moduleSection` fields — this is what powers the Learn More button in the hazard popup.
+Each hotspot can optionally link to a module, via its `moduleId`/`moduleTopic` fields — this is what powers the Learn More button in the hotspot's popup.
 
-**In edit mode**, select a hotspot and use the **Linked Module** field: pick a section from the first dropdown, then a module from the second (its options are scoped to whichever section you just picked).
+**In edit mode**, select a hotspot and use the **Linked Module** field: pick a topic from the first dropdown, then a module from the second (its options are scoped to whichever topic you just picked).
 	Pick "None" to remove the link — this clears both fields together, since a hotspot's link must be fully set or fully empty, never half-set.
-	If you pick a section but haven't picked a module yet (or vice versa), **Save Changes** disables with a warning until you either finish picking a module or set the section back to "None".
+	If you pick a topic but haven't picked a module yet (or vice versa), **Save Changes** disables with a warning until you either finish picking a module or set the topic back to "None".
 
-**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/hazardModules.ts`/`lib/guides.ts`'s bundled defaults.
+**A module only appears as an option once it actually exists in Supabase** — the dropdowns are populated live from the `modules` table, not from `lib/modules/hazards.ts`/`lib/modules/guides.ts`'s bundled defaults.
 	If you've added a module to one of those files but haven't seeded a matching row in Supabase yet (see "Customising Module Content" above), it won't show up here yet — add the Supabase row first.
 
-You can still set or clear a link directly in Supabase if you prefer (set the `hazards` table's `module_section`/`module_id` columns for the relevant row, either both to a valid `(section, id)` pair from the `modules` table, or both to `null`) — the in-app editor is just the more convenient path for day-to-day use now.
+You can still set or clear a link directly in Supabase if you prefer (set the `hotspots` table's `module_topic`/`module_id` columns for the relevant row, either both to a valid `(topic, id)` pair from the `modules` table, or both to `null`) — the in-app editor is just the more convenient path for day-to-day use now.
 
 See `ADDITIONAL_INFO.md` for how these fields are read and enforced.

@@ -1,3 +1,4 @@
+// app/layout.tsx
 // Root layout that wraps all pages, setting the HTML metdata and importing the css
 
 import type { Metadata } from "next";					// Used to type metadata object

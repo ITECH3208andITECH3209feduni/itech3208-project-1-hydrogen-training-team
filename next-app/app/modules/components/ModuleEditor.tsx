@@ -1,8 +1,9 @@
 // app/modules/components/ModuleEditor.tsx
 // Edit panel for a module: top-level fields, then a two-column section list + section field editor
 
-import { ModuleData, ModuleSection } from '@/lib/moduleTypes';
+import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
+import VideoEditorPanel, { VideoType } from '@/components/VideoEditorPanel';
 
 interface ModuleEditorProps {
 	draft: ModuleData;
@@ -16,6 +17,19 @@ interface ModuleEditorProps {
 	onUpdateSectionItem: (sectionIndex: number, itemIndex: number, value: string) => void;
 	onAddSectionItem: (sectionIndex: number) => void;
 	onDeleteSectionItem: (sectionIndex: number, itemIndex: number) => void;
+
+	// Optional module video controls
+	videoType?: VideoType;
+	youtubeUrl?: string;
+	selectedVideoFile?: File | null;
+	videoSaving?: boolean;
+
+	onChangeVideoType?: (type: VideoType) => void;
+	onChangeYoutubeUrl?: (url: string) => void;
+	onSelectVideoFile?: (file: File | null) => void;
+	onSaveYoutubeVideo?: () => void;
+	onUploadMp4Video?: () => void;
+	onRemoveVideo?: () => void;
 }
 
 export default function ModuleEditor({
@@ -30,12 +44,22 @@ export default function ModuleEditor({
 	onUpdateSectionItem,
 	onAddSectionItem,
 	onDeleteSectionItem,
+	
+	videoType = 'youtube',
+	youtubeUrl = '',
+	selectedVideoFile = null,
+	videoSaving = false,
+	onChangeVideoType,
+	onChangeYoutubeUrl,
+	onSelectVideoFile,
+	onSaveYoutubeVideo,
+	onUploadMp4Video,
+	onRemoveVideo,
 }: ModuleEditorProps) {
 	const section = selectedSection !== null ? draft.sections[selectedSection] : null;
 
 	return (
 		<div className="module-editor-wrap">
-
 			{/* ── Module-level fields ──────────────────────────────────────────── */}
 			<div className="panel panel--clip">
 				<div className="panel-header">📄 Module Details</div>
@@ -132,6 +156,28 @@ export default function ModuleEditor({
 							placeholder="Leave blank if this is the last module"
 						/>
 					</div>
+				</div>
+			</div>
+			
+			{/* Embedded Video */}
+			<div className="panel panel--clip">
+				<div className="panel-header">🎬 Module Video</div>
+				<div className="module-editor-body">
+					<VideoEditorPanel
+						currentVideoUrl={draft.videoUrl}
+						currentVideoType={draft.videoType}
+						videoType={videoType}
+						youtubeUrl={youtubeUrl}
+						selectedVideoFile={selectedVideoFile}
+						videoSaving={videoSaving}
+						onChangeVideoType={onChangeVideoType}
+						onChangeYoutubeUrl={onChangeYoutubeUrl}
+						onSelectVideoFile={onSelectVideoFile}
+						onSaveYoutubeVideo={onSaveYoutubeVideo}
+						onUploadMp4Video={onUploadMp4Video}
+						onRemoveVideo={onRemoveVideo}
+						noVideoMessage="No video is currently attached to this module."
+					/>
 				</div>
 			</div>
 

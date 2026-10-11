@@ -2,8 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { requireAdmin } from "@/lib/adminAuth";
-import { hazardModules } from "@/lib/hazardModules";
+import { requireAdmin } from "@/lib/firebase/adminAuth";
+import { hazardModules } from "@/lib/modules/hazards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,7 +64,7 @@ export async function GET(
             .from("user_module_progress")
             .select("*")
             .eq("uid", uid)
-            .eq("section", "hazard-modules")    // Scoped to hazard-modules
+            .eq("topic", "hazards")    // Scoped to hazards
             .order("module_id");
 
         if (moduleProgressError) {
@@ -203,11 +203,11 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { module_id, section, status } = body;
+        const { module_id, topic, status } = body;
 
-        if (!module_id || !section || !status) {
+        if (!module_id || !topic || !status) {
             return NextResponse.json(
-                { ok: false, error: "module_id, section and status are required" },
+                { ok: false, error: "module_id, topic and status are required" },
                 { status: 400 }
             );
         }
@@ -226,7 +226,7 @@ export async function PATCH(
                 .from("user_module_progress")
                 .select("id")
                 .eq("uid", uid)
-                .eq("section", section)
+                .eq("topic", topic)
                 .eq("module_id", module_id)
                 .maybeSingle();
 
@@ -254,7 +254,7 @@ export async function PATCH(
                   .from("user_module_progress")
                   .update(fields)
                   .eq("uid", uid)
-                  .eq("section", section)
+                  .eq("topic", topic)
                   .eq("module_id", module_id)
                   .select()
                   .single()
@@ -262,7 +262,7 @@ export async function PATCH(
                   .from("user_module_progress")
                   .insert({
                       uid,
-                      section,
+                      topic,
                       module_id,
                       attempts: 1,
                       progress: status === "done" ? 100 : 0,

@@ -1,4 +1,4 @@
-/* Module card — shared base styles used by both ModuleCard (student)
+/* app/modules/components/ModuleCard.css — shared base styles used by both ModuleCard (student)
    and AdminModuleCard (admin). Admin-only styles live in admin.css. */
 .module-card {
 	background: var(--card-bg);

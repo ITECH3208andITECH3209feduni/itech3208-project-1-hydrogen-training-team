@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import "../../admin.css";
-import { hazardModules } from "@/lib/hazardModules";
+import { hazardModules } from "@/lib/modules/hazards";
 import AdminModuleCard from "@/app/admin/users/components/AdminModuleCard";
 import { useAuth } from "@/context/AuthContext";
-import type { ModuleStatus } from "@/lib/moduleTypes";
+import type { ModuleStatus } from "@/lib/modules/moduleTypes";
 
 interface Profile {
     uid: string;
@@ -139,7 +139,7 @@ export default function UserProgressPage() {
                 },
                 body: JSON.stringify({
                     module_id: moduleId,
-                    section: "hazard-modules",
+                    topic: "hazards",
                     status,
                 }),
             });

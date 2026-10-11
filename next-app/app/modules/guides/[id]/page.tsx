@@ -1,14 +1,14 @@
 // app/modules/guides/[id]/page.tsx
-// EXAMPLE section reusing the app/modules/ template. Rename the folder and
-// adjust copy/basePath below to match your real section.
+// EXAMPLE page reusing the app/modules/ template. Rename the folder and
+// adjust copy/basePath below to match your real page.
 
 'use client';
 
 import '../../modules.css';
 import { useParams } from 'next/navigation';
 import ModuleReaderPage from '../../components/ModuleReaderPage';
-import { useModuleById } from '@/hooks/useModules';
-import { guides } from '@/lib/guides';
+import { useModuleById } from '@/hooks/modules/useModules';
+import { guides } from '@/lib/modules/guides';
 
 export default function GuidePage() {
 	const params = useParams();
@@ -19,11 +19,11 @@ export default function GuidePage() {
 		<ModuleReaderPage
 			item={item}
 			allModules={modules}
-			section="guides"
+			topic="guides"
 			basePath="/modules/guides"
 			// No badgeLabel — these items have no badgeNum, so no badge is shown.
 			backLabel="Guides"
-			heroHint="Replace with a short hero hint for this section."
+			heroHint="Replace with a short hero hint for this page."
 			usingDefaults={usingDefaults}
 			defaults={guides}
 		/>

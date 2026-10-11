@@ -1,7 +1,7 @@
 // app/admin/users/components/AdminModuleCard.tsx
 // Card for showing user's progress on a module.
 
-import { ModuleData, ModuleStatus } from "@/lib/moduleTypes";
+import { ModuleData, ModuleStatus } from "@/lib/modules/moduleTypes";
 import "@/app/modules/components/ModuleCard.css";
 import "../admin.css";
 

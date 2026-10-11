@@ -10,7 +10,7 @@ import type { User } from 'firebase/auth';
 export interface QuizRequirementRow {
 	quiz_id: string;
 	required_module_id: string;
-	section: string;
+	topic: string;
 }
 
 interface ModuleProgressRow {
@@ -55,10 +55,10 @@ export function useQuizLock(quizId: string, user: User | null, loading: boolean)
 
 				setRequirement(row);
 
-				// The required module's progress lives under its own section —
-				// /api/modules/progress is section-scoped, so pass it explicitly.
+				// The required module's progress lives under its own topic —
+				// /api/modules/progress is topic-scoped, so pass it explicitly.
 				const progRes = await fetch(
-					`/api/modules/progress?section=${encodeURIComponent(row.section)}`,
+					`/api/modules/progress?topic=${encodeURIComponent(row.topic)}`,
 					{
 						headers: { Authorization: `Bearer ${token}` },
 						cache: 'no-store',

@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { QUIZ_TITLE, QUIZ_SLUG } from '@/lib/questionhazards';
-import { hazardModules } from '@/lib/hazardModules';
+import { hazardModules } from '@/lib/modules/hazards';
 
 interface QuizRecord {
 	passed: boolean;
@@ -49,7 +49,7 @@ export default function CertificatePage() {
                                 };
 
                                 const [moduleResponse, quizResponse] = await Promise.all([
-                                        fetch("/api/modules/progress?section=hazard-modules", {
+                                        fetch("/api/modules/progress?topic=hazards", {
                                                 method: "GET",
                                                 headers,
                                                 cache: "no-store",
@@ -170,7 +170,7 @@ export default function CertificatePage() {
 
                                         {needsModules && (
                                                 <Link
-                                                        href="/modules/hazard-modules"
+                                                        href="/modules/hazards"
                                                         className="btn-primary"
                                                 >
                                                         Complete Training Modules

@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
-import { requireUser } from "@/lib/authUser";
+import { requireUser } from "@/lib/firebase/authUser";
 import { isModuleLockedForUser } from "@/lib/progressLock";
 
 export const runtime = "nodejs";
@@ -14,18 +14,16 @@ export async function GET(request: NextRequest) {
 	try {
 		const uid = await requireUser(request);
 
-		const section = request.nextUrl.searchParams.get("section");
+		const topic = request.nextUrl.searchParams.get("topic");
 
 		let query = supabaseServer
 			.from("user_module_progress")
 			.select("*")
 			.eq("uid", uid);
 
-		// Scope to a section when provided — both current callers (useModules,
-		// useModuleProgress) always know their own section and should pass it,
-		// to avoid two sections' progress for the same module_id colliding.
-		if (section) {
-			query = query.eq("section", section);
+		// Scope to topic (avoids colliding module_id's)
+		if (topic) {
+			query = query.eq("topic", topic);
 		}
 
 		const { data, error } = await query.order("module_id");
@@ -69,7 +67,7 @@ export async function POST(request: NextRequest) {
 		const uid = await requireUser(request);
 
 		const body = await request.json();
-		const { module_id, section } = body;
+		const { module_id, topic } = body;
 
 		if (!module_id) {
 			return NextResponse.json(
@@ -81,17 +79,17 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (!section) {
+		if (!topic) {
 			return NextResponse.json(
 				{
 					ok: false,
-					error: "section is required",
+					error: "topic is required",
 				},
 				{ status: 400 }
 			);
 		}
 
-		if (await isModuleLockedForUser(uid, section, module_id)) {
+		if (await isModuleLockedForUser(uid, topic, module_id)) {
 			return NextResponse.json(
 				{
 					ok: false,
@@ -106,7 +104,7 @@ export async function POST(request: NextRequest) {
 			.from("user_module_progress")
 			.select("id")
 			.eq("uid", uid)
-			.eq("section", section)
+			.eq("topic", topic)
 			.eq("module_id", module_id)
 			.maybeSingle();
 
@@ -134,7 +132,7 @@ export async function POST(request: NextRequest) {
 			.from("user_module_progress")
 			.insert({
 				uid,
-				section,
+				topic,
                 module_id,
 				status: "progress",
 				progress: 0,
@@ -185,7 +183,7 @@ export async function PATCH(request: NextRequest) {
 
 		const {
 			module_id,
-			section,
+			topic,
 			progress,
 			status,
 			attempts,
@@ -203,17 +201,17 @@ export async function PATCH(request: NextRequest) {
 			);
 		}
 
-		if (!section) {
+		if (!topic) {
 			return NextResponse.json(
 				{
 					ok: false,
-					error: "section is required",
+					error: "topic is required",
 				},
 				{ status: 400 }
 			);
 		}
 
-		if (await isModuleLockedForUser(uid, section, module_id)) {
+		if (await isModuleLockedForUser(uid, topic, module_id)) {
 			return NextResponse.json(
 				{
 					ok: false,
@@ -235,7 +233,7 @@ export async function PATCH(request: NextRequest) {
             	.from("user_module_progress")
             	.select("id, attempts, progress, status")
             	.eq("uid", uid)
-				.eq("section", section)
+				.eq("topic", topic)
             	.eq("module_id", module_id)
             	.maybeSingle();
 
@@ -283,7 +281,7 @@ export async function PATCH(request: NextRequest) {
 					last_accessed: now,
             	})
             	.eq("uid", uid)
-				.eq("section", section)
+				.eq("topic", topic)
             	.eq("module_id", module_id)
             	.select()
             	.single();
@@ -402,7 +400,7 @@ export async function PATCH(request: NextRequest) {
 			.from("user_module_progress")
 			.update(updateData)
 			.eq("uid", uid)
-			.eq("section", section)
+			.eq("topic", topic)
 			.eq("module_id", module_id)
 			.select()
 			.single();

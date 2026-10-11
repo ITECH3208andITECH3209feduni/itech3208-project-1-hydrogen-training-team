@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
 	const { data, error } = await supabase
 		.from('quiz_requirements')
-		.select('quiz_id, required_module_id, section');
+		.select('quiz_id, required_module_id, topic');
 
 	if (error) {
 		console.error('quiz-requirements error:', error);

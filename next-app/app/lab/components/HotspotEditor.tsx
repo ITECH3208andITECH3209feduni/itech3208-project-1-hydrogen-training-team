@@ -1,24 +1,37 @@
 // app/lab/components/HotspotEditor.tsx
-// Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position editor on the right
+// Image upload section, followed by two-column edit panel: hotspot list on the left, title/text/position/video editor on the right
 
 import { useRef } from 'react';
-import { EditableHotspot, UploadStatus } from '@/hooks/useHazards';
-import { ModuleSectionOptions } from '@/hooks/useModuleOptions';
+import { EditableHotspot, UploadStatus } from '@/hooks/lab/useHotspots';
+import { ModuleTopicOptions } from '@/hooks/lab/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import { labelStyle, inputStyle } from '@/components/editorStyles';
+import VideoEditorPanel from '@/components/VideoEditorPanel';
 
 interface HotspotEditorProps {
 	hotspots:           EditableHotspot[];
 	selected:           number | null;
 	uploadStatus:       UploadStatus;
-	moduleOptions:      ModuleSectionOptions[];
+	moduleOptions:      ModuleTopicOptions[];
 	onSelect:           (index: number) => void;
-	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string) => void;
+	onUpdateInfo:       (index: number, field: keyof HazardInfo, value: string | null) => void;
 	onUpdatePosition:   (index: number, field: 'top' | 'left', value: string) => void;
-	onUpdateModuleLink: (index: number, moduleSection: string | null, moduleId: string | null) => void;
+	onUpdateModuleLink: (index: number, moduleTopic: string | null, moduleId: string | null) => void;
 	onAdd:              () => void;
 	onDelete:           (index: number) => void;
 	onUploadImage:      (file: File) => void;
+
+	// Video controls for the currently-select hotspot
+	videoType:          'youtube' | 'mp4';
+	youtubeUrl:         string;
+	selectedVideoFile:  File | null;
+	videoSaving:        boolean;
+	onChangeVideoType:  (type: 'youtube' | 'mp4') => void;
+	onChangeYoutubeUrl: (url: string) => void;
+	onSelectVideoFile:  (file: File | null) => void;
+	onSaveYoutubeVideo: () => void;
+	onUploadMp4Video:   () => void;
+	onRemoveVideo:      () => void;
 }
 
 export default function HotspotEditor({
@@ -33,6 +46,16 @@ export default function HotspotEditor({
 	onAdd,
 	onDelete,
 	onUploadImage,
+	videoType,
+	youtubeUrl,
+	selectedVideoFile,
+	videoSaving,
+	onChangeVideoType,
+	onChangeYoutubeUrl,
+	onSelectVideoFile,
+	onSaveYoutubeVideo,
+	onUploadMp4Video,
+	onRemoveVideo,
 }: HotspotEditorProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	
@@ -181,20 +204,20 @@ export default function HotspotEditor({
 										<select
 											className="linked-module-select"
 											style={inputStyle}
-											value={hotspots[selected].info.moduleSection ?? ''}
+											value={hotspots[selected].info.moduleTopic ?? ''}
 											onChange={(e) =>
 												onUpdateModuleLink(selected, e.target.value || null, null)
 											}
 										>
 											<option value="">None</option>
-											{moduleOptions.map((section) => (
-												<option key={section.value} value={section.value}>
-													{section.value}
+											{moduleOptions.map((topic) => (
+												<option key={topic.value} value={topic.value}>
+													{topic.value}
 												</option>
 											))}
 										</select>
 										
-										{hotspots[selected].info.moduleSection && (
+										{hotspots[selected].info.moduleTopic && (
 											<select
 												className="linked-module-select"
 												style={inputStyle}
@@ -202,14 +225,14 @@ export default function HotspotEditor({
 												onChange={(e) =>
 													onUpdateModuleLink(
 														selected,
-														hotspots[selected].info.moduleSection,
+														hotspots[selected].info.moduleTopic,
 														e.target.value || null
 													)
 												}
 											>
 												<option value="">Select a module…</option>
 												{moduleOptions
-													.find((section) => section.value === hotspots[selected].info.moduleSection)
+													.find((topic) => topic.value === hotspots[selected].info.moduleTopic)
 													?.options.map((mod) => (
 														<option key={mod.id} value={mod.id}>
 															{mod.badgeNum != null ? `${mod.badgeNum}. ${mod.title}` : mod.title}
@@ -219,15 +242,33 @@ export default function HotspotEditor({
 										)}
 									</div>
 									<p className="field-hint">
-										{hotspots[selected].info.moduleSection && !hotspots[selected].info.moduleId
+										{hotspots[selected].info.moduleTopic && !hotspots[selected].info.moduleId
 											? '⚠️ Select a module, or set this back to "None" — saving is disabled until then.'
-											: 'Powers the "Learn More" button in this hazard\u2019s popup. Set to "None" to hide it.'}
+											: 'Powers the "Learn More" button in this hotspot\u2019s popup. Set to "None" to hide it.'}
 									</p>
 								</div>
 
-								<p className="drag-hint">
-									💡 Drag the hotspot on the image to reposition — values above update automatically.
-								</p>
+								{/* Embedded Video */}
+								<div>
+									<label style={labelStyle}>Hotspot Video</label>
+									<VideoEditorPanel
+										currentVideoUrl={hotspots[selected].info.videoUrl}
+										currentVideoType={hotspots[selected].info.videoType}
+										videoType={videoType}
+										youtubeUrl={youtubeUrl}
+										selectedVideoFile={selectedVideoFile}
+										videoSaving={videoSaving}
+										onChangeVideoType={onChangeVideoType}
+										onChangeYoutubeUrl={onChangeYoutubeUrl}
+										onSelectVideoFile={onSelectVideoFile}
+										onSaveYoutubeVideo={onSaveYoutubeVideo}
+										onUploadMp4Video={onUploadMp4Video}
+										onRemoveVideo={onRemoveVideo}
+										noVideoMessage="Shown under this hotspot's description in its popup."
+									/>
+								</div>
+
+								<p className="drag-hint">💡 Drag the hotspot on the image to reposition — values above update automatically.</p>
 							</div>
 						)}
 					</div>
