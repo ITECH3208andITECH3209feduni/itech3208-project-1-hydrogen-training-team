@@ -3,11 +3,10 @@
 
 'use client';
 
-import './scenarios.css';
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import HubCard from '@/components/HubCard';
 
 export default function ScenariosPage() {
         const { user, loading } = useAuth();
@@ -27,25 +26,14 @@ export default function ScenariosPage() {
                                 <p>Practice hydrogen safety through realistic interactive scenarios.</p>
                         </div>
 
-                        <div className="scenarios-grid">
-                                {/* Interactive Hydrogen Lab */}
-                                <Link href="/scenarios/hazards" className="scenario-card">
-                                        <div className="scenario-card-icon">&#x1F9EA;</div>
-
-                                        <div className="scenario-card-body">
-                                                <div className="scenario-card-title">
-                                                        Interactive Hydrogen Lab
-                                                </div>
-
-                                                <div className="scenario-card-desc">
-                                                        Explore a hydrogen laboratory and identify potential safety hazards in the environment.
-                                                </div>
-                                        </div>
-
-                                        <div className="scenario-card-link">
-                                                Start Scenario &rarr;
-                                        </div>
-                                </Link>
+                        <div className="hub-grid">
+                                <HubCard
+                                        href="/scenarios/hazards"
+                                        icon="🧪"
+                                        title="Interactive Hydrogen Lab"
+                                        desc="Explore a hydrogen laboratory and identify potential safety hazards in the environment."
+                                        linkText="Start Scenario →"
+                                />
                         </div>
                 </main>
         );

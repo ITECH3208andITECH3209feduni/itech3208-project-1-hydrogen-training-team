@@ -34,20 +34,6 @@
 	margin-bottom: 16px;
 }
 
-.cert-name-input {
-	width: 100%;
-	max-width: 400px;
-	padding: 12px 16px;
-	border-radius: 10px;
-	border: 1px solid var(--border);
-	background: var(--card-bg);
-	color: var(--white);
-	font-size: 1.02rem;
-	margin: 24px 0 28px;
-	outline: none;
-}
-.cert-name-input:focus { border-color: var(--accent); }
-
 .cert-canvas {
 	width: 100%;
 	max-width: 700px;

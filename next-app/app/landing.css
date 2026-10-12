@@ -117,24 +117,6 @@
 	background: var(--accent-glow);
 }
 
-/* Shared card hover — same effect as the about-page cards.
-   Applies to quick facts, feature cards, audience cards and fundamentals cards. */
-.intro-fact,
-.intro-card,
-.intro-aud-card,
-.intro-fund-card {
-	transition: 0.25s;
-}
-
-.intro-fact:hover,
-.intro-card:hover,
-.intro-aud-card:hover,
-.intro-fund-card:hover {
-	transform: translateY(-5px);
-	border-color: var(--accent);
-	box-shadow: 0 12px 24px var(--accent-shadow);
-}
-
 /* ─── Quick facts ────────────────────────────────────────────────────────── */
 .intro-facts {
 	position: relative;
@@ -148,7 +130,7 @@
 }
 
 .intro-fact {
-	background: rgba(0,180,216,0.08);
+	background: var(--teal-tint);
 	border: 1px solid rgba(0,180,216,0.2);
 	border-radius: 10px;
 	padding: 14px;
@@ -326,7 +308,7 @@
 	.intro-facts { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 600px) {
 	.intro-grid4 { grid-template-columns: 1fr; }
 	.intro-facts { grid-template-columns: 1fr; }
 	.intro-hero h1 { font-size: 1.9rem; }

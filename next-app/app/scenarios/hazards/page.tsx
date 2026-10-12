@@ -3,7 +3,7 @@
 
 'use client';
 
-import './lab.css';		// css specific to this page
+import '../scenarios.css';
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from "next/navigation";

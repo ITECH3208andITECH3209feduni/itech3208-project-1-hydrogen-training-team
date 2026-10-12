@@ -269,7 +269,7 @@ export default function Dashboard() {
             {/* Lower Dashboard Panels */}
             <div className="dashboard-lower-grid">
                 {/* Training Topics */}
-                <section className="dashboard-panel topics-panel">
+                <section className="dashboard-panel">
                     <div className="panel-header">
                         <div className="panel-title">
                             <span className="panel-title-icon">&#128218;</span>
@@ -352,7 +352,7 @@ export default function Dashboard() {
 
                 <Link
                     href="/feedback"
-                    className="feedback-button"
+                    className="feedback-cta-btn"
                 >
                     Give Feedback &#8594;
                 </Link>

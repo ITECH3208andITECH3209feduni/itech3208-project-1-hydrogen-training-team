@@ -2,6 +2,8 @@
 // Save/reset buttons for editor pages (Save sends current state to Supabase, Reset reverts to fallback defaults)
 // Shared by multiple in-app editors (e.g. lab, modules reader)
 
+import "./EditMode.css";
+
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface SaveBarProps {

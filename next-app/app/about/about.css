@@ -61,17 +61,6 @@
     font-size: 1.05rem;
 }
 
-/* Shared card hover effect — used by every hoverable card on this page. */
-.info-card:hover,
-.feature-card:hover,
-.tech-card:hover,
-.leadership-card:hover,
-.developer-card:hover{
-    transform:translateY(-5px);
-    border-color:var(--accent);
-    box-shadow:0 12px 24px var(--accent-shadow);
-}
-
 /* Information card grid */
 .info-grid{
     display:grid;
@@ -86,7 +75,6 @@
     border:var(--border-rule);
     border-radius:var(--radius);
     padding:28px;
-    transition:.25s;
 }
 
 /* Icon at top of each card */
@@ -98,7 +86,7 @@
     align-items:center;
     justify-content:center;
     font-size: 1.9rem;
-    background:rgba(0,180,216,.12);
+    background:var(--teal-tint);
     margin-bottom:20px;
 }
 
@@ -130,7 +118,6 @@
     border:var(--border-rule);
     border-radius:var(--radius);
     padding:30px;
-    transition:.25s;
 }
 
 /* Feature icon */
@@ -142,7 +129,7 @@
     justify-content:center;
     align-items:center;
     font-size: 1.9rem;
-    background:rgba(0,180,216,.12);
+    background:var(--teal-tint);
     margin-bottom:18px;
 }
 
@@ -175,7 +162,6 @@
     border-radius:var(--radius);
     padding:24px;
     text-align:center;
-    transition:.25s;
 }
 
 /* Technology icon */
@@ -218,7 +204,7 @@
     align-items:center;
     justify-content:center;
     font-size: 1.5rem;
-    background:rgba(0,180,216,.12);
+    background:var(--teal-tint);
     flex-shrink:0;
 }
 
@@ -250,7 +236,6 @@
     border:var(--border-rule);
     border-radius:var(--radius);
     padding:28px;
-    transition:.25s;
 }
 
 /* Contributor avatar */
@@ -263,7 +248,7 @@
     justify-content:center;
     flex-shrink:0;
     font-size: 1.8rem;
-    background:rgba(0,180,216,.12);
+    background: var(--teal-tint);
 }
 
 
@@ -305,7 +290,6 @@
     border-radius:var(--radius);
     padding:24px;
     text-align:center;
-    transition:.25s;
 }
 .developer-card .contributor-avatar{ margin:0 auto 16px; }
 
@@ -345,7 +329,7 @@
     justify-content:center;
     flex-shrink:0;
     font-size: 1.7rem;
-    background:rgba(0,180,216,.12);
+    background: var(--teal-tint);
 }
 
 .contributor-thanks h3{

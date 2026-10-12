@@ -3,7 +3,7 @@
 "use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
 // @ts-ignore: Implicit any for CSS import
-import "./admin.css";
+import "../admin.css";
 import React, { useEffect, useMemo, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -299,7 +299,7 @@ This action cannot be undone.`
         <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Users</span>
+              <span>Users</span>
             </div>
 
             <div className="count">{totalUsers}</div>
@@ -309,7 +309,7 @@ This action cannot be undone.`
         <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Administrators</span>
+              <span>Administrators</span>
             </div>
 
             <div className="count">{adminCount}</div>
@@ -320,7 +320,7 @@ This action cannot be undone.`
         <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Training Completed</span>
+              <span>Training Completed</span>
             </div>
 
             <div className="count">{completedTraining}</div>
@@ -331,7 +331,7 @@ This action cannot be undone.`
         <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Average Progress</span>
+              <span>Average Progress</span>
             </div>
 
             <div className="count">{averageProgress}%</div>
@@ -371,7 +371,7 @@ This action cannot be undone.`
             {exporting ? "Exporting..." : "Export Excel"}
           </button>
         </div>
-        <div className="user-count">{filteredUsers.length} of {totalUsers} users</div>
+        <div>{filteredUsers.length} of {totalUsers} users</div>
       </div>
 
       {loadingUsers ? (<p>Loading users...</p>) : (

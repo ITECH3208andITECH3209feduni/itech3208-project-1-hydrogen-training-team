@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
+import "@/components/EditMode.css";
 
 type UserProfile = {
   uid: string;

@@ -1,12 +1,8 @@
-﻿/* app/admin/users/admin.css */
+﻿/* app/admin/admin.css */
 
 /*  ════════════════════════════════════════════════════════════════
    USER MANAGEMENT
    ════════════════════════════════════════════════════════════════ */
-
-/* .greeting/.greeting-accent itself now lives in globals.css (moved there
-   because this page uses it too, not just the dashboard). This just adds
-   the flex layout this page's extra Refresh button needs. */
 .admin-greeting {
     display: flex;
     align-items: center;
@@ -29,7 +25,7 @@
 }
 
 .admin-table thead{
-    background:rgba(0,180,216,.08);
+    background:var(--teal-tint);
 }
 
 .admin-table th{
@@ -66,17 +62,17 @@
 }
 
 .role-admin{
-    background:rgba(255,80,80,.18);
-    color:#ff7070;
+    background: var(--red-glow);
+    color:var(--red);
 }
 
 .role-staff{
-    background:rgba(255,190,0,.18);
-    color:#ffd84d;
+    background: var(--edit-yellow-glow);
+    color:var(--edit-yellow);
 }
 
 .role-user{
-    background:rgba(0,180,216,.18);
+    background:var(--teal-glow);
     color:var(--teal);
 }
 
@@ -102,6 +98,31 @@
     color: var(--navy);
     box-shadow:0 4px 16px var(--accent-shadow);
 }
+
+.progress-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.progress-track {
+	flex: 1;
+	height: 8px;
+	border-radius: 999px;
+	background: rgba(255,255,255,0.08);
+	overflow: hidden;
+}
+.progress-fill {
+	height: 100%;
+	background: var(--teal);
+	transition: width 0.3s ease;
+}
+.progress-pct {
+	flex-shrink: 0;
+	font-weight: 700;
+	color: var(--teal);
+	font-size: 0.95rem;
+}
+
 /* ===============================
    EDIT USER MODAL
 ================================ */
@@ -247,7 +268,7 @@
     display:inline-block;
     padding:6px 14px;
     border-radius:999px;
-    background: rgba(0,180,216,.18);
+    background: var(--teal-glow);
     color: var(--teal);
     font-weight:700;
     font-size: 0.8rem;
@@ -276,43 +297,9 @@
     transform:translateY(-2px);
 }
 
-/* ========================================
-   ADMIN MODULE CARD
-======================================== */
-
-.admin-module-info{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin:14px 0 18px;
-    padding:12px 14px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.06);
-    border-radius:10px;
-}
-
-.admin-module-info p{
-    margin:0;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size: 0.88rem;
-    color:var(--muted);
-}
-
-.admin-module-info strong{
-    color:var(--white);
-    font-weight:600;
-}
-
-.admin-module-info span{
-    color:var(--teal);
-    font-weight:600;
-}
-
 .delete-btn{
     border:none;
-    background:#ef4444;
+    background: var(--red);
     color:white;
     padding:8px 14px;
     border-radius:8px;
@@ -323,13 +310,9 @@
 }
 
 .delete-btn:hover{
-    background: #ffffff;
-    color: #dc2626;
+    background:var(--white);
+    color:var(--red);
     transform:translateY(-2px);
-}
-
-.module-card.module-card--static {
-    cursor: default;
 }
 
 .admin-user-id {
@@ -354,10 +337,6 @@
     color:white;
     font-size: 0.92rem;
     cursor:pointer;
-}
-.export-select option {
-    background: #ffffff;
-    color: #1a1a1a;
 }
 
 .export-select:hover,

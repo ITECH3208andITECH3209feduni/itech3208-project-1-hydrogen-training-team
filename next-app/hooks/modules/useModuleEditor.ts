@@ -328,8 +328,8 @@ export function useModuleEditor(
 		}
 	}, [user, draft, topic, videoDraftFile, updateField, onSaved]);
 
-	// Remove an existing module video
-	const removeModuleVideo = useCallback(async () => {
+	// Remove an existing embedded video
+	const removeEmbeddedVideo = useCallback(async () => {
 		if (!user || !draft) return;
 
 		const confirmed = window.confirm('Remove this video from the module?');
@@ -362,7 +362,7 @@ export function useModuleEditor(
 			setVideoDraftType('youtube');
 			onSaved?.();
 		} catch (error) {
-			console.error('REMOVE MODULE VIDEO ERROR:', error);
+			console.error('REMOVE EMBEDDED VIDEO ERROR:', error);
 			alert(error instanceof Error ? error.message : 'Unable to remove video.');
 		} finally {
 			setVideoSaving(false);
@@ -397,6 +397,6 @@ export function useModuleEditor(
 		selectVideoDraftFile,
 		saveYoutubeVideo,
 		uploadMp4Video,
-		removeModuleVideo,
+		removeEmbeddedVideo,
 	};
 }

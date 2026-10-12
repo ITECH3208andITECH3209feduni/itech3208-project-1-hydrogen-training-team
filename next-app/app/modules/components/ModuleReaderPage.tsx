@@ -88,7 +88,7 @@ export default function ModuleReaderPage({
         selectVideoDraftFile,
         saveYoutubeVideo,
         uploadMp4Video,
-        removeModuleVideo,
+        removeEmbeddedVideo,
     } = useModuleEditor(topic, item, fallbackItem, { onSaved: reload });
 
     useLeaveWarning(hasUnsavedChanges);
@@ -315,7 +315,7 @@ export default function ModuleReaderPage({
                     onSelectVideoFile={selectVideoDraftFile}
                     onSaveYoutubeVideo={saveYoutubeVideo}
                     onUploadMp4Video={uploadMp4Video}
-                    onRemoveVideo={removeModuleVideo}
+                    onRemoveVideo={removeEmbeddedVideo}
                 />
             )}
 

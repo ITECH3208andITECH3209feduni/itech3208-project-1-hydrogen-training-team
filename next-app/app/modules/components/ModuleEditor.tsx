@@ -3,6 +3,7 @@
 
 import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
 import VideoEditorPanel, { VideoType } from '@/components/VideoEditorPanel';
+import "@/components/EditMode.css";
 
 interface ModuleEditorProps {
 	draft: ModuleData;
@@ -17,7 +18,7 @@ interface ModuleEditorProps {
 	onAddSectionItem: (sectionIndex: number) => void;
 	onDeleteSectionItem: (sectionIndex: number, itemIndex: number) => void;
 
-	// Optional module video controls
+	// Optional embedded video controls
 	videoType?: VideoType;
 	youtubeUrl?: string;
 	selectedVideoFile?: File | null;
@@ -158,7 +159,7 @@ export default function ModuleEditor({
 			
 			{/* Embedded Video */}
 			<div className="panel panel--clip">
-				<div className="panel-header">🎬 Module Video</div>
+				<div className="panel-header">🎬 Embedded Video</div>
 				<div className="module-editor-body">
 					<VideoEditorPanel
 						currentVideoUrl={draft.videoUrl}
@@ -185,7 +186,7 @@ export default function ModuleEditor({
 				<div className="panel panel--clip">
 					<div className="panel-header panel-header--spread">
 						<span>📑 Sections</span>
-						<button onClick={onAddSection} title="Add new section" className="module-add-btn">+</button>
+						<button onClick={onAddSection} title="Add new section" className="add-icon-btn">+</button>
 					</div>
 					<div className="module-list-body">
 						{draft.sections.map((s, index) => (
@@ -212,7 +213,7 @@ export default function ModuleEditor({
 								>
 									↓
 								</button>
-								<button onClick={() => onDeleteSection(index)} title="Delete section" className="module-delete-btn">
+								<button onClick={() => onDeleteSection(index)} title="Delete section" className="delete-icon-btn">
 									✕
 								</button>
 							</div>
@@ -235,7 +236,7 @@ export default function ModuleEditor({
 								Click a section in the list to edit its heading, body, list, and callout.
 							</p>
 						) : (
-							<div className="module-field-stack">
+							<div className="field-stack">
 
 								<div>
 									<label className="editor-label">Heading</label>
@@ -261,7 +262,7 @@ export default function ModuleEditor({
 								<div>
 									<label className="editor-label">List Type</label>
 									<select
-										className="editor-input module-select"
+										className="editor-input"
 										value={section.listType ?? ''}
 										onChange={(e) =>
 											onUpdateSection(
@@ -290,13 +291,13 @@ export default function ModuleEditor({
 												<button
 													onClick={() => onDeleteSectionItem(selectedSection, itemIndex)}
 													title="Delete item"
-													className="module-delete-btn"
+													className="delete-icon-btn"
 												>
 													✕
 												</button>
 											</div>
 										))}
-										<button onClick={() => onAddSectionItem(selectedSection)} className="module-add-item-btn">
+										<button onClick={() => onAddSectionItem(selectedSection)} className="add-item-btn">
 											+ Add item
 										</button>
 									</div>

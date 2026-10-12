@@ -174,7 +174,7 @@ export default function HazardsQuizPage() {
                     )}
 
                     {usingDefaults && (
-                        <p className="quiz-defaults-notice">⚠️ Showing the default question set — live content is unavailable right now.</p>
+                        <p className="defaults-notice">⚠️ Showing the default question set — live content is unavailable right now.</p>
                     )}
                 </div>
 

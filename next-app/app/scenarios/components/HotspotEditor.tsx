@@ -7,6 +7,7 @@ import { UploadStatus } from '@/hooks/scenarios/useHotspotEditor';
 import { ModuleTopicOptions } from '@/hooks/scenarios/useModuleOptions';
 import { HazardInfo } from '@/lib/hazards';
 import VideoEditorPanel from '@/components/VideoEditorPanel';
+import "@/components/EditMode.css";
 
 interface HotspotEditorProps {
 	hotspots:           EditableHotspot[];
@@ -107,7 +108,7 @@ export default function HotspotEditor({
 					<div className="panel-header panel-header--spread">
 						<span>🎯 Hotspots</span>
 						{/* Add Hotspot button */}
-						<button onClick={onAdd} title="Add new hotspot" className="hotspot-add-btn">+</button>
+						<button onClick={onAdd} title="Add new hotspot" className="add-icon-btn">+</button>
 					</div>
 					<div className="hotspot-list-body">
 						{hotspots.map((hs, index) => (
@@ -122,7 +123,7 @@ export default function HotspotEditor({
 									</div>
 								</button>
 								{/* Delete Hotspot button */}
-								<button onClick={() => onDelete(index)} title="Delete hotspot" className="hotspot-delete-btn">✕</button>
+								<button onClick={() => onDelete(index)} title="Delete hotspot" className="delete-icon-btn">✕</button>
 							</div>
 						))}
 						
@@ -145,7 +146,7 @@ export default function HotspotEditor({
 								Click a hotspot on the image or pick one from the list to edit its title and description.
 							</p>
 						) : (
-							<div className="hotspot-field-stack">
+							<div className="field-stack">
 							
 								{/* Type key (read-only) */}
 								<div>

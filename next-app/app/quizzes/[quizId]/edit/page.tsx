@@ -55,7 +55,7 @@ export default function QuizEditorPage() {
 				<h1>Edit Quiz</h1>
 				<p>Editing content for &ldquo;{draft.title || quizId}&rdquo;. Changes take effect immediately once saved.</p>
 				{usingDefaults && loadStatus === 'ready' && (
-					<p className="quiz-defaults-notice">This quiz has no live content in Supabase yet — showing default questions.</p>
+					<p className="defaults-notice">This quiz has no live content in Supabase yet — showing default questions.</p>
 				)}
                 {loadStatus === 'error' && (
 					<p className="quiz-editor-load-error">⚠️ Couldn&apos;t reach the database — the content shown may be stale. Saving now would overwrite whatever&apos;s actually stored in Supabase.</p>

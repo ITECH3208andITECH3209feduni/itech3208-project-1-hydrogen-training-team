@@ -55,7 +55,7 @@
 }
 
 .leaderboard-list-header {
-    background: rgba(0, 180, 216, 0.08);
+    background: var(--teal-tint);
     color: var(--teal);
     font-size: 0.82rem;
     font-weight: 700;
@@ -126,9 +126,9 @@
 .leaderboard-error {
     padding: 18px;
     border-radius: 10px;
-    background: rgba(220, 50, 50, 0.1);
-    border: 1px solid rgba(220, 50, 50, 0.35);
-    color: #ff8080;
+    background: var(--red-glow);
+    border: 1px solid var(--red);
+    color: var(--red-sub);
     text-align: center;
 }
 
@@ -181,21 +181,6 @@
     border-color: var(--accent-border);
     background: var(--accent-glow);
     color: var(--accent);
-}
-
-@media (max-width: 700px) {
-    .leaderboard-list-header, .leaderboard-row { grid-template-columns: 60px 1fr 80px; }
-
-    .leaderboard-list-header span:last-child, .student-attempts { display: none; }
-
-    .leaderboard-footer { flex-direction: column; }
-
-    .leaderboard-button,
-    .leaderboard-secondary-button {
-        width: 100%;
-        max-width: 280px;
-        text-align: center;
-    }
 }
 
 /* =========================================================
@@ -417,9 +402,22 @@
 
 
 /* =========================================================
-   MOBILE PODIUM
+   Responsive Design
    ========================================================= */
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+    .leaderboard-list-header, .leaderboard-row { grid-template-columns: 60px 1fr 80px; }
+
+    .leaderboard-list-header span:last-child, .student-attempts { display: none; }
+
+    .leaderboard-footer { flex-direction: column; }
+
+    .leaderboard-button,
+    .leaderboard-secondary-button {
+        width: 100%;
+        max-width: 280px;
+        text-align: center;
+    }
+
     .leaderboard-podium {
         display: grid;
         grid-template-columns: 1fr;

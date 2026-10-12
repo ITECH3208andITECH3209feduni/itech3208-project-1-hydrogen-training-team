@@ -5,6 +5,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import "./EmbeddedVideo.css";
 
 interface EmbeddedVideoProps {
     videoUrl?: string | null;

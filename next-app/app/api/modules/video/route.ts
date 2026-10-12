@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest) {
 
         return NextResponse.json({ ok: true, module: data });
     } catch (err) {
-        console.error("MODULE VIDEO API FAILED:", err);
+        console.error("EMBEDDED VIDEO API FAILED:", err);
         return NextResponse.json(
             { ok: false, error: err instanceof Error ? err.message : String(err) },
             { status: 500 }
@@ -181,7 +181,7 @@ export async function DELETE(request: NextRequest) {
             .single();
 
         if (error) {
-            console.error("VIDEO REMOVE ERROR:", error);
+            console.error("EMBEDDED VIDEO REMOVE ERROR:", error);
             return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
         }
 
@@ -198,7 +198,7 @@ export async function DELETE(request: NextRequest) {
 
         return NextResponse.json({ ok: true, module: data });
     } catch (err) {
-        console.error("MODULE VIDEO DELETE API FAILED:", err);
+        console.error("EMBEDDED VIDEO DELETE API FAILED:", err);
         return NextResponse.json(
             { ok: false, error: err instanceof Error ? err.message : String(err) },
             { status: 500 }

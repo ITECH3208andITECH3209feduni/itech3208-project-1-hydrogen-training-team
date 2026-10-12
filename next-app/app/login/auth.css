@@ -96,10 +96,6 @@
 .auth-input:focus {
 	border-color: var(--login-blue);
 }
-.auth-input option {
-	color: #1a1a2e;
-	background: #ffffff;
-}
 
 /* ─── Submit button ──────────────────────────────────────────────────────── */
 .auth-btn {

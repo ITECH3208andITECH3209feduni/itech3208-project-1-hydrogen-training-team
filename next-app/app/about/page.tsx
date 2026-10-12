@@ -34,19 +34,19 @@ export default function AboutPage() {
           </div>
 
           <div className="info-grid">
-            <div className="info-card">
+            <div className="info-card card-hover-glow">
               <div className="info-icon">👁</div>
               <h3>Invisible Flame</h3>
               <p>Hydrogen flames can be almost invisible in daylight, making them difficult to detect without specialised equipment.</p>
             </div>
 
-            <div className="info-card">
+            <div className="info-card card-hover-glow">
               <div className="info-icon">🔥</div>
               <h3>Highly Flammable</h3>
               <p>Hydrogen ignites easily and burns rapidly. Understanding safe handling procedures helps minimise the risk of accidents.</p>
             </div>
 
-            <div className="info-card">
+            <div className="info-card card-hover-glow">
               <div className="info-icon">🎓</div>
               <h3>Safe Learning</h3>
               <p>This application allows learners to understand hydrogen hazards through interactive learning before entering a real laboratory.</p>
@@ -62,37 +62,37 @@ export default function AboutPage() {
           </div>
 
           <div className="feature-grid">
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">🔐</div>
               <h3>Secure Authentication</h3>
               <p>Firebase Authentication provides secure user registration, login and password recovery while protecting learner accounts.</p>
             </div>
 
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">📚</div>
               <h3>Interactive Modules</h3>
               <p>Five structured learning modules introduce users to common hydrogen hazards and laboratory safety procedures.</p>
             </div>
 
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">🧪</div>
               <h3>Virtual Laboratory</h3>
               <p>Explore a simulated hydrogen laboratory environment and identify potential hazards before entering a real lab.</p>
             </div>
 
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">📝</div>
               <h3>Knowledge Quizzes</h3>
               <p>Reinforce learning through quizzes designed to assess understanding of each training module.</p>
             </div>
 
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">📊</div>
               <h3>Progress Tracking</h3>
               <p>Learners can monitor completed modules and continue their training from where they previously stopped.</p>
             </div>
 
-            <div className="feature-card">
+            <div className="feature-card card-hover-glow">
               <div className="feature-icon">👨‍💼</div>
               <h3>Administration Portal</h3>
               <p>Administrators can manage users, roles and learner progress through a secure administration dashboard.</p>
@@ -108,31 +108,31 @@ export default function AboutPage() {
           </div>
 
           <div className="tech-grid">
-            <div className="tech-card">
+            <div className="tech-card card-hover-glow">
               <div className="tech-icon">⚛️</div>
               <h3>React</h3>
               <p>Component-based user interface development.</p>
             </div>
 
-            <div className="tech-card">
+            <div className="tech-card card-hover-glow">
               <div className="tech-icon">▲</div>
               <h3>Next.js</h3>
               <p>Routing, server rendering and application framework.</p>
             </div>
 
-            <div className="tech-card">
+            <div className="tech-card card-hover-glow">
               <div className="tech-icon">🔥</div>
               <h3>Firebase</h3>
               <p>Authentication and secure user management.</p>
             </div>
 
-            <div className="tech-card">
+            <div className="tech-card card-hover-glow">
               <div className="tech-icon">🗄️</div>
               <h3>Supabase</h3>
               <p>Cloud database and learner progress storage.</p>
             </div>
 
-            <div className="tech-card">
+            <div className="tech-card card-hover-glow">
               <div className="tech-icon">💻</div>
               <h3>GitHub</h3>
               <p>Version control and collaborative development.</p>
@@ -169,7 +169,7 @@ export default function AboutPage() {
             </div>
 
             <div className="leadership-grid">
-              <div className="leadership-card">
+              <div className="leadership-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <div className="leadership-card-content">
                   <h3>Assoc. Prof. Surbhi Sharma</h3>
@@ -178,7 +178,7 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <div className="leadership-card">
+              <div className="leadership-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <div className="leadership-card-content">
                   <h3>Prof Bhavna Antony</h3>
@@ -199,28 +199,28 @@ export default function AboutPage() {
             </div>
 
             <div className="development-grid">
-              <div className="developer-card">
+              <div className="developer-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <h3>Caleb Mclean</h3>
                 <div className="contributor-role">Team Member</div>
                 <p>Hydrogen Training Team</p>
               </div>
 
-              <div className="developer-card">
+              <div className="developer-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <h3>Sarin Bhandari</h3>
                 <div className="contributor-role">Team Member</div>
                 <p>Hydrogen Training Team</p>
               </div>
 
-              <div className="developer-card">
+              <div className="developer-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <h3>Danuja Khadka</h3>
                 <div className="contributor-role">Team Member</div>
                 <p>Hydrogen Training Team</p>
               </div>
 
-              <div className="developer-card">
+              <div className="developer-card card-hover-glow">
                 <div className="contributor-avatar">👤</div>
                 <h3>Adeola Ayeni</h3>
                 <div className="contributor-role">Team Member</div>

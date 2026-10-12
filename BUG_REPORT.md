@@ -151,39 +151,14 @@ The config references `eslint-config-next`, but neither it nor `eslint` itself a
 
 ---
 
-## Performance
-
-### Fonts are loaded via a `<link>` tag instead of `next/font/google`
-`layout.tsx` pulls in **Exo 2** and **Inter** from Google Fonts using a plain `<link>` tag rather than `next/font/google`. This means the fonts aren't self-hosted or subset by Next's font optimizer — an extra render-blocking request to Google's CDN on every page load, and no automatic `font-display`/preload handling.
-**Fix:** replace the `<link>` tag with `next/font/google`:
-```tsx
-import { Exo_2, Inter } from 'next/font/google';
-```
-See the [Next.js font documentation](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) for setup details.
-
----
-
 ## Architecture / structure
 
 ### The lab, module and quiz editors each implement their own draft/save/reset logic
 `useHotspotEditor.ts` (`/scenarios/hazards`), `useModuleEditor.ts` (module reader pages) and `useQuizEditor.ts` (`/quizzes/[quizId]/edit`) each hold a draft, expose their own edit handlers, and implement save and Reset to Defaults themselves. Unsaved-change tracking and the leave-page warning are shared (`hooks/unsavedChanges/`), as are `SaveBar.tsx`, `EditModeToggle.tsx` (lab and module pages), and `VideoEditorPanel.tsx`'s fields (used by both the lab and module editors) — but seeding a draft from live data, deciding when a background refresh may replace it, the save call with its status handling, and the embedded-video draft state plus its three save/upload/remove handlers, are each written independently by two or three of the editors rather than shared. The editors differ in small ways as a result: the lab and module editors keep an `editMode` flag while the quiz editor has none. A generic "draft seeded from live data, with a save/reset layer on top" hook, and a shared video-draft hook reused by the lab and module editors, would remove the duplication, but what each editor saves differs enough (the lab's delete-then-reinsert of every hotspot, per-module and per-quiz row replacement) that it would be a larger refactor than three editors currently justify.
 
-### CSS is split across many page-specific files with no canonical reference for which classes are global vs. local
-Every page/component folder that needs styling imports its own `.css` file (see the CSS Structure table in `README.md`), and `globals.css` holds `nav`, `.main`, `.panel`, edit-mode toggle, and save-bar styles used everywhere. But there's no single place listing which classes are safe to assume as globally available versus which need a local definition — confirming this for a new page means reading `globals.css` in full, or checking how an existing page with similar markup handles it.
-
-`app/quizzes/[quizId]/edit/quizEditor.css` duplicates `.quiz-defaults-notice` (already defined once in `quizzes.css`) rather than sharing it, since the two pages don't import each other's stylesheets and there's no shared partial for classes used by more than one page but not all of them. Some classes are also used identically across multiple page-specific files without being pulled into `globals.css`, even though they're not page-specific in nature — `.page-header` is used by the admin pages, the quizzes pages, and others, but is defined independently (or, in at least one case, not confirmed to be defined at all) in each.
-
-**Fix:** an audit of every `.css` file against the classes actually used in its corresponding page(s) — confirming each class is defined exactly once, in the appropriate scope (`globals.css` for genuinely shared patterns, a page-specific file for one-off use) — would likely surface both missing and duplicated rules, and is worth doing as its own deliberate pass rather than catching each instance individually as new pages are added.
-
 ---
 
 ## Cosmetic / minor
-
-### `ModuleVideo.tsx`/`VideoEditorPanel.tsx` still use "module"-prefixed names despite being shared with the lab page
-`ModuleVideo.tsx`'s CSS classes (`module-video-*`, defined in `globals.css`) and the classes `VideoEditorPanel.tsx` reuses from the module editor (`module-field-stack`, `module-select`, `module-add-item-btn`, `module-delete-btn`) read as module-specific, but both files are shared with `HotspotEditor.tsx`/`Popup.tsx` on `/scenarios/hazards` too. The component name itself has the same problem — `ModuleVideo` for something that's just as much a lab component now would more accurately be `EmbeddedVideo`. Purely cosmetic — nothing behaves incorrectly — but worth a rename pass (component, file, and the CSS classes) for clarity.
-
-### `AdminModuleCard`'s `mode` prop is accepted but never read
-`AdminModuleCardProps` declares `mode?: "student" | "admin"`, and the per-user progress page passes `mode="admin"` when rendering it, but the component body never references `mode` anywhere — it always renders the same admin-style layout regardless of the value passed. Harmless, but either dead prop or an unfinished student/admin variant.
 
 ### Admin feedback dashboard's "Average Rating" card always shows five filled stars
 `app/admin/feedback/page.tsx`'s summary card renders the numeric average correctly (e.g. "3.7") but the star row beneath it is a fixed `★★★★★` string, not scaled to the actual average — a 2.0-average dataset and a 5.0-average dataset show identical stars.

@@ -108,7 +108,7 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 | `/api/admin/feedback`                | `GET`           | `requireAdmin`               | `feedback`                                               | `app/admin/feedback/page.tsx`                                                                                          |
 | `/api/admin/users`                   | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`                       | `app/admin/users/page.tsx`                                                                                             |
 | `/api/admin/users/export`            | `GET`           | `requireAdmin`               | `profiles`, `user_quiz_progress`                         | `app/admin/users/page.tsx` (Export Excel button)                                                                       |
-| `/api/admin/users/{uid}`             | `PATCH`         | `requireAdmin`               | `profiles`, `user_quiz_progress`,                        | `EditUserModal.tsx`, `app/admin/users/page.tsx` (Delete button)                                                        |
+| `/api/admin/users/{uid}`             | `PATCH`         | `requireAdmin`               | `profiles`                                               | `EditUserModal.tsx`, `app/admin/users/page.tsx` (Delete button)                                                        |
 | ^^^^^                                | `DELETE`        | ^^^^^                        | `user_lab_progress`, `user_module_progress`              | ^^^^^                                                                                                                  |
 | `/api/admin/users/{uid}/progress`    | `GET`           | `requireAdmin`               | `profiles`, `user_module_progress`, `user_quiz_progress` | `app/admin/users/[uid]/progress/page.tsx`, and `app/admin/users/page.tsx` (one fetch per learner, see `BUG_REPORT.md`) |
 | `/api/profile/get`                   | `GET`           | public — see `BUG_REPORT.md` | `profiles`                                               | `AuthContext.tsx` (profile bootstrap on every auth-state change)                                                       |
@@ -118,7 +118,7 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 
 ## Modules system
 
-`app/modules/` holds every topic built on a shared listing+reader template, plus a hub page at its root (`/modules`, `app/modules/page.tsx`) that lists the available topics and links into each topic's own listing page.
+`app/modules/` holds every topic built on a shared listing+reader template, plus a hub page at its root (`/modules`, `app/modules/page.tsx`, built from the shared `HubCard` component) that lists the available topics and links into each topic's own listing page.
 	The Navbar's Modules link and the dashboard's Modules stat card both point at this hub.
 	Currently there are two topics:
 - **Hazard Modules** (`/modules/hazards`) — the hydrogen hazards content, defined in `lib/modules/hazards.ts`.
@@ -131,10 +131,12 @@ The shared template lives in `app/modules/components/`:
 - `ModuleListingPage.tsx` — filter bar, grid, auth redirect
 - `ModuleReaderPage.tsx`  — breadcrumb, hero, sections, key takeaway, prev/next nav, and the progress UI described under "Module Progress Tracking" below
 - `ModuleEditor.tsx`      — edit panel for a module's fields and sections, rendered by `ModuleReaderPage` while its edit mode is on
-- `ModuleCard.tsx`        — card shown in the listing page, used for every topic
 - `SectionBlock.tsx`      — renders a single numbered section.
 	Body text is split on blank lines into paragraphs and rendered via `dangerouslySetInnerHTML`, so section `body` content can include inline HTML (e.g. `<strong>`), not just plain text.
 	A `callout` is rendered with a 💡 prefix added by this component.
+
+Each module is rendered by the shared `ModuleCard` (`components/ModuleCard.tsx`), used for every topic.
+	Its `mode` prop selects the student presentation (listing pages) or the read-only admin presentation (per-user progress page).
 
 Shared types (`ModuleData`, `ModuleSection`, `ModuleStatus`) and a generic `getModuleById(items, id)` lookup helper live in `lib/modules/moduleTypes.ts`.
 	Each topic's data file wraps that helper with its own name (`getHazardModuleById`, `getGuideById`) rather than exposing the generic one directly to pages — though these topic-specific wrappers are no longer called by the reader pages (which now use `useModuleById` instead);
@@ -285,7 +287,7 @@ Quiz content lives in Supabase, loaded per-quiz through `hooks/quizzes/useQuiz.t
 - `mapQuestionRow`/`mapQuizRow` (exported from `useQuiz.ts`) do the field-name translation between Supabase's snake_case row shape (`correct_index`, `pass_threshold`, `is_core`, …) and the app's camelCase `QuizQuestion`/`QuizData` shape (`correctIndex`, `passThreshold`, `isCore`, …).
 - **`drawQuizPool(quizData)`** (also exported from `useQuiz.ts`) draws the set of questions presented for one attempt: every question with `isCore: true`, topped up to `poolSize` with a random sample of the rest, with the result shuffled as a whole.
 	`poolSize === null`, or a `poolSize` at or above the bank's total question count, presents every question (shuffled).
-- `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx` both call `useQuiz('hazards', QUIZ_DEFAULTS)` and show a small notice (`.quiz-defaults-notice`/`.quiz-card-notice` in `quizzes.css`) whenever `usingDefaults` is `true`.
+- `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx` both call `useQuiz('hazards', QUIZ_DEFAULTS)` and show a small notice (`.defaults-notice`, in `globals.css`) whenever `usingDefaults` is `true`.
 - An in-app editor for quiz content exists at `/quizzes/[quizId]/edit`, admin-only — see "Quiz Content Editor" below and `EDITING_GUIDE.md` for how to use it.
 - `quiz_id` for this quiz is `'hazards'`, matching `QUIZ_SLUG` — deliberately, since `user_quiz_progress`/the leaderboard routes use an independently-hardcoded, differently-spelled `quiz_id` (`"hydrogen-hazards"`); see `BUG_REPORT.md`.
 	`quizzes`/`quiz_questions` are not affected by that mismatch, since both are keyed by `QUIZ_SLUG` directly.
@@ -329,7 +331,7 @@ This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (se
 
 ### Quizzes hub (`/quizzes`)
 
-A grid of quiz cards (`app/quizzes/page.tsx`, styled by `quizzes.css`) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
+A grid of quiz cards (`app/quizzes/page.tsx`, built from the shared `HubCard` component) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
 
 ### Taking a quiz (`/quizzes/hazards`)
 
@@ -437,7 +439,7 @@ Unlike `/quizzes/hazards`, `/scenarios/hazards`, and the module reader pages, `/
 	`quizPassed` is computed route-side against its own hardcoded `QUIZ_ID`/pass-score constants (see `BUG_REPORT.md`) and is what `/admin/users`' "Training Completed" stat card checks alongside module completion.
 	The per-user progress page's own **Certificate** panel, however, only checks module completion (`completedModules >= totalModules`) for its "Eligible"/"Pending" status — it doesn't factor in `summary.quizPassed` at all, so it can disagree with both the "Training Completed" stat card and the learner-facing `/certificate` page's own (differently-computed) eligibility rule. See `BUG_REPORT.md`.
 	Nothing in the admin UI currently displays `leaderboard_visible`.
-- Each module is rendered via `AdminModuleCard.tsx` with `mode="admin"` and `adminProgress={module.adminProgress}`.
+- Each module is rendered via the shared `ModuleCard.tsx` (`components/ModuleCard.tsx`) with `mode="admin"` and `adminProgress={module.adminProgress}`.
 
 ---
 
@@ -446,11 +448,11 @@ Unlike `/quizzes/hazards`, `/scenarios/hazards`, and the module reader pages, `/
 `app/scenarios/` holds every interactive scenario built on the lab page's format — a background image with clickable hotspots, each opening a popup with text, an optional embedded video and an optional Learn More link into a module — plus a hub page at its root.
 	It mirrors the hub-plus-`hazards` layout of `app/modules/` and `app/quizzes/`.
 
-- **`/scenarios`** (`app/scenarios/page.tsx`) — the hub: lists the available scenarios and links into each one. The Navbar's Scenarios link and the dashboard's Scenarios stat card both point here.
+- **`/scenarios`** (`app/scenarios/page.tsx`, built from the shared `HubCard` component) — the hub: lists the available scenarios and links into each one. The Navbar's Scenarios link and the dashboard's Scenarios stat card both point here.
 - **`/scenarios/hazards`** (`app/scenarios/hazards/page.tsx`) — the interactive hydrogen lab, currently the only scenario. The folder is named `hazards` to match `modules/hazards` and `quizzes/hazards`.
-- **`app/scenarios/components/`** — `HotspotEditor.tsx` and `Popup.tsx`. They sit one level above `hazards/`, the way `app/modules/components/` sits above `modules/hazards/`, so another scenario can reuse them without importing from the hazards folder.
+- **`app/scenarios/components/`** — `HotspotEditor.tsx` and `Popup.tsx`. They sit one level above `hazards/`, so another scenario can reuse them without importing from the hazards folder.
 - **`hooks/scenarios/`** and **`app/api/scenarios/`** — the lab's hooks and API routes (see "API Routes Reference").
-- **`lab.css`** (`app/scenarios/hazards/lab.css`) — styles the lab page and the components above.
+- **`scenarios.css`** (`app/scenarios/scenarios.css`) — styles the hazards page and the components.
 
 **What is still single-scenario.** The folder structure has room for more than one scenario, but the data layer does not yet:
 - `hotspots` has no column saying which scenario a hotspot belongs to, and every `/api/scenarios/*` route reads or writes that one table (`save-hotspots` replaces all of it).
@@ -458,7 +460,7 @@ Unlike `/quizzes/hazards`, `/scenarios/hazards`, and the module reader pages, `/
 - `user_lab_progress.scenario_id` exists for this purpose, but its only value today is `'interactive-lab'`, and `GET /api/scenarios/progress` counts every row in `hotspots` as `totalHotspots`.
 
 A second scenario would need its hotspots, image and progress counts keyed by scenario before it could share these routes.
-	The tables, buckets and files behind the lab keep "lab" in their names (`user_lab_progress`, `lab-images`, `lab-videos`, `lab.jpg`, `lab.css`), and the matching `Permissions` flag is `canUseSimulation`.
+	The tables, buckets and files behind the lab keep "lab" in their names (`user_lab_progress`, `lab-images`, `lab-videos`, `lab.jpg`), and the matching `Permissions` flag is `canUseSimulation`.
 
 ---
 
@@ -508,10 +510,10 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 	`modules.video_url`/`modules.video_type` and `hotspots.video_url`/`hotspots.video_type` store it;
 	`video_type` is `'youtube'`, `'mp4'`, or `null`.
 
-**Display (`components/ModuleVideo.tsx`):** a shared, stateless component taking `videoUrl`/`videoType` and rendering nothing when both are absent.
+**Display (`components/EmbeddedVideo.tsx`):** a shared, stateless component taking `videoUrl`/`videoType` and rendering nothing when both are absent.
 	Otherwise it renders a compact launcher card; clicking it opens a modal with either a YouTube `<iframe>` (the URL is parsed into an embed URL first) or a native `<video>` element for mp4.
 	The modal closes on Escape, on clicking its backdrop, or its own close button, and locks body scroll while open.
-	`ModuleReaderPage.tsx` renders it above a module's sections; `Popup.tsx` renders it inline, under the hotspot's description and above the Learn More link — the same component, two different surrounding contexts, styled via a light-background override in `lab.css` scoped to `.popup-content`.
+	`ModuleReaderPage.tsx` renders it above a module's sections; `Popup.tsx` renders it inline, under the hotspot's description and above the Learn More link — the same component, two different surrounding contexts, styled via a light-background override in `scenarios.css` scoped to `.popup-content`.
 
 **Editing (`components/VideoEditorPanel.tsx`):** the fields shared by both editors — a YouTube/mp4 type toggle, a YouTube URL field with its own save button, an mp4 file input with its own upload button, and a remove button when a video is already set.
 	`ModuleEditor.tsx` and `HotspotEditor.tsx` each wrap it in their own panel chrome and wire it to their own draft state and handlers; the component itself holds no state of its own.
@@ -522,7 +524,7 @@ Both module reader pages and lab hotspots can have one embedded video — a YouT
 	`lib/video/video.ts` holds the logic both routes share — YouTube URL parsing (`getYouTubeVideoId`), Storage path parsing for cleanup (`getStoragePath`), mp4 validation (`validateMp4File`, `isMp4File`, `MAX_MP4_BYTES`), and `safeFileName` (lowercases and hyphenates an uploaded file's name before it's used in the Storage path, e.g. `my video (final)!.mp4` → `my-video--final--.mp4`) — the same 50MB check runs client-side (immediate rejection before an upload starts) and server-side (so it isn't just cosmetic).
 	A video change therefore never counts as an unsaved change (see "Unsaved-Changes Protection").
 
-Once a video is saved through either route, the editor hook managing that page — `useModuleEditor.ts`'s `saveYoutubeVideo`/`uploadMp4Video`/`removeModuleVideo`, or `useHotspotEditor.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo` — writes the returned `video_url`/`video_type` into its own draft, so the display component picks it up immediately without a full page reload.
+Once a video is saved through either route, the editor hook managing that page — `useModuleEditor.ts`'s `saveYoutubeVideo`/`uploadMp4Video`/`removeEmbeddedVideo`, or `useHotspotEditor.ts`'s `saveHotspotYoutubeVideo`/`uploadHotspotMp4Video`/`removeHotspotVideo` — writes the returned `video_url`/`video_type` into its own draft, so the display component picks it up immediately without a full page reload.
 	Each also calls its optional `onSaved` callback, which both pages wire to their loading hook's `reload()` (`useModules`/`useModuleById` for a module, `useHotspots` for the lab), so the underlying live data is refreshed too — relevant once edit mode is switched back off, since the page then reads from `item`/`hotspots` rather than the draft.
 	A video removed this way is not re-derived from any bundled `lib/` default on that refresh — see the `videoUrl`/`videoType` bullet under "Modules system" above.
 

@@ -5,9 +5,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import "../../admin.css";
+import "../../../admin.css";
 import { hazardModules } from "@/lib/modules/hazards";
-import AdminModuleCard from "@/app/admin/users/components/AdminModuleCard";
+import ModuleCard from "@/components/ModuleCard";
 import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
@@ -295,7 +295,7 @@ export default function UserProgressPage() {
 
             <div className="card-grid">
                 {modulesWithProgress.map((module, index) => (
-                    <AdminModuleCard
+                    <ModuleCard
                         key={module.id}
                         item={module}
                         animationDelay={index * 0.07}

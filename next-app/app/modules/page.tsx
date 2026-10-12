@@ -3,11 +3,10 @@
 
 'use client';
 
-import './modules-hub.css';
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import HubCard from '@/components/HubCard';
 
 export default function ModulesPage() {
         const { user, loading } = useAuth();
@@ -29,31 +28,14 @@ export default function ModulesPage() {
                                 </p>
                         </div>
 
-                        <div className="module-hub-grid">
-                                {/* Hydrogen Safety Modules */}
-                                <Link
+                        <div className="hub-grid">
+                                <HubCard
                                         href="/modules/hazards"
-                                        className="module-hub-card"
-                                >
-                                        <div className="module-hub-icon">
-                                                &#x26A0;&#xFE0F;
-                                        </div>
-
-                                        <div className="module-hub-body">
-                                                <div className="module-hub-title">
-                                                        Hydrogen Safety Modules
-                                                </div>
-
-                                                <div className="module-hub-desc">
-                                                        Learn about hydrogen hazards, safe practices,
-                                                        and how to identify and respond to risks.
-                                                </div>
-                                        </div>
-
-                                        <div className="module-hub-link">
-                                                View Modules &rarr;
-                                        </div>
-                                </Link>
+                                        icon="⚠️"
+                                        title="Hydrogen Safety Modules"
+                                        desc="Learn about hydrogen hazards, safe practices, and how to identify and respond to risks."
+                                        linkText="View Modules →"
+                                />
                         </div>
                 </main>
         );

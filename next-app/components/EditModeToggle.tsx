@@ -2,6 +2,8 @@
 // Edit-mode toggle switch + expanding banner
 // Shared by multiple in-app editors (e.g. lab, modules reader)
 
+import "./EditMode.css";
+
 interface EditModeToggleProps {
 	editMode: boolean;
 	onToggle: () => void;

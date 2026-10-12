@@ -2,6 +2,7 @@
 // Shared editor block for embedded videos (used by modules and lab pages)
 // Caller supplies the currently persisted video plus in-progress draft state, and wraps this in whatever panel/label chrome fits its own editor.
 
+import "@/components/EditMode.css";
 export type VideoType = 'youtube' | 'mp4';
 
 interface VideoEditorPanelProps {
@@ -39,7 +40,7 @@ export default function VideoEditorPanel({
 	noVideoMessage = 'No video is currently attached.',
 }: VideoEditorPanelProps) {
 	return (
-		<div className="module-field-stack">
+		<div className="field-stack">
 
 			{currentVideoUrl && currentVideoType && (
 				<div>
@@ -55,7 +56,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onRemoveVideo}
                             disabled={videoSaving}
-                            className="module-delete-btn"
+                            className="delete-icon-btn"
                         >
 							Remove Video
 						</button>
@@ -66,7 +67,7 @@ export default function VideoEditorPanel({
 			<div>
 				<label className="editor-label">Video Type</label>
 				<select
-					className="editor-input module-select"
+					className="editor-input"
 					value={videoType}
 					onChange={(e) => onChangeVideoType?.(e.target.value as VideoType)}
 					disabled={videoSaving}
@@ -92,7 +93,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onSaveYoutubeVideo}
                             disabled={videoSaving || !youtubeUrl.trim()}
-                            className="module-add-item-btn"
+                            className="add-item-btn"
                         >
 							{videoSaving ? 'Saving...' : 'Save YouTube Video'}
 						</button>
@@ -115,7 +116,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onUploadMp4Video}
                             disabled={videoSaving || !selectedVideoFile}
-                            className="module-add-item-btn"
+                            className="add-item-btn"
                         >
 							{videoSaving ? 'Uploading...' : 'Upload MP4 Video'}
 						</button>

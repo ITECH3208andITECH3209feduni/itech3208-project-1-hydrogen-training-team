@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleStatus } from '@/lib/modules/moduleTypes';
-import ModuleCard from './ModuleCard';
+import ModuleCard from '@/components/ModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;
 
