@@ -13,7 +13,7 @@ import { hazardModules } from '@/lib/modules/hazards';
 export default function HazardModulePage() {
 	const params = useParams();
 	const id = Array.isArray(params.id) ? params.id[0] : params.id;
-	const { item, modules, usingDefaults } = useModuleById('hazards', hazardModules, id);
+	const { item, modules, usingDefaults, reload } = useModuleById('hazards', hazardModules, id);
 
 	return (
 		<ModuleReaderPage
@@ -26,6 +26,7 @@ export default function HazardModulePage() {
 			heroHint="Read through all sections to complete this module. Then test your knowledge in the Quiz."
 			usingDefaults={usingDefaults}
 			defaults={hazardModules}
+			reload={reload}
 		/>
 	);
 }

@@ -15,7 +15,7 @@ Both the lab and every module reader page have an in-app edit mode, visible only
 
 Hotspot positions and text are stored in Supabase and can be edited directly in the browser via edit mode.
 
-**To enter edit mode:** navigate to `/lab` and click the switch at the top-left of the page.
+**To enter edit mode:** navigate to `/scenarios/hazards` and click the switch at the top-left of the page.
 	It expands into a banner confirming edit mode is active while it's on. Click it again to exit.
 
 **Hotspots:**
@@ -40,7 +40,7 @@ Hotspot positions and text are stored in Supabase and can be edited directly in 
 
 Module content (title, description, sections, key takeaway, and more — see "Customising Module Content" below for the full field list) can also be edited directly in the browser, in addition to editing Supabase rows by hand.
 
-**To enter edit mode:** open any module reader page (e.g. `/modules/hazards/1`) and click the switch at the top of the page. As on `/lab`, it expands into a banner while active; click it again to exit.
+**To enter edit mode:** open any module reader page (e.g. `/modules/hazards/1`) and click the switch at the top of the page. As on `/scenarios/hazards`, it expands into a banner while active; click it again to exit.
 	Exiting edit mode this way does not discard unsaved changes — they're kept in the editor until you either save or click Reset to Defaults, or navigate to a different module (via ← Previous/Next →, or back to the listing).
 
 **While editing**, everything above the editor panel — the hero, every section, and the key takeaway — previews your unsaved changes live, so you can see how they'll look before saving.
@@ -61,6 +61,13 @@ Module content (title, description, sections, key takeaway, and more — see "Cu
 **Saving and resetting:**
 - Click **Save Changes** to write the module's fields and sections to Supabase — changes persist everywhere immediately, including for a module that only existed as bundled fallback content before.
 - Click **Reset to Defaults** to revert every field and section back to the module's bundled `lib/modules/` entry (e.g. `lib/modules/hazards.ts`). This button is disabled, with an explanatory tooltip, for any topic that doesn't have bundled defaults wired up.
+
+### Leaving with Unsaved Changes
+
+The lab, the module reader pages and the quiz editor warn before an edit in progress is lost — when closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet. Confirming lets you leave, and the changes are lost.
+	The warning follows the changes, not edit mode: switching edit mode off keeps unsaved changes, and the warning stays active until you save them or leave the page. Putting a value back the way it was clears it, and Reset to Defaults counts as a change until it's saved.
+	Saving, replacing or removing an embedded video takes effect immediately, so it never triggers the warning.
+	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
 
 ---
 
@@ -111,6 +118,9 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 
 **Editing:**
 - Title, Description, and Pass Threshold are free-text/number fields at the top of the page.
+- Pass Threshold is the percentage of questions a learner must answer correctly to pass, entered as a whole number from 0 to 100.
+	An invalid value shows an error beneath the field.
+	The `quizzes` table in Supabase is also constrained to only accept values from 0 to 100 — it will reject any other value.
 - Pool Size is a number field controlling how many questions are drawn per attempt; leave it blank to present every question in the bank.
 - The Questions panel lists every question on the left; click one to edit its question text, options, and explanation on the right.
 - Click **+** in the question list header to add a new question — it's numbered using the first id not already in use (so deleting question 2 and adding a new one reuses id 2 rather than continuing to 4).
@@ -119,15 +129,15 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 	click **✕** next to an option to delete it (deleting the correct option itself resets the correct answer to the first remaining option; deleting an earlier option shifts the correct answer's position down to match);
 	click **+ Add option** to add one.
 - A Core checkbox in the question detail panel marks that question to always appear in every drawn pool, regardless of Pool Size's random selection for the rest.
-- **Save Changes** disables, with an explanatory warning, if any question has fewer than 2 options or no valid correct answer selected, or if Pool Size is below 1, below the number of core questions, or above the total number of questions.
+- **Save Changes** disables, with an explanatory warning, if:
+	- Any question has fewer than 2 options or no valid correct answer selected
+	- If Pass Threshold isn't a whole number from 0 to 100
+	- If Pool Size is below 1, below the number of core questions, or above the total number of questions.
 
 **Saving and resetting:**
 - Click **Save Changes** to write the quiz's title/description/threshold and its full question list to Supabase — changes persist everywhere immediately, replacing the quiz's previous question list entirely rather than merging with it.
 - Click **Reset to Defaults** to revert every field and question back to the quiz's bundled `lib/questionhazards.ts` entry.
 	Only the Hazards quiz currently has bundled defaults wired up; a quiz without them shows this button disabled with an explanatory tooltip, the same as a module topic with no bundled defaults.
-
-**Leaving with unsaved changes:** the editor warns before losing an edit in progress — on closing or reloading the browser tab, and when clicking any in-app link (including the navigation bar) while a change hasn't been saved yet.
-	It doesn't currently catch the navigation bar's Logout button specifically, or the browser's Back/Forward buttons.
 
 **`quiz_questions` columns:**
 - `quiz_id` — which quiz this question belongs to; part of the composite primary key with `id`.

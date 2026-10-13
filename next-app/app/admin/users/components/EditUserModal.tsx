@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
+import "@/components/EditMode.css";
 
 type UserProfile = {
   uid: string;
@@ -96,13 +97,14 @@ export default function EditUserModal({
 
         <div className="modal-body">
           <div className="form-group">
-            <label>Email</label>
-            <input value={user.email} disabled />
+            <label className="editor-label">Email</label>
+            <input className="editor-input editor-input--readonly" value={user.email} disabled />
           </div>
 
           <div className="form-group">
-            <label>Role</label>
+            <label className="editor-label">Role</label>
             <select
+              className="editor-input"
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
@@ -113,8 +115,9 @@ export default function EditUserModal({
           </div>
 
           <div className="form-group">
-            <label>User Type</label>
+            <label className="editor-label">User Type</label>
             <select
+              className="editor-input"
               value={userType}
               onChange={(e) => setUserType(e.target.value)}
             >
@@ -129,17 +132,22 @@ export default function EditUserModal({
           </div>
 
           <div className="form-group">
-            <label>Organisation</label>
-            <input
+            <label className="editor-label">Organisation</label>
+            <select
+              className="editor-input"
               value={organisation}
               onChange={(e) => setOrganisation(e.target.value)}
-            />
+            >
+              <option value="">Not set</option>
+              <option value="Fed Uni">Fed Uni</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
         </div>
 
         <div className="modal-footer">
           <button
-            className="cancel-btn"
+            className="editor-btn-secondary"
             onClick={onClose}
             disabled={saving}
           >
@@ -147,7 +155,7 @@ export default function EditUserModal({
           </button>
 
           <button
-            className="save-btn"
+            className="editor-btn-primary"
             onClick={saveChanges}
             disabled={saving}
           >

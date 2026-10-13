@@ -5,9 +5,9 @@ import { requireUser } from "@/lib/firebase/authUser";
 import { supabaseServer } from "@/lib/supabase";
 
 const VALID_CATEGORIES = [
-    "Training Modules",
-    "Simulations",
-    "Quizzes",
+    "Safety Scenarios",
+    "Learning Modules",
+    "Knowledge Quizzes",
     "Website / Navigation",
     "Technical Issue",
     "Other",

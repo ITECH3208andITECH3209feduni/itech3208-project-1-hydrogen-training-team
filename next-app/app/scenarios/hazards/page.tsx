@@ -1,0 +1,205 @@
+// app/scenarios/hazards/page.tsx  –  Interactive Hydrogen Lab
+// Edit mode entered/exited via toggle switch (only visible to admins)
+
+'use client';
+
+import '../scenarios.css';
+import { useRef, useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import Popup from '../components/Popup';
+import EditModeToggle from '@/components/EditModeToggle';
+import HotspotEditor from '../components/HotspotEditor';
+import SaveBar from '@/components/SaveBar';
+import { useHotspots } from '@/hooks/scenarios/useHotspots';
+import { useHotspotEditor } from '@/hooks/scenarios/useHotspotEditor';
+import { useHotspotProgress } from '@/hooks/scenarios/useHotspotProgress';
+import { useModuleOptions } from '@/hooks/scenarios/useModuleOptions';
+import { useLeaveWarning } from '@/hooks/unsavedChanges/useLeaveWarning';
+
+export default function LabPage() {
+	// Authentication
+	const { user, loading, permissions } = useAuth();
+	const router = useRouter();
+
+	// Page constants
+	const containerRef = useRef<HTMLDivElement>(null);						// Attached to image container div, so drag logic knows its position & size
+	const [activePopup, setActivePopup] = useState<string | null>(null);	// Which hotspot's popup is currently open (default none/null)
+
+	const {
+		hotspots,
+		loadStatus,
+		imageUrl,
+		setImageUrl,
+		reload,
+		liveHotspotData,
+	} = useHotspots();
+
+	const {
+		draft,
+		editMode,
+		toggleEditMode,
+		hasUnsavedChanges,
+		selected,
+		setSelected,
+		saveStatus,
+		handleDragStart,
+		updateInfo,
+		updatePosition,
+		updateModuleLink,
+		hasInvalidModuleLink,
+		addHotspot,
+		deleteHotspot,
+		uploadStatus,
+		uploadImage,
+		saveToSupabase,
+		resetDefaults,
+		videoDraftType,
+		videoDraftYoutubeUrl,
+		videoDraftFile,
+		videoSaving,
+		changeVideoDraftType,
+		changeVideoDraftYoutubeUrl,
+		selectVideoDraftFile,
+		saveHotspotYoutubeVideo,
+		uploadHotspotMp4Video,
+		removeHotspotVideo,
+	} = useHotspotEditor(containerRef, hotspots, { onSaved: reload, onImageUploaded: setImageUrl });
+
+	const { recordHotspotProgress } = useHotspotProgress({ user });
+
+	const moduleOptions = useModuleOptions();
+	useLeaveWarning(hasUnsavedChanges);
+
+	useEffect(() => {
+		if (!loading && !user) {
+			router.replace("/login");
+		}
+	}, [user, loading, router]);
+
+	// Safety Net - Exit edit mode if lose permission mid-session (e.g. role change)
+	useEffect(() => {
+		if (editMode && !permissions.canManageUsers) {
+			toggleEditMode();
+		}
+	}, [editMode, permissions.canManageUsers, toggleEditMode]);
+
+	if (loading) {
+		return <div>Loading...</div>;
+	}
+
+	if (!user) {
+		return null;
+	}
+
+	// While editing, edits show live on the image; otherwise it shows the live/loaded hotspots
+	const displayed = editMode ? draft : hotspots;
+	
+	return (
+		<main className="main">
+
+			{/* Edit mode toggle — only visible to permitted users */}
+			{permissions.canManageUsers && (
+				<EditModeToggle editMode={editMode} onToggle={toggleEditMode} className="lab-edit-mode-toggle-bar" />
+			)}
+			
+			{/* Header */}
+			{/* Title and subtitle (latter changes based on loadStatus and editMode */}
+			<h1 className="lab-title">Interactive Hydrogen Lab</h1>
+			<p className="lab-subtitle">
+				{editMode ? 'Drag hotspots · select to edit · save when done'
+					: loadStatus === 'loading' ? 'Loading lab data…'
+					: loadStatus === 'error'   ? 'Could not load latest lab data — showing defaults.'
+					: 'Click on highlighted areas to identify hazards.'
+				}
+			</p>
+			
+			{/* Lab image + hotspots */}
+			{/* Hotspots turn blue in edit mode, yellow if selected */}
+			<div
+				ref={containerRef}
+				className={`lab-image-container panel ${editMode ? 'lab-image-container--edit' : ''}`}
+				style={{ opacity: loadStatus === 'loading' ? 0.5 : 1 }}
+			>
+				<Image
+					src={imageUrl}
+					alt="Hydrogen Lab"
+					width={900}
+					height={600}
+					className="lab-image"
+					unoptimized
+					priority
+				/>
+
+				{loadStatus !== 'loading' && displayed.map((hs, index) => {
+					const isSelected = selected === index;
+					return (
+						<button
+							key={hs.type}
+							className={`hotspot ${editMode ? (isSelected ? 'hotspot--selected' : 'hotspot--edit') : ''}`}
+							style={{ top: hs.top, left: hs.left }}
+							aria-label={`Inspect ${hs.type} item`}
+							onMouseDown={editMode ? handleDragStart(index) : undefined}
+							onClick={() => {
+								if (editMode) {
+									setSelected(index);
+								} else {
+									setActivePopup(hs.type);
+									recordHotspotProgress(hs.type);
+								}
+							}}
+						/>
+					);
+				})}
+			</div>
+			
+			{/* Edit panel - Only visible in edit mode*/}
+			{editMode && (
+				<HotspotEditor
+					hotspots={draft}
+					selected={selected}
+					uploadStatus={uploadStatus}
+					moduleOptions={moduleOptions}
+					onSelect={setSelected}
+					onUpdateInfo={updateInfo}
+					onUpdatePosition={updatePosition}
+					onUpdateModuleLink={updateModuleLink}
+					onAdd={addHotspot}
+					onDelete={deleteHotspot}
+					onUploadImage={uploadImage}
+					videoType={videoDraftType}
+					youtubeUrl={videoDraftYoutubeUrl}
+					selectedVideoFile={videoDraftFile}
+					videoSaving={videoSaving}
+					onChangeVideoType={changeVideoDraftType}
+					onChangeYoutubeUrl={changeVideoDraftYoutubeUrl}
+					onSelectVideoFile={selectVideoDraftFile}
+					onSaveYoutubeVideo={saveHotspotYoutubeVideo}
+					onUploadMp4Video={uploadHotspotMp4Video}
+					onRemoveVideo={removeHotspotVideo}
+				/>
+			)}
+			
+			{/* Save / reset bar - Only visible in edit mode */}
+			{/* Save button changes colour and label based on saveStatus */}
+			{editMode && (
+				<SaveBar
+					saveStatus={saveStatus}
+					onReset={resetDefaults}
+					onSave={saveToSupabase}
+					saveDisabled={hasInvalidModuleLink}
+					saveDisabledReason="One or more hotspots have a module topic without a module selected (or vice versa). Pick a module or set the link back to “None” for each before saving."
+				/>
+			)}
+			
+			{/* Popup - Only appears outside edit mode and if clicked on a hotspot */}
+			{!editMode && activePopup && (
+				<Popup
+					info={liveHotspotData[activePopup]}
+					onClose={() => setActivePopup(null)}
+				/>
+			)}
+		</main>
+	);
+}

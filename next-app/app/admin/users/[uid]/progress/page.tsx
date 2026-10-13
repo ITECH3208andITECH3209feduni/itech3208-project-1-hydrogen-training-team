@@ -5,9 +5,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import "../../admin.css";
+import "../../../admin.css";
 import { hazardModules } from "@/lib/modules/hazards";
-import AdminModuleCard from "@/app/admin/users/components/AdminModuleCard";
+import ModuleCard from "@/components/ModuleCard";
 import { useAuth } from "@/context/AuthContext";
 import type { ModuleStatus } from "@/lib/modules/moduleTypes";
 
@@ -282,7 +282,7 @@ export default function UserProgressPage() {
                 <h1>Training Progress</h1>
                 <p>
                     Viewing training record for user:
-                    <strong>{" "}{uid}</strong>
+                    <strong className="admin-user-id">{" "}{uid}</strong>
                 </p>
             </div>
 
@@ -341,9 +341,9 @@ export default function UserProgressPage() {
                 )}
             </div>
 
-            <div className="modules-grid">
+            <div className="card-grid">
                 {modulesWithProgress.map((module, index) => (
-                    <AdminModuleCard
+                    <ModuleCard
                         key={module.id}
                         item={module}
                         animationDelay={index * 0.07}

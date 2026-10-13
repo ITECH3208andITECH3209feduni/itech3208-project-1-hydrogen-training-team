@@ -1,7 +1,7 @@
 // hooks/useModules.test.ts
 // Unit & Integration tests for functions in useModules.ts & related API calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { mapSection, mergeRow, useModules, useModuleById } from './useModules';
 import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
@@ -160,6 +160,55 @@ describe('2. mergeRow', () => {
 		expect(result.slug).toBeUndefined();
 		expect(result.slug).not.toBe(testModule.slug);
 	});
+
+    // Ensure mergeRow doesn't fall back to the default file's video url when Supabase has none.
+    it('2.5 does NOT fall back to the default video when the row has no video', () => {
+        const fallbackWithVideo = {
+            ...testModule,
+            videoUrl: 'https://www.youtube.com/watch?v=default123',
+            videoType: 'youtube' as const,
+        };
+
+        const result = mergeRow(row, fallbackWithVideo);
+
+        expect(result.videoUrl).toBeNull();
+        expect(result.videoType).toBeNull();
+    });
+
+    it('2.6 uses the row\'s video when it has one, regardless of the fallback', () => {
+        const rowWithVideo = {
+            ...row,
+            video_url: 'https://www.youtube.com/watch?v=live456',
+            video_type: 'youtube',
+        };
+        const fallbackWithVideo = {
+            ...testModule,
+            videoUrl: 'https://www.youtube.com/watch?v=default123',
+            videoType: 'youtube' as const,
+        };
+
+        const result = mergeRow(rowWithVideo, fallbackWithVideo);
+
+        expect(result.videoUrl).toBe('https://www.youtube.com/watch?v=live456');
+        expect(result.videoType).toBe('youtube');
+    });
+
+    it('2.7 passes through an mp4 video type as-is', () => {
+        const rowWithMp4 = { ...row, video_url: 'https://storage.example.com/video.mp4', video_type: 'mp4' };
+
+        const result = mergeRow(rowWithMp4, testModule);
+
+        expect(result.videoUrl).toBe('https://storage.example.com/video.mp4');
+        expect(result.videoType).toBe('mp4');
+    });
+
+    it('2.8 treats an unrecognized video_type as no video type', () => {
+        const rowWithBadType = { ...row, video_url: 'https://example.com/x', video_type: 'vimeo' };
+
+        const result = mergeRow(rowWithBadType, testModule);
+
+        expect(result.videoType).toBeNull();
+    });
 });
 
 // 3. Test useModuleById
@@ -482,5 +531,148 @@ describe('5. modules/progress', () => {
         const loadedModule = result.current.modules.find((m) => m.id === '1');
         expect(loadedModule?.status).toBe('done');
         expect(loadedModule?.progress).toBe(100);
+    });
+
+    // Test that a superseded load can't overwrite the result of the load that replaced it
+    it('5.8 ignores a superseded load whose progress request finishes late', async () => {
+        mockUseAuth.mockReturnValue({ user: fakeUser, loading: false });
+
+        // Hold back the 1st load's progress response until after the 2nd load has finished
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => { release = resolve; });
+        let progressCalls = 0;
+
+        server.use(
+            http.get('/api/modules/load-modules', ({ request }) => {
+                const topic = new URL(request.url).searchParams.get('topic');
+                return HttpResponse.json({
+                    ok: true,
+                    data: [{
+                        id: '1',
+                        slug: null,
+                        badge_num: 1,
+                        icon: '🧪',
+                        icon_bg: 'rgba(0,0,0,0.1)',
+                        title: `Loaded for ${topic}`,
+                        description: 'Description.',
+                        key_takeaway: 'Key takeaway.',
+                        prev_id: null,
+                        next_id: null,
+                        video_url: null,
+                        video_type: null,
+                        module_sections: [],
+                    }],
+                });
+            }),
+            http.get('/api/modules/progress', async () => {
+                progressCalls++;
+                if (progressCalls === 1) await gate;
+                return HttpResponse.json({ ok: true, progress: [] });
+            })
+        );
+
+        const { result, rerender } = renderHook(
+            ({ topic }) => useModules(topic, testModules),
+            { initialProps: { topic: 'first' } }
+        );
+
+        await waitFor(() => expect(progressCalls).toBe(1));        // 1st load is now waiting on its progress request
+        rerender({ topic: 'second' });                             // Supersede it with a 2nd load
+        await waitFor(() => expect(result.current.modules[0].title).toBe('Loaded for second'));
+
+        release();                                                 // 1st load's progress request now finishes
+        await new Promise((resolve) => setTimeout(resolve, 50));   // Give the stale load a chance to (wrongly) overwrite state
+
+        expect(result.current.modules[0].title).toBe('Loaded for second');
+    });
+});
+
+// 6. Test reload
+describe('6. reload', () => {
+    it('6.1 re-fetches modules without resetting loadStatus to loading', async () => {
+        const { result } = renderHook(() => useModules('hazard-modules', testModules));
+        await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+        expect(result.current.modules[0].title).toBe('Gas Leak Detection');
+
+        server.use(
+            http.get('/api/modules/load-modules', () => HttpResponse.json({
+                ok: true,
+                data: [{
+                    id: '1', slug: null, badge_num: 1, icon: '🧪', icon_bg: 'rgba(0,0,0,0.1)',
+                    title: 'Reloaded Title', description: 'd', key_takeaway: 'k',
+                    prev_id: null, next_id: null, video_url: null, video_type: null,
+                    module_sections: [],
+                }],
+            }))
+        );
+
+        act(() => { result.current.reload(); });
+
+        expect(result.current.loadStatus).toBe('ready');   // stays 'ready' throughout, not bounced back to 'loading'
+        await waitFor(() => expect(result.current.modules[0].title).toBe('Reloaded Title'));
+    });
+
+    // Ensure removing a video doesn't cause the default file to fill in with its video.
+    it('6.2 reflects a video removed server-side after reload, without reviving the default', async () => {
+        const defaultsWithVideo = [{
+            ...testModule,
+            videoUrl: 'https://www.youtube.com/watch?v=default123',
+            videoType: 'youtube' as const,
+        }];
+
+        server.use(
+            http.get('/api/modules/load-modules', () => HttpResponse.json({
+                ok: true,
+                data: [{
+                    id: '1', slug: null, badge_num: 1, icon: '🧪', icon_bg: 'rgba(0,0,0,0.1)',
+                    title: 'T', description: 'd', key_takeaway: 'k',
+                    prev_id: null, next_id: null,
+                    video_url: 'https://www.youtube.com/watch?v=live456', video_type: 'youtube',
+                    module_sections: [],
+                }],
+            }))
+        );
+
+        const { result } = renderHook(() => useModules('hazard-modules', defaultsWithVideo));
+        await waitFor(() => expect(result.current.modules[0].videoUrl).toBe('https://www.youtube.com/watch?v=live456'));
+
+        // Simulate the video having just been removed server-side, then reload() picking that up
+        server.use(
+            http.get('/api/modules/load-modules', () => HttpResponse.json({
+                ok: true,
+                data: [{
+                    id: '1', slug: null, badge_num: 1, icon: '🧪', icon_bg: 'rgba(0,0,0,0.1)',
+                    title: 'T', description: 'd', key_takeaway: 'k',
+                    prev_id: null, next_id: null, video_url: null, video_type: null,
+                    module_sections: [],
+                }],
+            }))
+        );
+        act(() => { result.current.reload(); });
+
+        await waitFor(() => expect(result.current.modules[0].videoUrl).toBeNull());
+        expect(result.current.modules[0].videoType).toBeNull();
+    });
+
+    it('6.3 useModuleById also exposes a working reload', async () => {
+        const { result } = renderHook(() => useModuleById('hazard-modules', testModules, '1'));
+        await waitFor(() => expect(result.current.loadStatus).toBe('ready'));
+        expect(typeof result.current.reload).toBe('function');
+
+        server.use(
+            http.get('/api/modules/load-modules', () => HttpResponse.json({
+                ok: true,
+                data: [{
+                    id: '1', slug: null, badge_num: 1, icon: '🧪', icon_bg: 'rgba(0,0,0,0.1)',
+                    title: 'Reloaded via useModuleById', description: 'd', key_takeaway: 'k',
+                    prev_id: null, next_id: null, video_url: null, video_type: null,
+                    module_sections: [],
+                }],
+            }))
+        );
+
+        act(() => { result.current.reload(); });
+
+        await waitFor(() => expect(result.current.item?.title).toBe('Reloaded via useModuleById'));
     });
 });

@@ -95,6 +95,10 @@ export default function AdminFeedbackPage() {
         }));
     }, [feedback]);
 
+    const maxRatingCount = useMemo(() => {
+        return ratingCounts.reduce((max, item) => Math.max(max, item.count), 0);
+    }, [ratingCounts]);
+
     if (loading || !profile || !isAdmin) {
         return null;
     }
@@ -153,27 +157,28 @@ export default function AdminFeedbackPage() {
                     </div>
 
                     <div className="rating-breakdown">
-                        {ratingCounts.map((item) => (
-                            <div
-                                key={item.rating}
-                                className="rating-row"
-                            >
-                                <span>{item.rating} ★</span>
+                        {ratingCounts.map((item) => {
+                            const isHighest = maxRatingCount > 0 && item.count === maxRatingCount;
 
-                                <div className="rating-bar">
-                                    <div
-                                        className="rating-bar-fill"
-                                        style={{
-                                            width: totalResponses > 0
-                                                ? `${(item.count / totalResponses) * 100}%`
-                                                : "0%",
-                                        }}
-                                    />
+                            return (
+                                <div key={item.rating} className="rating-row">
+                                    <span className={isHighest ? "rating-label--highest" : ""}>{item.rating} ★</span>
+
+                                    <div className="rating-bar">
+                                        <div
+                                            className={`rating-bar-fill${isHighest ? " rating-bar-fill--highest" : ""}`}
+                                            style={{
+                                                width: totalResponses > 0
+                                                    ? `${(item.count / totalResponses) * 100}%`
+                                                    : "0%",
+                                            }}
+                                        />
+                                    </div>
+
+                                    <span className={`rating-count${isHighest ? " rating-count--highest" : ""}`}>{item.count}</span>
                                 </div>
-
-                                <span className="rating-count">{item.count}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </section>
 

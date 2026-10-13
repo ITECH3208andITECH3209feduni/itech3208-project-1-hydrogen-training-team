@@ -2,8 +2,7 @@
 // Shared editor block for embedded videos (used by modules and lab pages)
 // Caller supplies the currently persisted video plus in-progress draft state, and wraps this in whatever panel/label chrome fits its own editor.
 
-import { labelStyle, inputStyle } from '@/components/editorStyles';
-
+import "@/components/EditMode.css";
 export type VideoType = 'youtube' | 'mp4';
 
 interface VideoEditorPanelProps {
@@ -41,11 +40,11 @@ export default function VideoEditorPanel({
 	noVideoMessage = 'No video is currently attached.',
 }: VideoEditorPanelProps) {
 	return (
-		<div className="module-field-stack">
+		<div className="field-stack">
 
 			{currentVideoUrl && currentVideoType && (
 				<div>
-					<label style={labelStyle}>Current Video</label>
+					<label className="editor-label">Current Video</label>
 					<p className="field-hint">
 						Type: {currentVideoType === 'youtube' ? 'YouTube' : 'MP4'}
 					</p>
@@ -57,7 +56,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onRemoveVideo}
                             disabled={videoSaving}
-                            className="module-delete-btn"
+                            className="delete-icon-btn"
                         >
 							Remove Video
 						</button>
@@ -66,10 +65,9 @@ export default function VideoEditorPanel({
 			)}
 
 			<div>
-				<label style={labelStyle}>Video Type</label>
+				<label className="editor-label">Video Type</label>
 				<select
-					style={inputStyle}
-					className="module-select"
+					className="editor-input"
 					value={videoType}
 					onChange={(e) => onChangeVideoType?.(e.target.value as VideoType)}
 					disabled={videoSaving}
@@ -81,10 +79,10 @@ export default function VideoEditorPanel({
 
 			{videoType === 'youtube' && (
 				<div>
-					<label style={labelStyle}>YouTube URL</label>
+					<label className="editor-label">YouTube URL</label>
 					<input
 						type="url"
-						style={inputStyle}
+						className="editor-input"
 						value={youtubeUrl}
 						onChange={(e) => onChangeYoutubeUrl?.(e.target.value)}
 						placeholder="https://www.youtube.com/watch?v=..."
@@ -95,7 +93,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onSaveYoutubeVideo}
                             disabled={videoSaving || !youtubeUrl.trim()}
-                            className="module-add-item-btn"
+                            className="add-item-btn"
                         >
 							{videoSaving ? 'Saving...' : 'Save YouTube Video'}
 						</button>
@@ -105,7 +103,7 @@ export default function VideoEditorPanel({
 
 			{videoType === 'mp4' && (
 				<div>
-					<label style={labelStyle}>MP4 Video File (max 50MB)</label>
+					<label className="editor-label">MP4 Video File (max 50MB)</label>
 					<input
 						type="file"
 						accept="video/mp4,.mp4"
@@ -118,7 +116,7 @@ export default function VideoEditorPanel({
                             type="button"
                             onClick={onUploadMp4Video}
                             disabled={videoSaving || !selectedVideoFile}
-                            className="module-add-item-btn"
+                            className="add-item-btn"
                         >
 							{videoSaving ? 'Uploading...' : 'Upload MP4 Video'}
 						</button>

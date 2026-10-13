@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { ModuleData, ModuleStatus, getModuleById, isModuleLocked } from '@/lib/modules/moduleTypes';
-import ModuleCard from './ModuleCard';
+import ModuleCard from '@/components/ModuleCard';
 
 type FilterValue = 'all' | ModuleStatus;
 
@@ -83,7 +83,7 @@ export default function ModuleListingPage({
 			</div>
 			
 			{/* Module grid */}
-			<div className="modules-grid">
+			<div className="card-grid">
 				{visible.map((item, i) => {
 					const locked = isModuleLocked(item, items);
 					const prevTitle = item.prevId ? getModuleById(items, item.prevId)?.title : undefined;
@@ -102,7 +102,7 @@ export default function ModuleListingPage({
 
 				{/* If no modules available/match filter, show instead */}
 				{visible.length === 0 && (
-					<p style={{ color: 'var(--muted)', fontSize: '0.9rem', padding: '20px 0' }}>
+					<p className="modules-empty-message">
 						{emptyMessage}
 					</p>
 				)}
