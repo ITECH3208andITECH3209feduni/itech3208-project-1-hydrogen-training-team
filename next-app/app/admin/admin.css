@@ -345,6 +345,31 @@
     border-color: var(--accent);
 }
 
+.export-btn{
+    background:linear-gradient(135deg, var(--teal-dark), var(--teal));
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:10px 18px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.2s;
+    font-size: 0.95rem;
+}
+
+.export-btn:hover:not(:disabled){
+    transform:translateY(-2px);
+    background: var(--accent);
+    color: var(--navy);
+    box-shadow:0 8px 20px var(--accent-shadow);
+}
+
+.export-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+/* ========================================
    ADMIN PROGRESS OVERRIDE (AC5)
 ======================================== */
 
@@ -392,29 +417,3 @@
     opacity:.6;
     cursor:not-allowed;
 }
-=======
-.export-btn{
-    background:linear-gradient(135deg, var(--teal-dark), var(--teal));
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    padding:10px 18px;
-    font-weight:600;
-    cursor:pointer;
-    transition:.2s;
-    font-size: 0.95rem;
-}
-
-.export-btn:hover:not(:disabled){
-    transform:translateY(-2px);
-    background: var(--accent);
-    color: var(--navy);
-    box-shadow:0 8px 20px var(--accent-shadow);
-}
-
-.export-btn:disabled{
-    opacity:.6;
-    cursor:not-allowed;
-}
-
-/* =================================
