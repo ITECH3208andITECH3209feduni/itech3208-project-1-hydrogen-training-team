@@ -554,3 +554,76 @@ describe('10. restart requests', () => {
 		consoleSpy.mockRestore();
 	});
 });
+// 11. Test section locks (sectionsReached + markSectionRead, used by the reader's Continue button)
+describe('11. section locks', () => {
+	it('11.1 restores sectionsReached from saved progress', async () => {
+		serveProgress({ module_id: '1', progress: 50, status: 'progress', time_spent: 0 });   // 2 of 4 sections
+		const { result } = renderProgress();
+		await loaded(result);
+
+		expect(result.current.sectionsReached).toBe(2);
+	});
+
+	it('11.2 markSectionRead advances and saves the next section', async () => {
+		serveProgress({ module_id: '1', progress: 0, status: 'progress', time_spent: 0 });
+		const patches = capturePatches();
+		const { result } = renderProgress();
+		await loaded(result);
+
+		act(() => result.current.markSectionRead(1));
+
+		expect(result.current.sectionsReached).toBe(1);
+		await waitFor(() => expect(patches).toHaveLength(1));
+		expect(patches[0].progress).toBe(25);
+	});
+
+	it('11.3 markSectionRead ignores a section that is not the next one', async () => {
+		serveProgress({ module_id: '1', progress: 0, status: 'progress', time_spent: 0 });
+		const patches = capturePatches();
+		const { result } = renderProgress();
+		await loaded(result);
+
+		act(() => result.current.markSectionRead(3));   // skipping ahead
+		await settle();
+
+		expect(result.current.sectionsReached).toBe(0);
+		expect(patches).toHaveLength(0);
+	});
+
+	it('11.4 marking the last section completes the module', async () => {
+		serveProgress({ module_id: '1', progress: 75, status: 'progress', time_spent: 0 });
+		const patches = capturePatches();
+		const { result } = renderProgress();
+		await loaded(result);
+
+		act(() => result.current.markSectionRead(4));
+
+		await waitFor(() => expect(result.current.currentProgress).toBe(100));
+		expect(patches[0].progress).toBe(100);
+	});
+
+	it('11.5 scroll tracking and the button share the same position', async () => {
+		serveProgress({ module_id: '1', progress: 0, status: 'progress', time_spent: 0 });
+		capturePatches();
+		const sections = addSections(4);
+		const { result } = renderProgress();
+		await loaded(result);
+
+		reportVisible(sections, 1);                          // read by scrolling
+		act(() => result.current.markSectionRead(1));        // button for the same section is a no-op
+		act(() => result.current.markSectionRead(2));        // then the next one advances
+
+		expect(result.current.sectionsReached).toBe(2);
+	});
+
+	it('11.6 restart resets sectionsReached to 0', async () => {
+		vi.spyOn(window, 'confirm').mockReturnValue(true);
+		capturePatches();
+		const { result } = await renderComplete();
+		expect(result.current.sectionsReached).toBe(4);
+
+		await act(() => result.current.restartModule());
+
+		expect(result.current.sectionsReached).toBe(0);
+	});
+});

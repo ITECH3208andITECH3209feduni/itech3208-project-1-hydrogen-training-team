@@ -31,6 +31,8 @@ interface UseModuleProgressResult {
     restarting: boolean;
     continueFromSavedProgress: () => void;
     restartModule: () => Promise<void>;
+    sectionsReached: number;    // How many sections (in order) the learner has read — drives the section locks
+    markSectionRead: (sectionNumber: number) => void;
 }
 
 export function useModuleProgress({
@@ -43,6 +45,7 @@ export function useModuleProgress({
     const [currentProgress, setCurrentProgress] = useState(0);
     const [progressLoaded, setProgressLoaded] = useState(false);
     const [restarting, setRestarting] = useState(false);
+    const [sectionsReached, setSectionsReached] = useState(0);
 
     // ---------------------------------------------------------
     // Progress state
@@ -51,6 +54,12 @@ export function useModuleProgress({
     const lastSavedProgress = useRef(0);
     const highestSectionReached = useRef(0);
     const restartPendingRef = useRef(false);
+
+    // Keeps the ref (read synchronously by the observer) and the state (rendered by the reader) in step.
+    const setReached = useCallback((count: number) => {
+        highestSectionReached.current = count;
+        setSectionsReached(count);
+    }, []);
 
     // ---------------------------------------------------------
     // Time state
@@ -82,7 +91,7 @@ export function useModuleProgress({
         setRestarting(false);
 
         lastSavedProgress.current = 0;
-        highestSectionReached.current = 0;
+        setReached(0);
 
         savedTimeMinutes.current = 0;
         sessionStart.current = null;
@@ -91,7 +100,7 @@ export function useModuleProgress({
         saving.current = false;
         pendingSave.current = null;
         cancelled.current = false;
-    }, [moduleId]);
+    }, [moduleId, setReached]);
 
     // ---------------------------------------------------------
     // Load progress + initialise module record
@@ -174,15 +183,15 @@ export function useModuleProgress({
                     savedTimeMinutes.current = Number.isFinite(previousTime)
                         ? previousTime : 0;
 
-                    highestSectionReached.current = Math.min(sectionCount,
+                    setReached(Math.min(sectionCount,
                         Math.ceil(
                             ((Number.isFinite(savedProgress) ? savedProgress : 0) / 100) * sectionCount
                         )
-                    );
+                    ));
                 } else {
                     setCurrentProgress(0);
                     lastSavedProgress.current = 0;
-                    highestSectionReached.current = 0;
+                    setReached(0);
                     savedTimeMinutes.current = 0;
                 }
 
@@ -241,7 +250,7 @@ export function useModuleProgress({
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("pagehide", handlePageHide);
         };
-    }, [loading, user, moduleId, topic, sectionCount,]);
+    }, [loading, user, moduleId, topic, sectionCount, setReached]);
 
     // ---------------------------------------------------------
     // Persist progress/time
@@ -357,6 +366,37 @@ export function useModuleProgress({
     }, [loading, user, moduleId, topic]);
 
     // ---------------------------------------------------------
+    // Mark a section as read (scroll tracking + the reader's Continue button)
+    // ---------------------------------------------------------
+    const markSectionRead = useCallback((sectionNumber: number) => {
+        if (sectionNumber <= 0 || sectionNumber > sectionCount) {
+            return;
+        }
+
+        /*
+         * Only allow the next section to advance progress.
+         * This prevents IntersectionObserver from reporting later sections during initial page layout and incorrectly jumping progress forward.
+         */
+        const nextSection = highestSectionReached.current + 1;
+
+        if (sectionNumber !== nextSection) {
+            return;
+        }
+
+        setReached(sectionNumber);
+
+        const progress = sectionNumber >= sectionCount
+            ? 100
+            : Math.min(99, Math.round((sectionNumber / sectionCount) * 100));
+
+        if (progress <= lastSavedProgress.current) {
+            return;
+        }
+
+        void persistRef.current({ progress, });
+    }, [sectionCount, setReached]);
+
+    // ---------------------------------------------------------
     // Section progress tracking
     // ---------------------------------------------------------
     useEffect(() => {
@@ -377,31 +417,8 @@ export function useModuleProgress({
                 }
                 restartPendingRef.current = false;
             }
-            if (sectionNumber <= 0 || sectionNumber > sectionCount) {
-                return;
-            }
 
-            /*
-             * Only allow the next section to advance progress.
-             * This prevents IntersectionObserver from reporting later sections during initial page layout and incorrectly jumping progress forward.
-             */
-            const nextSection = highestSectionReached.current + 1;
-
-            if (sectionNumber !== nextSection) {
-                return;
-            }
-
-            highestSectionReached.current = sectionNumber;
-
-            const progress = sectionNumber >= sectionCount
-                ? 100
-                : Math.min(99, Math.round((sectionNumber / sectionCount) * 100));
-
-            if (progress <= lastSavedProgress.current) {
-                return;
-            }
-
-            void persistRef.current({ progress, });
+            markSectionRead(sectionNumber);
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -431,6 +448,8 @@ export function useModuleProgress({
         moduleId,
         sectionCount,
         progressLoaded,
+        sectionsReached,    // Re-observe when a newly unlocked section is added to the page
+        markSectionRead,
     ]);
 
     // ---------------------------------------------------------
@@ -515,7 +534,7 @@ export function useModuleProgress({
             setCurrentProgress(0);
 
             lastSavedProgress.current = 0;
-            highestSectionReached.current = 0;
+            setReached(0);
             restartPendingRef.current = true;
 
             savedTimeMinutes.current = 0;
@@ -540,6 +559,7 @@ export function useModuleProgress({
         topic,
         currentProgress,
         restarting,
+        setReached,
     ]);
 
     return {
@@ -548,5 +568,7 @@ export function useModuleProgress({
         restarting,
         continueFromSavedProgress,
         restartModule,
+        sectionsReached,
+        markSectionRead,
     };
 }

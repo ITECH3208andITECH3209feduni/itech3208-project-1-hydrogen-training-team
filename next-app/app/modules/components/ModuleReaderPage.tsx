@@ -54,6 +54,8 @@ export default function ModuleReaderPage({
         restarting,
         continueFromSavedProgress,
         restartModule,
+        sectionsReached,
+        markSectionRead,
     } = useModuleProgress({
         moduleId: item?.id ?? "",
         topic,
@@ -96,6 +98,24 @@ export default function ModuleReaderPage({
     } = useModuleEditor(topic, item, fallbackItem, { onSaved: reload });
 
     useLeaveWarning(hasUnsavedChanges);
+
+    // Section locks: learners unlock sections one at a time with the Continue button.
+    // Starts at 1 (first section open) and resets when the module changes or is restarted.
+    const [sectionsUnlocked, setSectionsUnlocked] = useState(1);
+
+    useEffect(() => {
+        setSectionsUnlocked(1);
+    }, [item?.id]);
+
+    // Scroll to a newly unlocked section once it has rendered.
+    const [scrollToSection, setScrollToSection] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (scrollToSection === null) return;
+        const sections = document.querySelectorAll<HTMLElement>("[data-module-section]");
+        sections[scrollToSection - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        setScrollToSection(null);
+    }, [scrollToSection]);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -145,6 +165,27 @@ export default function ModuleReaderPage({
     const hasBadge =
         displayed.badgeNum !== undefined &&
         !!badgeLabel;
+
+    // Admins (and edit mode) see every section; learners see the ones they've reached or unlocked.
+    const sectionTotal = displayed.sections.length;
+    const sectionsGated = !permissions.canManageUsers && !editMode;
+    const visibleSectionCount = sectionsGated
+        ? Math.min(sectionTotal, Math.max(1, sectionsReached, sectionsUnlocked))
+        : sectionTotal;
+    const allSectionsUnlocked = visibleSectionCount >= sectionTotal;
+    const moduleComplete = currentProgress >= 100;
+
+    // Marks the current last-visible section as read, then unlocks the next one.
+    function unlockNextSection() {
+        markSectionRead(visibleSectionCount);
+        setSectionsUnlocked(visibleSectionCount + 1);
+        setScrollToSection(visibleSectionCount + 1);
+    }
+
+    async function handleRestart() {
+        await restartModule();
+        setSectionsUnlocked(1);
+    }
 
     return (
         <main
@@ -228,8 +269,8 @@ export default function ModuleReaderPage({
                 </button>
             )}
 
-            {/* Sections */}
-            {displayed.sections.map((section) => (
+            {/* Sections — later ones stay locked until the learner continues */}
+            {displayed.sections.slice(0, visibleSectionCount).map((section) => (
                 <div
                     key={section.num}
                     data-module-section
@@ -239,17 +280,56 @@ export default function ModuleReaderPage({
                 </div>
             ))}
 
-            {/* Embedded Video */}
-            <EmbeddedVideo
-                videoUrl={displayed.videoUrl}
-                videoType={displayed.videoType}
-            />
+            {/* Section lock — Continue button + list of what's still locked */}
+            {!allSectionsUnlocked && (
+                <div className="section-gate">
+                    <button
+                        type="button"
+                        onClick={unlockNextSection}
+                        className="nav-btn teal section-gate-btn"
+                    >
+                        Continue to section {visibleSectionCount + 1} →
+                    </button>
 
-            {/* Key Takeaway */}
-            <div className="takeaway-box">
-                <h3>🔑 Key Takeaway</h3>
-                <p>{displayed.keyTakeaway}</p>
-            </div>
+                    <ul className="section-locked-list">
+                        {displayed.sections.slice(visibleSectionCount).map((section) => (
+                            <li key={section.num} className="section-locked-item">
+                                🔒 {section.num} – {section.heading}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* Video + takeaway unlock with the last section */}
+            {allSectionsUnlocked && (
+                <>
+                    {/* Embedded Video */}
+                    <EmbeddedVideo
+                        videoUrl={displayed.videoUrl}
+                        videoType={displayed.videoType}
+                    />
+
+                    {/* Key Takeaway */}
+                    <div className="takeaway-box">
+                        <h3>🔑 Key Takeaway</h3>
+                        <p>{displayed.keyTakeaway}</p>
+                    </div>
+                </>
+            )}
+
+            {/* Finish — covers a last section too short/tall for scroll tracking to register */}
+            {sectionsGated && allSectionsUnlocked && progressLoaded && !moduleComplete && (
+                <div className="section-gate">
+                    <button
+                        type="button"
+                        onClick={() => markSectionRead(sectionTotal)}
+                        className="nav-btn teal section-gate-btn"
+                    >
+                        Finish module ✓
+                    </button>
+                </div>
+            )}
 
             {/* Completion / restart */}
             {currentProgress >= 100 && (
@@ -265,7 +345,7 @@ export default function ModuleReaderPage({
 
                     <button
                         type="button"
-                        onClick={restartModule}
+                        onClick={handleRestart}
                         disabled={restarting}
                         className="module-secondary-btn module-restart-btn"
                     >
@@ -289,7 +369,15 @@ export default function ModuleReaderPage({
                     <span />
                 )}
 
-                {displayed.nextId ? (
+                {displayed.nextId && sectionsGated && !moduleComplete ? (
+                    <span
+                        className="nav-btn nav-btn-locked"
+                        title="Finish this module to unlock the next one"
+                        aria-disabled="true"
+                    >
+                        🔒 Next
+                    </span>
+                ) : displayed.nextId ? (
                     <Link
                         href={`${basePath}/${displayed.nextId}`}
                         className="nav-btn teal"
