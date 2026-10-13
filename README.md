@@ -26,7 +26,7 @@ Prof Bhavna Antony
 # Hydrogen Lab Safety – Next.js
 
 A **Next.js 14 App Router** application with TypeScript for hydrogen technology training.
-	Features an interactive lab safety simulation, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these modules, simulations, and quizzes.
+	Features an interactive lab safety scenario, informative modules, a randomised quiz, administrative progress tracking and a dashboard tracking these scenarios, modules and quizzes.
 
 This README covers project structure and getting the app running.
 	Known bugs and inconsistencies are tracked in [`BUG_REPORT.md`](./BUG_REPORT.md);
@@ -43,12 +43,12 @@ This README covers project structure and getting the app running.
 ```
 hydrogen-lab/
 ├── app/
-│   ├── globals.css						# Shared styles — reset, tokens, nav, panel, animations
+│   ├── globals.css						# Global styles — reset, design tokens, body, `.main`/`.panel`, animations
 │   ├── layout.tsx						# Root layout — renders Navbar and wraps all pages
 │   ├── page.tsx              			# Public landing/intro page (/) — root, no login required
-│   ├── intro.css						# Landing-page-specific styles
+│   ├── landing.css						# Landing-page-specific styles
 │   ├── dashboard/
-│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live module, quiz, and simulation progress from the API for the signed-in user
+│   │   ├── page.tsx					# Dashboard (/dashboard) — pulls live scenario, module, and quiz progress from the API for the signed-in user
 │   │   └── dashboard.css				# Dashboard-specific styles
 │   ├── about/
 │   │   ├── page.tsx					# Public "About" page (/about) — no login required
@@ -59,37 +59,37 @@ hydrogen-lab/
 │   │   ├── auth.css					# Shared styles for login and register pages
 │   │   ├── page.tsx					# Login page (/login)
 │   │   ├── register/
-│   │   │   └── page.tsx				# Register page (/login/register)
+│   │   │   └── page.tsx				# Register page (/login/register) — Organisation dropdown (Fed Uni / Other), plus a Student ID field for Fed Uni
 │   │   └── forgot-password/
 │   │       └── page.tsx				# Forgot-password page (/login/forgot-password)
 │   ├── admin/
 │   │   ├── page.tsx					# Admin hub (/admin) — cards linking to User Management and Learner Feedback
+│   │   ├── admin.css					# Styles for the users page and per-user progress page — table, badges, modal, overall-progress bar
 │   │   ├── users/
-│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal
-│   │   │   ├── admin.css				# Styles for the admin users page — table, modal, stat cards, admin module cards
+│   │   │   ├── page.tsx				# Admin "Access Management" page (/admin/users) — user table, search, stat cards, edit modal, delete, quiz-results Excel export
 │   │   │   ├── [uid]/
 │   │   │   │   └── progress/
 │   │   │   │       └── page.tsx		# Per-user training record (/admin/users/[uid]/progress) — read-only, admin-facing
 │   │   │   └── components/
-│   │   │       ├── EditUserModal.tsx	# Modal for editing a user's role, user_type, and organisation
-│   │   │       └── AdminModuleCard.tsx	# Read-only per-user module progress card; shares ModuleCard.css with ModuleCard
+│   │   │       └── EditUserModal.tsx	# Modal for editing a user's role, user_type, and organisation
 │   │   └── feedback/
 │   │       ├── page.tsx				# Admin "Feedback" page (/admin/feedback) — rating summary + full submission list
 │   │       └── admin-feedback.css		# Styles for the admin feedback page
-│   ├── lab/
-│   │   ├── page.tsx					# Interactive hydrogen lab (/lab)
-│   │   ├── lab.css						# Lab-specific styles
-│   │   └── components/
-│   │       ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, embedded video, lab image and linked module
-│   │       └── Popup.tsx				# Modal popup shown when a hotspot is clicked (+ embedded video & learn more link, if set)
+│   ├── scenarios/
+│   │   ├── page.tsx					# Scenarios hub (/scenarios) — lists the available scenarios and links into each one
+│   │   ├── scenarios.css				# Styles for the hazards lab page and the scenario components — hotspots, popup, hotspot editor
+│   │   ├── components/
+│   │   │   ├── HotspotEditor.tsx		# Edit panel for hotspot text, position, embedded video, lab image and linked module
+│   │   │   └── Popup.tsx				# Modal popup shown when a hotspot is clicked (+ embedded video & learn more link, if set)
+│   │   └── hazards/
+│   │       └── page.tsx				# Interactive hydrogen lab (/scenarios/hazards)
 │   ├── modules/
+│   │   ├── page.tsx					# Modules hub (/modules) — lists the available module topics and links into each one
 │   │   ├── modules.css					# Shared styles for every topic under app/modules/
 │   │   ├── components/
 │   │   │   ├── ModuleListingPage.tsx	# Wrapper for listing page
 │   │   │   ├── ModuleReaderPage.tsx	# Wrapper for module page — progress tracking & in-app editing
 │   │   │   ├── ModuleEditor.tsx		# Edit panel for a module's fields, sections and embedded video, rendered by ModuleReaderPage
-│   │   │   ├── ModuleCard.tsx			# Card component for each module in the listing page (used generically by every topic)
-│   │   │   ├── ModuleCard.css			# Styles for ModuleCard, shared with AdminModuleCard (app/admin/users/components/)
 │   │   │   └── SectionBlock.tsx		# Renders a single numbered section in a module page — body supports embedded HTML
 │   │   ├── hazards/
 │   │   │   ├── page.tsx				# Hazard module listing (/modules/hazards)
@@ -100,7 +100,7 @@ hydrogen-lab/
 │   │       └── [id]/
 │   │           └── page.tsx			# Example reader page
 │   ├── quizzes/
-│   │   ├── quizzes.css					# Shared styles for the quizzes hub and attempt pages
+│   │   ├── quizzes.css					# Styles for the hazards quiz attempt page and its leaderboard-privacy controls
 │   │   ├── page.tsx					# Quizzes hub — lists available quizzes (currently just one, Hazards)
 │   │   ├── [quizId]/
 │   │   │   └── edit/
@@ -127,7 +127,7 @@ hydrogen-lab/
 │       │   │   └── route.ts			# GET/POST/PATCH — per-user module progress (`requireUser`-gated); backs `useModuleProgress` and `useModules`' listing-card progress
 │       │   └── save-module/
 │       │       └── route.ts			# POST — upserts a module's row and replaces its sections in Supabase (`requireAdmin`-gated); backs the reader-page editor
-│       ├── lab/
+│       ├── scenarios/
 │       │   ├── load-hotspots/
 │       │   │   └── route.ts			# GET — loads hotspot data from Supabase (anon client; public read, no auth guard)
 │       │   ├── save-hotspots/
@@ -139,14 +139,16 @@ hydrogen-lab/
 │       │   ├── load-module-options/
 │       │   │   └── route.ts			# GET — flat list across all topics, for the lab editor's Linked Module dropdowns (public read, no lib/ fallback)
 │       │   ├── progress/
-│       │   │   └── route.ts			# GET/POST — per-user hotspot-click progress for `/lab` (`requireUser`-gated)
+│       │   │   └── route.ts			# GET/POST — per-user hotspot-click progress for `/scenarios/hazards` (`requireUser`-gated)
 │       │   └── video/
 │       │       └── route.ts			# PUT/DELETE — sets, replaces, or removes a hotspot's embedded video (`requireAdmin`-gated); backs the hotspot editor's Video panel
 │       ├── admin/
 │       │   ├── users/
 │       │   │   ├── route.ts			# GET — all profiles + server-computed statistics (`requireAdmin`-gated)
+│       │   │   ├── export/
+│       │   │   │   └── route.ts		# GET — quiz results for one organisation as an Excel (.xlsx) download (`requireAdmin`-gated)
 │       │   │   └── [uid]/
-│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation (`requireAdmin`-gated, no value validation)
+│       │   │       ├── route.ts		# PATCH — updates role/user_type/organisation; DELETE — removes a user, their progress and their Firebase account (both `requireAdmin`-gated)
 │       │   │       └── progress/
 │       │   │           └── route.ts	# GET — one user's module + quiz progress and summary (`requireAdmin`-gated)
 │       │   └── feedback/
@@ -166,33 +168,51 @@ hydrogen-lab/
 │           ├── get/
 │           │   └── route.ts			# GET — loads a user profile by Firebase uid (no auth guard)
 │           └── create/
-│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid (no auth guard)
+│               └── route.ts			# POST — creates a user profile record if one doesn't already exist for this uid; role/user_type are always `user`/`public` (no auth guard)
 ├── components/
 │   ├── Navbar.tsx						# Reusable navigation bar — hides on auth pages, gates Administration link by permissions
+│   ├── Navbar.css						# Navbar styles
 │   ├── EditModeToggle.tsx				# Toggle switch to enter/exit edit mode; expands into the banner text when on.
-│   ├── SaveBar.tsx						# Reset and save buttons for an in-app editor;
-│   ├── ModuleVideo.tsx					# Embedded-video launcher card + modal player (YouTube iframe or mp4), shared by module reader pages and the lab hotspot popup
-│   ├── VideoEditorPanel.tsx			# Shared video-editing fields (type toggle, YouTube URL, mp4 upload, remove), used by ModuleEditor.tsx and HotspotEditor.tsx
-│   └── editorStyles.ts					# Shared inline style objects (labels, inputs, buttons) used by in-app editors
+│   ├── SaveBar.tsx						# Reset and save buttons for an in-app editor.
+│   ├── EditMode.css					# Edit-mode toggle, save bar, and the shared editor-form primitives (labels, inputs, buttons)
+│   ├── HubCard.tsx						# Hub card shared by the /scenarios, /modules, /quizzes and /admin hub pages
+│   ├── HubCard.css						# Hub card styles
+│   ├── ModuleCard.tsx					# Module card — `mode="student"` for listing pages (every modules/[topic]), `mode="admin"` for the read-only per-user progress view
+│   ├── ModuleCard.css					# Module card styles, for both modes
+│   ├── EmbeddedVideo.tsx				# Embedded-video launcher card + modal player (YouTube iframe or mp4), shared by module reader pages and the lab hotspot popup
+│   ├── EmbeddedVideo.css				# Embedded-video launcher and modal styles
+│   └── VideoEditorPanel.tsx			# Shared video-editing fields (type toggle, YouTube URL, mp4 upload, remove), used by ModuleEditor.tsx and HotspotEditor.tsx
 ├── context/
 │   └── AuthContext.tsx					# Firebase auth state + user profile/role/permissions — wraps the app via layout.tsx
 ├── hooks/
-│   ├── lab/							# Hooks for the interactive lab page (/lab)
-│   │   ├── useHotspots.ts				# Custom hook — hotspot state, Supabase load/save, drag, edit-mode toggle, image upload, per-hotspot embedded video
-│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHazards.ts
+│   ├── scenarios/						# Hooks for the interactive lab page (/scenarios/hazards)
+│   │   ├── useHotspots.ts				# Loads live hotspots + lab image URL from Supabase, falling back to lib/hazards.ts
+│   │   ├── useHotspots.test.ts			# Unit + integration tests for useHotspots.ts
+│   │   ├── useHotspotEditor.ts			# Edit-mode/draft/save state for the lab's in-app editor — drag, image upload, linked module, embedded video
+│   │   ├── useHotspotEditor.test.ts	# Unit + integration tests for useHotspotEditor.ts
+│   │   ├── useHotspotProgress.ts		# Records a signed-in learner's hotspot clicks
+│   │   ├── useHotspotProgress.test.ts	# Unit + integration tests for useHotspotProgress.ts
 │   │   ├── useModuleOptions.ts			# Hook — flat Supabase (topic, id, title, badgeNum) list, grouped per topic
 │   │   └── useModuleOptions.test.ts	# Integration tests for useModuleOptions.ts
 │   ├── modules/						# Hooks shared by every app/modules/ topic (listing + reader pages)
-│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ topic
+│   │   ├── useModules.ts				# Generic hook — loads+merges Supabase module content and live per-user progress, for any app/modules/ topic; exposes reload()
 │   │   ├── useModules.test.ts			# Unit + integration tests for useModules.ts
 │   │   ├── useModuleProgress.ts		# Per-user progress/time tracking for the reader page
-│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor
+│   │   ├── useModuleProgress.test.ts	# Unit + integration tests for useModuleProgress.ts
+│   │   ├── useModuleEditor.ts			# Edit-mode/draft/save state for a module reader page's in-app editor, including its embedded video
 │   │   └── useModuleEditor.test.ts		# Unit + integration tests for useModuleEditor.ts
-│   └── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
-│       ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
-│       ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
-│       ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
-│       └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   ├── quizzes/						# Hooks for the quiz pages and the standalone quiz editor
+│   │   ├── useQuiz.ts					# Hook — loads a quiz (metadata + question bank) from Supabase for a given quiz_id, or falls back wholesale to lib/questionhazards.ts
+│   │   ├── useQuiz.test.ts				# Unit + integration tests for useQuiz.ts
+│   │   ├── useQuizProgress.ts			# Per-user quiz-attempt progress for /quizzes/hazards — saving a result, and loading/updating the leaderboard opt-in
+│   │   ├── useQuizProgress.test.ts		# Unit + integration tests for useQuizProgress.ts
+│   │   ├── useQuizEditor.ts			# Draft/save/reset state for the standalone quiz editor page
+│   │   └── useQuizEditor.test.ts		# Unit + integration tests for useQuizEditor.ts
+│   └── unsavedChanges/					# Hooks shared by every in-app editor (lab, module reader pages, quiz editor)
+│       ├── useUnsavedChanges.ts		# Tracks whether an editor's draft differs from what's stored; each editor supplies its own snapshot function
+│       ├── useUnsavedChanges.test.ts	# Unit tests for useUnsavedChanges.ts
+│       ├── useLeaveWarning.ts			# Warns before leaving the page (tab close/reload, in-app link clicks) while there are unsaved changes
+│       └── useLeaveWarning.test.ts		# Unit tests for useLeaveWarning.ts
 ├── mocks/
 │   ├── handlers.ts						# MSW request handlers — mock responses for all /api routes
 │   └── server.ts						# MSW server instance, started/stopped in vitest.setup.ts
@@ -209,7 +229,7 @@ hydrogen-lab/
 │   │   ├── moduleTypes.ts				# Generic ModuleData/ModuleSection/ModuleStatus types + getModuleById — shared by every app/modules/ topic
 │   │   ├── hazards.ts					# Static content for the 5 hazard modules (bundled at build time)
 │   │   └── guides.ts					# Example second topic's data — not linked in nav
-│   └── video/							# Shared video helpers for the modules and lab video routes
+│   └── video/							# Shared video helpers for the modules and scenarios video routes
 │       ├── video.ts					# YouTube URL parsing, Storage path parsing, mp4 validation, 50MB size limit
 │       └── video.test.ts				# Unit tests for lib/video/video.ts
 ├── public/
@@ -233,12 +253,14 @@ hydrogen-lab/
 | Route                         | File                                      | Description                                                                                 |
 |-------------------------------|-------------------------------------------|---------------------------------------------------------------------------------------------|
 | `/`                           | `app/page.tsx`                            | Public landing page introducing the platform — no login required                            |
-| `/dashboard`                  | `app/dashboard/page.tsx`                  | Dashboard with modules, simulations, quizzes, and training progress                           |
+| `/dashboard`                  | `app/dashboard/page.tsx`                  | Dashboard with modules, scenarios, quizzes, and training progress                           |
 | `/about`                      | `app/about/page.tsx`                      | Public "About" page — project background, platform features, tech stack; no login required  |
 | `/login`                      | `app/login/page.tsx`                      | Email and password login                                                                    |
 | `/login/register`             | `app/login/register/page.tsx`             | New account registration                                                                    |
 | `/login/forgot-password`      | `app/login/forgot-password/page.tsx`      | Firebase password-reset email request                                                       |
-| `/lab`                        | `app/lab/page.tsx`                        | Interactive lab with clickable hazard hotspots                                              |
+| `/scenarios`                  | `app/scenarios/page.tsx`                  | Scenarios hub — lists the available interactive scenarios and links into each one           |
+| `/scenarios/hazards`          | `app/scenarios/hazards/page.tsx`          | Interactive lab with clickable hazard hotspots                                              |
+| `/modules`                    | `app/modules/page.tsx`                    | Modules hub — lists the available module topics and links into each one                     |
 | `/modules/hazards`            | `app/modules/hazards/page.tsx`            | Hazard module listing grid with status filter bar                                           |
 | `/modules/hazards/[id]`       | `app/modules/hazards/[id]/page.tsx`       | Hazard module reader — sections, callouts, key takeaway, prev/next nav                      |
 | `/modules/guides`             | `app/modules/guides/page.tsx`             | Example second topic built on the same template — not linked in nav                         |
@@ -250,12 +272,12 @@ hydrogen-lab/
 | `/certificate`                | `app/certificate/page.tsx`                | Downloadable certificate — gated server-side on completing all modules and passing the quiz |
 | `/feedback`                   | `app/feedback/page.tsx`                   | Feedback form — star rating, category, free-text message                                    |
 | `/admin`                      | `app/admin/page.tsx`                      | Admin-only hub — cards linking to User Management and Learner Feedback                      |
-| `/admin/users`                | `app/admin/users/page.tsx`                | Admin-only "Access Management" page — user table, search, stat cards, edit modal            |
+| `/admin/users`                | `app/admin/users/page.tsx`                | Admin-only "User Management" page — user table, edit, delete, quiz-results Excel export     |
 | `/admin/users/[uid]/progress` | `app/admin/users/[uid]/progress/page.tsx` | Read-only per-user training record — module progress, quiz score, certificate eligibility   |
 | `/admin/feedback`             | `app/admin/feedback/page.tsx`             | Admin-only feedback dashboard — rating summary and the full list of submissions             |
 
-There is no page at the bare `/modules` route — `app/modules/` is a code-organization directory, not a page itself, so visiting `/modules` directly returns a 404.
-	The Navbar and dashboard both link straight to `/modules/hazards`.
+`/scenarios`, `/modules`, `/quizzes` and `/admin` are hub pages: each lists what's available beneath it (scenarios, module topics, quiz topics, admin tools) and links into it, using the shared `components/HubCard.tsx`
+	The Navbar and dashboard link to the hubs.
 
 All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and `/about` redirect unauthenticated users to `/login`.
 	`/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` are further exceptions:
@@ -271,24 +293,26 @@ All pages except `/`, `/login`, `/login/register`, `/login/forgot-password`, and
 |--------------------------------|------------------------------|-------------------------------|
 | *(all pages)*                  | Navbar → Hydrogen Lab Safety | `/`                           |
 | *(all pages)*                  | Navbar → Home                | `/dashboard`                  |
-| *(all pages)*                  | Navbar → Simulations         | `/lab`                        |
-| *(all pages)*                  | Navbar → Modules             | `/modules/hazards`            |
+| *(all pages)*                  | Navbar → Scenarios           | `/scenarios`                  |
+| *(all pages)*                  | Navbar → Modules             | `/modules`                    |
 | *(all pages)*                  | Navbar → Quizzes             | `/quizzes`                    |
 | *(all pages)*                  | Navbar → About               | `/about`                      |
 | *(all pages)*                  | Navbar → Administration      | `/admin`                      |
 | *(all pages)*                  | Navbar → Logout              | `/`                           |
-| `/`                            | Get Started → || Continue →  | `/dashboard`                  |
-| `/`                            | Learn the Basics             | `/modules/hazards`            |
-| `/dashboard`                   | "Simulations" card           | `/lab`                        |
-| `/dashboard`                   | "Modules" card               | `/modules/hazards`            |
+| `/`                            | Go to Dashboard →            | `/dashboard`                  |
+| `/`                            | Learn the Basics             | `/modules`                    |
+| `/dashboard`                   | "Scenarios" card             | `/scenarios`                  |
+| `/dashboard`                   | "Modules" card               | `/modules`                    |
 | `/dashboard`                   | "Quizzes" card               | `/quizzes`                    |
 | `/dashboard`                   | Download Certificate →       | `/certificate`                |
 | `/dashboard`                   | Give Feedback →              | `/feedback`                   |
+| `/scenarios`                   | Interactive Hydogen Lab card | `/scenarios/hazards`          |
+| `/scenarios/hazards`           | Learn More →                 | `/modules/hazards/[id]`       |
+| `/modules`                     | Hydrogen Safety Modules card | `/modules/hazards`            |
 | `/modules/hazards`             | 'Module' card                | `/modules/hazards/[id]`       |
 | `/modules/hazards/[id]`        | ← Hazard Modules             | `/modules/hazards`            |
 | `/modules/hazards/[id]`        | ← Previous                   | `/modules/hazards/[id]`       |
 | `/modules/hazards/[id]`        | Next →                       | `/modules/hazards/[id]`       |
-| `/lab`                         | Learn More →                 | `/modules/hazards/[id]`       |
 | `/quizzes`                     | "Hydrogen Hazards Quiz" card | `/quizzes/hazards`            |
 | `/quizzes`                     | "Student Leaderboard" card   | `/quizzes/leaderboard`        |
 | `/quizzes`                     | "Edit" tab (admin only)      | `/quizzes/[quizId]/edit`      |
@@ -323,25 +347,42 @@ Most links come from `Navbar.tsx`, shown on every page except `/login`, `/login/
 
 Styles are split across several files to keep page-specific rules isolated:
 
-| File                                      | Scope																						                         |
-|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `app/globals.css`                         | Reset, design tokens, nav, panel/field-layout helpers, animations, edit-mode toggle, save bar, embedded-video      |
-| `app/intro.css`                           | Landing page only — hero, quick facts, content sections, CTA                                                       |
-| `app/dashboard/dashboard.css`             | Dashboard page only — greeting, stat cards, bottom grid, progress panel, certificate panel                         |
-| `app/lab/lab.css`                         | Lab page only — hotspots, popup (+ embedded-video override), hotspot editor                                        |
-| `app/modules/modules.css`                 | Shared by every page under `app/modules/` — page header, cards, filter bar, section blocks, prev/next nav, editor  |
-| `app/modules/components/ModuleCard.css`   | Shared base styles used by both ModuleCard and AdminModuleCard (found in admin folder)                             |
-| `app/login/auth.css`                      | Login and register pages — card, form inputs, error box                                                            |
-| `app/about/about.css`                     | About page only — header, section cards, info/feature/tech grids, footer                                           |
-| `app/admin/users/admin.css`               | Admin users page only — user table, role/user-type badges, edit modal, stat cards, admin module-card, modules grid |
-| `app/admin/feedback/admin-feedback.css`   | Admin feedback page only — summary cards, rating breakdown bars, submission list                                   |
-| `app/quizzes/quizzes.css`                 | Quizzes hub and attempt pages — quiz cards, edit tab, question/option list, result banner, leaderboard opt-in      |
-| `app/quizzes/[quizId]/edit/quizEditor.css`| Quiz editor page only — quiz info fields, question list and detail panels, load/validation notices                 |
-| `app/quizzes/leaderboard/leaderboard.css` | Leaderboard page only — badge, podium (top 3), ranked list, empty/error states                                     |
-| `app/certificate/certificate.css`         | Certificate page only — name input, canvas, action buttons, blocked state                                          |
-| `app/feedback/feedback.css`               | Feedback page only — card, star rating, category select, textarea, success state, action buttons                   |
+| File                                       | Scope																						                      |
+|--------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `app/globals.css`                          | Reset, design tokens, body, `.main`/`.panel`, shared card utilities, shared page-layout classes, animations        |
+| `app/login/auth.css`                       | Login and register pages — card, form inputs, error box                                                            |
+| `app/landing.css`                          | Landing page only — hero, quick facts, content sections, CTA                                                       |
+| `app/about/about.css`                      | About page only — header, section cards, info/feature/tech grids, footer                                           |
+| `app/dashboard/dashboard.css`              | Dashboard page only — bottom grid, progress panel, certificate panel, feedback call-to-action                      |
+| `app/scenarios/scenarios.css`              | Hazards lab page and the scenario components — hotspots, popup (+ embedded-video override), hotspot editor         |
+| `app/modules/modules.css`                  | Shared by every topic page under `app/modules/` — filter bar, section blocks, prev/next nav, editor                |
+| `app/quizzes/quizzes.css`                  | Hazards quiz attempt page — question/option list, result banner, leaderboard opt-in                                |
+| `app/quizzes/[quizId]/edit/quizEditor.css` | Quiz editor page only — quiz info fields, question list and detail panels, load/validation notices                 |
+| `app/quizzes/leaderboard/leaderboard.css`  | Leaderboard page only — badge, podium (top 3), ranked list, empty/error states                                     |
+| `app/certificate/certificate.css`          | Certificate page only — name input, canvas, action buttons, blocked state                                          |
+| `app/feedback/feedback.css`                | Feedback page only — card, star rating, category select, textarea, success state, action buttons                   |
+| `app/admin/users/admin.css`                | Admin users page and per-user progress page — user table, role/user-type badges, edit modal, overall-progress bar  |
+| `app/admin/feedback/admin-feedback.css`    | Admin feedback page only — summary cards, rating breakdown bars, submission list                                   |
+| `components/Navbar.css`                    | Navbar only                                                                                                        |
+| `components/EditMode.css`                  | Edit-mode toggle, save bar, and every editor-form primitive — labels, inputs, buttons, field stacks, icon buttons  |
+| `components/EmbeddedVideo.css`             | Embedded-video launcher card and modal                                                                             |
+| `components/HubCard.css`                   | Hub cards used by the scenarios, modules, quizzes and admin hubs                                                   |
+| `components/ModuleCard.css`                | Module card, in both student and admin modes                                                                       |
 
 `globals.css` is imported once in `layout.tsx` and applies everywhere. The rest are imported directly by the pages/components that need them.
+
+A class used by more than one page lives in `globals.css` or the relevant `components/*.css` file; a class used by a single page lives in that page's own stylesheet.
+
+**Fonts** are loaded with `next/font/google` (Inter and Exo 2) in `layout.tsx` and exposed as `--font-body` and `--font-heading`. `button`, `input`, `select` and `textarea` inherit the surrounding font.
+	The certificate canvas can't read CSS variables, so it resolves the real font name at runtime from `--font-inter` with `getComputedStyle`.
+
+**Design tokens** (`:root` in `globals.css`) cover colour (`--teal` family, `--accent` orange family, `--login-blue` for auth pages, `--edit-yellow`, `--green`, `--red`, `--navy`, `--navy-mid`, `--white`, `--card-bg`, `--border`, `--text`, `--muted`), shape (`--radius`, `--radius-pill`, `--border-rule`) and typography (`--font-body`, `--font-heading`).
+	Colour conventions:
+- **Orange (`--accent`)** — sub-headings, links, hover states and call-to-action fills (navy text on orange).
+- **Teal (`--teal`)** — selected and active states.
+- **Green / red** — success and destructive states, each with a `-glow`/`-sub` companion token.
+- **Hover vs. active** — hover wins over active/selected styling; invalid-field validation styling wins over hover.
+- **Card hover** — `.card-hover-glow` (lift + shadow; about and landing cards) and `.card-hover-tint` (lift + background tint; module, hub and stat cards).
 
 **Tailwind CSS v4** is a dependency, wired up via `postcss.config.mjs` (`@tailwindcss/postcss`), but the app's own styling uses plain, hand-written CSS with custom class names and CSS custom properties (design tokens like `--teal`, `--navy` in `:root`) — see `BUG_REPORT.md`.
 
@@ -350,7 +391,7 @@ Styles are split across several files to keep page-specific rules isolated:
 ## Authentication & Permissions
 
 Firebase handles authentication (sign-in, sign-up, session state).
-	Each user also has a **profile** — role, user type, organisation — stored separately in Supabase and managed through two API routes:
+	Each user also has a **profile** — role, user type, organisation, and student ID (Fed Uni users only) — stored separately in Supabase and managed through two API routes:
 - `GET /api/profile/get?uid=...` — loads the profile matching a Firebase uid
 - `POST /api/profile/create`     — creates a profile record
 
@@ -369,15 +410,15 @@ A profile's `role` is one of `"user" | "staff" | "admin"`. `useAuth()` derives a
 
 Only `canManageUsers` is currently wired into the UI — it gates:
 - the **Administration** link in `Navbar.tsx`
-- the **Edit Mode** switch on `/lab` and every module reader page (both use `EditModeToggle.tsx`)
-- the "✏️ Edit" tab on the Hydrogen Hazards quiz card on `/quizzes` (linking to `/quizzes/hazards/edit`, which independently re-checks `isAdmin` itself rather than relying on the link being hidden).
+- the **Edit Mode** switch on `/scenarios/hazards` and every module reader page (both use `EditModeToggle.tsx`)
+- the "✏️ Edit" tab on the Hydrogen Hazards quiz card on `/quizzes` (linking to `/quizzes/[quizId]]/edit`, which independently re-checks `isAdmin` itself rather than relying on the link being hidden).
 	
 See `BUG_REPORT.md` for the other seven.
 Promoting a user to `staff`/`admin`, or changing their `user_type`/`organisation`, is done through the **Edit User** modal on `/admin/users`.
 
 Two server-side helpers protect API routes using a Firebase ID token:
-- `requireUser` (`lib/authUser.ts`) verifies the token and returns the caller's `uid`.
-- `requireAdmin` (`lib/adminAuth.ts`) additionally looks up the caller's Supabase profile and requires `role === 'admin'`.
+- `requireUser` (`lib/firebase/authUser.ts`) verifies the token and returns the caller's `uid`.
+- `requireAdmin` (`lib/firebase/adminAuth.ts`) additionally looks up the caller's Supabase profile and requires `role === 'admin'`.
 
 See `ADDITIONAL_INFO.md` for full route-by-route auth coverage and behavioural details.
 
@@ -403,7 +444,7 @@ The app uses Firebase for user authentication.
 
 **c) Find your credentials** — go to **Project Settings → Your apps → SDK setup and configuration** and copy the config values.
 
-**d) Generate a service account** (for the server-side Firebase Admin SDK, used by `lib/firebaseAdmin.ts` to verify ID tokens in API routes) — go to **Project Settings → Service Accounts** and click **Generate new private key**.
+**d) Generate a service account** (for the server-side Firebase Admin SDK, used by `lib/firebase/firebaseAdmin.ts` to verify ID tokens in API routes) — go to **Project Settings → Service Accounts** and click **Generate new private key**.
 	This downloads a JSON file containing `project_id`, `client_email`, and `private_key`, used for the `FIREBASE_ADMIN_*` variables below (see "Environment Variables").
 
 ### 3. Set up Supabase
@@ -413,10 +454,11 @@ The app uses Supabase to persistently store hotspot data across deployments. Fol
 **a) Create a free account** at [supabase.com](https://supabase.com) and create a new project.
 
 **b) Create the database tables, storage bucket, and permissions** — go to the SQL Editor in your Supabase dashboard, paste in the contents of [`supabase_setup.sql`](./supabase_setup.sql), and run it.
-	It creates the `hotspots`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_lab_progress`, and `feedback` tables (in dependency order, with the `hotspots`→`modules` and `quiz_questions`→`quizzes` foreign keys added once their referenced tables exist), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
-	It also creates all the Row Level Security policies and grants those tables and the bucket need.
-	(public `anon` read + `service_role` read/write for `hotspots`/`modules`/`module_sections`/`quizzes`/`quiz_questions`/the bucket (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
+	It creates the `hotspots`, `modules`, `module_sections`, `quizzes`, `quiz_questions`, `profiles`, `user_module_progress`, `user_quiz_progress`, `user_lab_progress`, and `feedback` tables (in dependency order, with each table's foreign keys declared inline), and the `lab-images`, `module-videos`, and `lab-videos` storage buckets.
+	It also creates all the Row Level Security policies and grants those tables and the storage buckets need.
+	(public `anon` read + `service_role` read/write for `hotspots`/`modules`/`module_sections`/`quizzes`/`quiz_questions` (`select` is granted to `service_role` alongside `insert`/`update`/`delete` on all five, since PostgREST's write response needs read-back access regardless of which DML statement a save route performs);
 	`service_role`-only access for `profiles`/`user_module_progress`/`user_quiz_progress`/`user_lab_progress`/`feedback`, since those are only ever touched server-side behind `requireUser`/`requireAdmin`.)
+	The three storage buckets are public and serve files through their public URLs, so they have no read policy; `storage.objects` carries only `service_role` insert and update policies per bucket, plus delete for `module-videos` and `lab-videos`.
 	See the comments in that file for the reasoning behind each step.
 
 **c) Find your credentials** — go to **Settings → API Keys** in the Supabase dashboard:
@@ -451,7 +493,7 @@ SUPABASE_SECRET_KEY=your_sb_secret_key
 
 No quotes around values, no spaces around `=`.
 	**except** `FIREBASE_ADMIN_PRIVATE_KEY`, which does need to be wrapped in quotes since the key spans multiple lines represented as literal `\n` sequences;
-	`lib/firebaseAdmin.ts` un-escapes them (`.replace(/\\n/g, "\n")`) before passing the key to the Admin SDK.
+	`lib/firebase/firebaseAdmin.ts` un-escapes them (`.replace(/\\n/g, "\n")`) before passing the key to the Admin SDK.
 	Restart the dev server after creating or editing this file.
 
 When deploying, enter these same variables in your host's environment variable settings instead of uploading `.env.local`.
@@ -489,13 +531,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser — this loa
 
 ### 7. Seed the database
 
-On first run the Supabase tables are empty, so the app falls back to the bundled defaults in `lib/hazards.ts` and `lib/hazardModules.ts`.
+On first run the Supabase tables are empty, so the app falls back to the bundled defaults in `lib/hazards.ts` and `lib/modules/hazards.ts`.
 
 **Seed `modules`/`module_sections` first:** log in as an admin and visit each hazard module reader page in turn (`/modules/hazards/1` through `/modules/hazards/5`), click the **Edit Mode** toggle, and click **Save Changes** without changing anything
-	The page already shows `lib/hazardModules.ts`'s bundled content since Supabase is still empty, so this writes that content into `modules`/`module_sections` as-is.
+	The page already shows `lib/modules/hazards.ts`'s bundled content since Supabase is still empty, so this writes that content into `modules`/`module_sections` as-is.
 
 **Then seed `hotspots`:**
-1. Navigate to `/lab`.
+1. Navigate to `/scenarios/hazards`.
 2. Click the **Edit Mode** toggle switch.
 3. Without changing anything, click **Save Changes**.
 
@@ -545,7 +587,7 @@ See `ADDITIONAL_INFO.md` for what's covered, mock API conventions, and CI detail
 | `SUPABASE_SECRET_KEY` 						| Supabase `sb_secret` key — server-side only, never exposed to browser							|
 
 All `NEXT_PUBLIC_` variables are embedded in the client bundle at build time.
-	`SUPABASE_SECRET_KEY` and the three `FIREBASE_ADMIN_*` variables are used only in server-side code (API routes and `lib/firebaseAdmin.ts`) and are never sent to the browser.
+	`SUPABASE_SECRET_KEY` and the three `FIREBASE_ADMIN_*` variables are used only in server-side code (API routes and `lib/firebase/firebaseAdmin.ts`) and are never sent to the browser.
 
 ---
 

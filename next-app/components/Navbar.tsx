@@ -1,4 +1,4 @@
-﻿// components/Navbar.tsx
+// components/Navbar.tsx
 // Universal navigation header that appears on all pages (some may purposfully hide it)
 
 "use client";
@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import "./Navbar.css";
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -46,6 +47,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="logo">
                 <span>Hydrogen Lab Safety</span>
+                <img src="/logo/Logo_Navy_NoBackground.png" alt="Hydrogen Training Logo" className="logo-img" />
             </Link>
 
             <div className="nav-links">
@@ -66,21 +68,21 @@ export default function Navbar() {
                 {/* Authenticated users only */}
                 {user && (
                     <>
-                        {/* Simulations */}
+                        {/* Scenarios */}
                         <Link
-                            href="/lab"
+                            href="/scenarios"
                             className={`nav-link ${
-                                pathname === "/lab"
+                                pathname.startsWith("/scenarios")
                                     ? "active"
                                     : ""
                             }`}
                         >
-                            Simulations
+                            Scenarios
                         </Link>
                         
                         {/* Modules */}
                         <Link
-                            href="/modules/hazards"
+                            href="/modules"
                             className={`nav-link ${
                                 pathname.startsWith("/modules")
                                     ? "active"

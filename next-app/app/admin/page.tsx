@@ -1,11 +1,10 @@
 ﻿// app/admin/page.tsx
 "use client";
 
-import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import "../quizzes/quizzes.css";
+import HubCard from "@/components/HubCard";
 
 export default function AdminPage() {
     const { loading, profile, isAdmin } = useAuth();
@@ -30,63 +29,22 @@ export default function AdminPage() {
                 </p>
             </div>
 
-            <div className="quizzes-grid">
-                <Link
+            <div className="hub-grid">
+                <HubCard
                     href="/admin/users"
-                    className="quiz-card"
-                >
-                    <div
-                        className="quiz-card-icon"
-                        style={{
-                            background: "rgba(0, 180, 216, 0.12)",
-                        }}
-                    >
-                        👥
-                    </div>
+                    icon="👤"
+                    title="User Management"
+                    desc="Manage users, roles and learner progress."
+                    linkText="Manage Users →"
+                />
 
-                    <div className="quiz-card-body">
-                        <div className="quiz-card-title">
-                            User Management
-                        </div>
-
-                        <div className="quiz-card-desc">
-                            Manage users, roles and learner progress.
-                        </div>
-                    </div>
-
-                    <div className="quiz-card-link">
-                        Manage Users →
-                    </div>
-                </Link>
-
-                <Link
+                <HubCard
                     href="/admin/feedback"
-                    className="quiz-card"
-                >
-                    <div
-                        className="quiz-card-icon"
-                        style={{
-                            background: "rgba(0, 180, 216, 0.12)",
-                        }}
-                    >
-                        💬
-                    </div>
-
-                    <div className="quiz-card-body">
-                        <div className="quiz-card-title">
-                            Learner Feedback
-                        </div>
-
-                        <div className="quiz-card-desc">
-                            Review learner ratings, comments and feedback
-                            from the training experience.
-                        </div>
-                    </div>
-
-                    <div className="quiz-card-link">
-                        View Feedback →
-                    </div>
-                </Link>
+                    icon="💬"
+                    title="Learner Feedback"
+                    desc="Review learner ratings, comments and feedback from the training experience."
+                    linkText="View Feedback →"
+                />
             </div>
         </main>
     );

@@ -2,8 +2,8 @@
 // Edit panel for a module: top-level fields, then a two-column section list + section field editor
 
 import { ModuleData, ModuleSection } from '@/lib/modules/moduleTypes';
-import { labelStyle, inputStyle } from '@/components/editorStyles';
 import VideoEditorPanel, { VideoType } from '@/components/VideoEditorPanel';
+import "@/components/EditMode.css";
 
 interface ModuleEditorProps {
 	draft: ModuleData;
@@ -18,7 +18,7 @@ interface ModuleEditorProps {
 	onAddSectionItem: (sectionIndex: number) => void;
 	onDeleteSectionItem: (sectionIndex: number, itemIndex: number) => void;
 
-	// Optional module video controls
+	// Optional embedded video controls
 	videoType?: VideoType;
 	youtubeUrl?: string;
 	selectedVideoFile?: File | null;
@@ -66,15 +66,15 @@ export default function ModuleEditor({
 				<div className="module-field-grid">
 
 					<div>
-						<label style={labelStyle}>ID (read-only)</label>
-						<input style={inputStyle} className="module-input--readonly" value={draft.id} readOnly />
+						<label className="editor-label">ID (read-only)</label>
+						<input className="editor-input module-input--readonly" value={draft.id} readOnly />
 						<p className="field-hint">The stable key routes are built from — cannot be changed here.</p>
 					</div>
 
 					<div>
-						<label style={labelStyle}>Slug</label>
+						<label className="editor-label">Slug</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.slug ?? ''}
 							onChange={(e) => onUpdateField('slug', (e.target.value || undefined) as ModuleData['slug'])}
 							placeholder="e.g. gas-leak-detection"
@@ -82,9 +82,9 @@ export default function ModuleEditor({
 					</div>
 
 					<div>
-						<label style={labelStyle}>Badge Number</label>
+						<label className="editor-label">Badge Number</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.badgeNum ?? ''}
 							onChange={(e) => onUpdateField('badgeNum', (e.target.value || undefined) as ModuleData['badgeNum'])}
 							placeholder="Leave blank to hide the badge"
@@ -92,9 +92,9 @@ export default function ModuleEditor({
 					</div>
 
 					<div>
-						<label style={labelStyle}>Icon</label>
+						<label className="editor-label">Icon</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.icon}
 							onChange={(e) => onUpdateField('icon', e.target.value)}
 							placeholder="e.g. 💨"
@@ -102,9 +102,9 @@ export default function ModuleEditor({
 					</div>
 
 					<div>
-						<label style={labelStyle}>Icon Background (CSS color)</label>
+						<label className="editor-label">Icon Background (CSS color)</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.iconBg}
 							onChange={(e) => onUpdateField('iconBg', e.target.value)}
 							placeholder="e.g. rgba(0,180,216,0.15)"
@@ -112,15 +112,14 @@ export default function ModuleEditor({
 					</div>
 
 					<div>
-						<label style={labelStyle}>Title</label>
-						<input style={inputStyle} value={draft.title} onChange={(e) => onUpdateField('title', e.target.value)} />
+						<label className="editor-label">Title</label>
+						<input className="editor-input" value={draft.title} onChange={(e) => onUpdateField('title', e.target.value)} />
 					</div>
 
 					<div className="module-field-span-2">
-						<label style={labelStyle}>Description</label>
+						<label className="editor-label">Description</label>
 						<textarea
-							style={inputStyle}
-							className="module-textarea"
+							className="editor-input module-textarea"
 							value={draft.description}
 							onChange={(e) => onUpdateField('description', e.target.value)}
 						/>
@@ -128,19 +127,18 @@ export default function ModuleEditor({
 					</div>
 
 					<div className="module-field-span-2">
-						<label style={labelStyle}>Key Takeaway</label>
+						<label className="editor-label">Key Takeaway</label>
 						<textarea
-							style={inputStyle}
-							className="module-textarea"
+							className="editor-input module-textarea"
 							value={draft.keyTakeaway}
 							onChange={(e) => onUpdateField('keyTakeaway', e.target.value)}
 						/>
 					</div>
 
 					<div>
-						<label style={labelStyle}>Previous Module ID</label>
+						<label className="editor-label">Previous Module ID</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.prevId ?? ''}
 							onChange={(e) => onUpdateField('prevId', (e.target.value || undefined) as ModuleData['prevId'])}
 							placeholder="Leave blank if this is the first module"
@@ -148,9 +146,9 @@ export default function ModuleEditor({
 					</div>
 
 					<div>
-						<label style={labelStyle}>Next Module ID</label>
+						<label className="editor-label">Next Module ID</label>
 						<input
-							style={inputStyle}
+							className="editor-input"
 							value={draft.nextId ?? ''}
 							onChange={(e) => onUpdateField('nextId', (e.target.value || undefined) as ModuleData['nextId'])}
 							placeholder="Leave blank if this is the last module"
@@ -161,7 +159,7 @@ export default function ModuleEditor({
 			
 			{/* Embedded Video */}
 			<div className="panel panel--clip">
-				<div className="panel-header">🎬 Module Video</div>
+				<div className="panel-header">🎬 Embedded Video</div>
 				<div className="module-editor-body">
 					<VideoEditorPanel
 						currentVideoUrl={draft.videoUrl}
@@ -188,7 +186,7 @@ export default function ModuleEditor({
 				<div className="panel panel--clip">
 					<div className="panel-header panel-header--spread">
 						<span>📑 Sections</span>
-						<button onClick={onAddSection} title="Add new section" className="module-add-btn">+</button>
+						<button onClick={onAddSection} title="Add new section" className="add-icon-btn">+</button>
 					</div>
 					<div className="module-list-body">
 						{draft.sections.map((s, index) => (
@@ -215,7 +213,7 @@ export default function ModuleEditor({
 								>
 									↓
 								</button>
-								<button onClick={() => onDeleteSection(index)} title="Delete section" className="module-delete-btn">
+								<button onClick={() => onDeleteSection(index)} title="Delete section" className="delete-icon-btn">
 									✕
 								</button>
 							</div>
@@ -238,22 +236,21 @@ export default function ModuleEditor({
 								Click a section in the list to edit its heading, body, list, and callout.
 							</p>
 						) : (
-							<div className="module-field-stack">
+							<div className="field-stack">
 
 								<div>
-									<label style={labelStyle}>Heading</label>
+									<label className="editor-label">Heading</label>
 									<input
-										style={inputStyle}
+										className="editor-input"
 										value={section.heading}
 										onChange={(e) => onUpdateSection(selectedSection, 'heading', e.target.value)}
 									/>
 								</div>
 
 								<div>
-									<label style={labelStyle}>Body</label>
+									<label className="editor-label">Body</label>
 									<textarea
-										style={inputStyle}
-										className="module-textarea module-textarea--tall"
+										className="editor-input module-textarea module-textarea--tall"
 										value={section.body}
 										onChange={(e) => onUpdateSection(selectedSection, 'body', e.target.value)}
 									/>
@@ -263,10 +260,9 @@ export default function ModuleEditor({
 								</div>
 
 								<div>
-									<label style={labelStyle}>List Type</label>
+									<label className="editor-label">List Type</label>
 									<select
-										style={inputStyle}
-										className="module-select"
+										className="editor-input"
 										value={section.listType ?? ''}
 										onChange={(e) =>
 											onUpdateSection(
@@ -284,34 +280,33 @@ export default function ModuleEditor({
 
 								{(section.listType === 'ul' || section.listType === 'ol') && (
 									<div>
-										<label style={labelStyle}>List Items</label>
+										<label className="editor-label">List Items</label>
 										{(section.items ?? []).map((item, itemIndex) => (
 											<div key={itemIndex} className="field-row module-list-item-row">
 												<input
-													style={inputStyle}
+													className="editor-input"
 													value={item}
 													onChange={(e) => onUpdateSectionItem(selectedSection, itemIndex, e.target.value)}
 												/>
 												<button
 													onClick={() => onDeleteSectionItem(selectedSection, itemIndex)}
 													title="Delete item"
-													className="module-delete-btn"
+													className="delete-icon-btn"
 												>
 													✕
 												</button>
 											</div>
 										))}
-										<button onClick={() => onAddSectionItem(selectedSection)} className="module-add-item-btn">
+										<button onClick={() => onAddSectionItem(selectedSection)} className="add-item-btn">
 											+ Add item
 										</button>
 									</div>
 								)}
 
 								<div>
-									<label style={labelStyle}>Callout</label>
+									<label className="editor-label">Callout</label>
 									<textarea
-										style={inputStyle}
-										className="module-textarea"
+										className="editor-input module-textarea"
 										value={section.callout ?? ''}
 										onChange={(e) =>
 											onUpdateSection(selectedSection, 'callout', (e.target.value || undefined) as ModuleSection['callout'])

@@ -1,9 +1,9 @@
-// app/admin/users/page.tsx
+﻿// app/admin/users/page.tsx
 
 "use client";
 // TypeScript may not have declarations for importing plain CSS here. Suppress the error.
 // @ts-ignore: Implicit any for CSS import
-import "./admin.css";
+import "../admin.css";
 import React, { useEffect, useMemo, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -30,6 +30,9 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [exportOrganisation, setExportOrganisation] =
+    useState<"Fed Uni" | "Other">("Fed Uni");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -141,6 +144,113 @@ export default function AdminUsersPage() {
     setSelectedUser(updatedUser);
   }
 
+  async function handleDeleteUser(user: UserProfile) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${user.display_name ?? user.email}?
+
+This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      const response = await fetch(`/api/admin/users/${user.uid}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || "Unable to delete user.");
+      }
+
+      setUsers((prevUsers) =>
+        prevUsers.filter((existingUser) => existingUser.uid !== user.uid)
+      );
+
+      alert("User deleted successfully.");
+    } catch (error) {
+      console.error("DELETE USER FAILED:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Unable to delete user.";
+
+      alert(message);
+    }
+  }
+
+  async function handleExportResults() {
+    try {
+      setExporting(true);
+
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error("Not authenticated");
+      }
+
+      const idToken = await currentUser.getIdToken();
+
+      const response = await fetch(
+        `/api/admin/users/export?organisation=${encodeURIComponent(exportOrganisation)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Unable to export quiz results.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download =
+        exportOrganisation === "Fed Uni"
+          ? "hydrogen-quiz-results-Fed-Uni.xlsx"
+          : "hydrogen-quiz-results-Other.xlsx";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error("EXPORT QUIZ RESULTS FAILED:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to export quiz results.";
+
+      alert(message);
+    } finally {
+      setExporting(false);
+    }
+  }
   const filteredUsers = useMemo(() => {
     const term = searchTerm.toLowerCase();
 
@@ -164,10 +274,10 @@ export default function AdminUsersPage() {
 
   return (
     <main className="main">
-      <div className="greeting">
+      <div className="greeting admin-greeting">
         <div>
           <h1>
-            Access{" "}
+            User{" "}
             <span className="greeting-accent">Management</span>
           </h1>
 
@@ -186,20 +296,20 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="admin-stat-cards">
-        <div className="stat-card users-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Users</span>
+              <span>Users</span>
             </div>
 
             <div className="count">{totalUsers}</div>
             <div className="sub">Registered Accounts</div>
           </div>
         </div>
-        <div className="stat-card admin-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Administrators</span>
+              <span>Administrators</span>
             </div>
 
             <div className="count">{adminCount}</div>
@@ -207,10 +317,10 @@ export default function AdminUsersPage() {
           </div>
         </div>
         
-        <div className="stat-card completed-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Training Completed</span>
+              <span>Training Completed</span>
             </div>
 
             <div className="count">{completedTraining}</div>
@@ -218,10 +328,10 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="stat-card progress-card">
+        <div className="stat-card">
           <div className="stat-info">
             <div className="label">
-              <span className="label-icon">Average Progress</span>
+              <span>Average Progress</span>
             </div>
 
             <div className="count">{averageProgress}%</div>
@@ -239,7 +349,29 @@ export default function AdminUsersPage() {
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
         />
 
-        <div className="user-count">{filteredUsers.length} of {totalUsers} users</div>
+        <div className="export-controls">
+          <select
+            className="export-select"
+            value={exportOrganisation}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setExportOrganisation(
+                e.target.value as "Fed Uni" | "Other"
+              )
+            }
+          >
+            <option value="Fed Uni">Fed Uni</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <button
+            className="export-btn"
+            onClick={handleExportResults}
+            disabled={exporting}
+          >
+            {exporting ? "Exporting..." : "Export Excel"}
+          </button>
+        </div>
+        <div>{filteredUsers.length} of {totalUsers} users</div>
       </div>
 
       {loadingUsers ? (<p>Loading users...</p>) : (
@@ -291,6 +423,15 @@ export default function AdminUsersPage() {
                       >
                         Progress
                       </Link>
+
+                      {user.uid !== profile.uid && (
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteUser(user)}
+                      >
+                        Delete
+                      </button>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -70,6 +70,15 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
+		// passThreshold is a percentage: whole number, 0-100
+		const passThreshold = quizInput.passThreshold;
+		if (!Number.isInteger(passThreshold) || passThreshold < 0 || passThreshold > 100) {
+			return NextResponse.json(
+				{ ok: false, error: 'passThreshold must be a whole number between 0 and 100' },
+				{ status: 400 }
+			);
+		}
+
 		// Step 1 — update the 'quizzes' row
 		const { error: upsertError } = await supabaseServer.from('quizzes').upsert(
 			{

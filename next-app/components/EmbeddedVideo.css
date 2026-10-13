@@ -1,0 +1,269 @@
+/* components/EmbeddedVideo.css */
+
+/* ─── Embedded Video ────────────────────────────────────────────────────── */
+.embed-video {
+    margin: 28px 0 32px;
+    animation: fadeUp 0.5s ease both;
+}
+
+/* Small clickable video card */
+.embed-video-launcher {
+	width: 100%;
+	min-height: 100px;
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	padding: 18px 22px;
+	border: 1px solid rgba(0,180,216,0.35);
+	border-radius: var(--radius);
+	color: var(--white);
+	text-align: left;
+	cursor: pointer;
+	
+	background: linear-gradient(
+		135deg,
+		var(--teal-glow),
+		var(--teal-tint)
+	);
+
+	transition:
+		transform 0.2s ease,
+		border-color 0.2s ease,
+		background 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.embed-video-launcher:hover {
+	transform: translateY(-2px);
+	border-color: var(--accent);
+	box-shadow: 0 8px 28px var(--accent-shadow);
+	
+	background: linear-gradient(
+		135deg,
+		rgba(0,119,168,0.22),
+		var(--teal-tint)
+	);
+}
+
+.embed-video-launcher:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 3px;
+}
+
+/* Play button */
+.embed-video-play {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 54px;
+	height: 54px;
+	flex-shrink: 0;
+	border-radius: 50%;
+	background: rgba(0,180,216,0.14);
+	border: 1px solid rgba(0,180,216,0.45);
+	color: var(--teal);
+	font-size: 1.3rem;
+	padding-left: 3px;
+
+	transition:
+		background 0.2s ease,
+		transform 0.2s ease;
+}
+
+.embed-video-launcher:hover .embed-video-play {
+	background: rgba(251,146,60,0.25);
+	transform: scale(1.05);
+	border: 1px solid var(--accent-border);
+	color: var(--accent);
+}
+
+/* Text */
+.embed-video-launcher-text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+}
+
+.embed-video-launcher-text strong {
+	font-family: var(--font-heading);
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--white);
+}
+
+.embed-video-launcher-text span {
+	font-size: 0.95rem;
+	color: var(--muted);
+}
+
+/* Arrow */
+.embed-video-launch-arrow {
+	color: var(--teal);
+	font-size: 1.4rem;
+	opacity: 0.7;
+
+	transition:
+		opacity 0.2s ease,
+		transform 0.2s ease;
+}
+
+.embed-video-launcher:hover .embed-video-launch-arrow {
+	color: var(--accent);
+	opacity: 1;
+	transform: translateX(4px);
+}
+
+.embed-video-native {
+	width: 100%;
+	height: 100%;
+	display: block;
+	background: #000;
+}
+
+/* ─── Video Modal ─────────────────────────────────────────────────────── */
+.embed-video-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 30px;
+	background: rgba(2, 7, 25, 0.82);
+	backdrop-filter: blur(6px);
+	animation: embedVideoFadeIn 0.2s ease both;
+}
+
+@keyframes embedVideoFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+/*
+ * MAIN VIDEO FRAME
+ * This is the section we can easily adjust later.
+ * width controls the overall popup width.
+ * max-width prevents it becoming too large.
+ */
+.embed-video-modal-frame {
+	width: min(760px, 100%);
+	border: 1px solid var(--teal);
+	border-radius: 16px;
+	padding: 14px;
+	animation: embedVideoPopIn 0.25s ease both;
+
+	background: linear-gradient(
+		145deg,
+		rgba(8,25,65,0.98),
+		rgba(12,20,58,0.98)
+	);
+
+	box-shadow:
+		0 25px 80px rgba(0,0,0,0.55),
+		0 0 30px rgba(0,180,216,0.12);
+}
+
+@keyframes embedVideoPopIn {
+	from {
+		opacity: 0;
+		transform: scale(0.94) translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* Modal header */
+.embed-video-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 2px 4px 12px 6px;
+}
+
+.embed-video-modal-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.embed-video-modal-title span { font-size: 1.3rem; }
+
+.embed-video-modal-title h2 {
+	margin: 0;
+	font-family: var(--font-heading);
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--accent);
+}
+
+/* Close button */
+.embed-video-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: none;
+	border-radius: 50%;
+	background: rgba(255,255,255,0.06);
+	color: var(--white);
+	font-size: 1.6rem;
+	line-height: 1;
+	cursor: pointer;
+
+	transition:
+		background 0.2s ease,
+		transform 0.2s ease;
+}
+
+.embed-video-close:hover {
+	background: rgba(255,255,255,0.12);
+	transform: scale(1.05);
+}
+
+.embed-video-close:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+
+/* Actual video */
+.embed-video-player {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	overflow: hidden;
+	border-radius: 10px;
+	background: #000;
+}
+
+.embed-video-player iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+	.embed-video { margin: 24px 0 28px; }
+	.embed-video-launcher {
+		min-height: 88px;
+		padding: 14px 16px;
+		gap: 14px;
+	}
+	.embed-video-play {
+		width: 46px;
+		height: 46px;
+		font-size: 1.1rem;
+	}
+	.embed-video-modal { padding: 14px; }
+	.embed-video-modal-frame {
+		width: 100%;
+		padding: 10px;
+		border-radius: 12px;
+	}
+	.embed-video-modal-header { padding-bottom: 10px; }
+}
