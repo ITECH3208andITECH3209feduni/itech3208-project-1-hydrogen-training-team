@@ -155,6 +155,19 @@ It can be changed either through the in-app quiz editor (see below) or by editin
 	Changing `lib/questionhazards.ts` requires a redeployment to take effect; editing `quizzes`/`quiz_questions` in Supabase, or through the in-app editor above, takes effect immediately.
 	See `ADDITIONAL_INFO.md` for how `hooks/quizzes/useQuiz.ts` implements this fallback, and for how the editor itself works.
 
+### Quiz Lock
+
+A quiz is locked until the learner has completed every module in the topic named by `QUIZ_TOPIC` in `lib/questionhazards.ts` (`'hazards'` for the Hazards quiz).
+	The quiz editor has no setting for it; what changes the lock is the topic's module set and each learner's progress.
+- **Which modules count:** every row in `modules` for that topic, or the bundled `lib/modules/hazards.ts` entries when there are none.
+	Adding a module row to the topic raises the requirement for everyone, including learners who had finished the others.
+- **What counts as completed:** the learner's `user_module_progress` row for the module has `status = 'done'` or `progress >= 100`, which the reader page sets on reaching the last section.
+	Using Restart Module on a completed module resets it and locks the quiz again until it's finished again.
+- **Admins:** there's no exemption, but the ✏️ Edit tab on the locked quiz card at `/quizzes` still opens the quiz editor.
+- **Changing the gating topic:** change `QUIZ_TOPIC` and pass the matching bundled module defaults to `useQuizLock` in `app/quizzes/page.tsx` and `app/quizzes/hazards/page.tsx`; this needs a redeployment.
+	The server-side fallback in `lib/progressLock.ts` only has bundled modules for `hazards`.
+See `ADDITIONAL_INFO.md` ("Quiz lock") for how the check works on the client and server.
+
 ---
 
 ## Customising Default Hotspot Data

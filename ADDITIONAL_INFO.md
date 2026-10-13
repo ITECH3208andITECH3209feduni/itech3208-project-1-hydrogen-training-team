@@ -16,6 +16,8 @@ Exceptions:
 - `/` — the public landing/intro page; calls `useAuth()` (to swap some elements for logged-in users) but doesn't gate access on it, so it's viewable by anyone.
 - `/about` — doesn't call `useAuth()` at all; a fully static public page with no auth-dependent UI.
 - `/admin`, `/admin/users`, `/admin/users/[uid]/progress`, `/admin/feedback` and `/quizzes/[quizId]/edit` — each checks `isAdmin` directly (not just whether a user is logged in) and redirects anyone who fails that check to `/dashboard` rather than `/login`.
+- `/quizzes/hazards` follows the standard pattern for logged-out users and adds a second redirect for signed-in ones:
+	while `useQuizLock` reports the quiz as locked, it calls `router.replace('/quizzes')` — see "Quiz lock" under "Quizzes & Certificate".
 
 `Navbar.tsx` hides itself on `/login`, `/login/register`, and `/login/forgot-password`. Its site-title logo links to `/` (the landing page), its "Home" nav link goes to `/dashboard`.
 	Its Scenarios/Modules/Quizzes links only render while a user is signed in; the Administration link only renders while `permissions.canManageUsers` (i.e. `isAdmin`) is true, and points at `/admin`.
@@ -94,15 +96,15 @@ Every route under `app/api/`, what it reads/writes in Supabase, and what in the 
 | `/api/scenarios/load-module-options` | `GET`           | public                       | `modules`                                                | `useModuleOptions.ts` (`/scenarios/hazards` editor's Linked Module dropdown)                                           |
 | `/api/scenarios/progress`            | `GET`, `POST`   | `requireUser`                | `user_lab_progress`, `hotspots` (count)                  | `useHotspotProgress.ts` (`POST` on hotspot click), `app/dashboard/page.tsx` (`GET` for the Scenarios stat card)        |
 | `/api/scenarios/video`               | `PUT`, `DELETE` | `requireAdmin`               | `hotspots`, `lab-videos` storage bucket                  | `useHotspotEditor.ts` (`/scenarios/hazards` editor video panel)                                                        |
-| `/api/modules/load-modules`          | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page)                                           |
+| `/api/modules/load-modules`          | `GET`           | public                       | `modules`, `module_sections`                             | `useModules.ts`/`useModuleById` (every `app/modules/` listing + reader page), useQuizLock.ts` (quiz lock module list)` |
 | `/api/modules/video`                 | `PUT`, `DELETE` | `requireAdmin`               | `modules`, `module-videos` storage bucket                | `useModuleEditor.ts` (module reader editor video panel)                                                                |
-| `/api/modules/progress`              | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress),                                               |
+| `/api/modules/progress`              | `GET`, `POST`,  | `requireUser`                | `user_module_progress`                                   | `useModuleProgress.ts`/`useModules.ts` (reader + listing-card progress), useQuizLock.ts` (quiz lock done count)`       |
 | ^^^^^                                | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/dashboard/page.tsx` (Modules stat card, via `useModules`), `app/certificate/page.tsx` (module-completion check)   |
 | `/api/modules/save-module`           | `POST`          | `requireAdmin`               | `modules`, `module_sections`                             | `useModuleEditor.ts` (module reader editor save)                                                                       |
 | `/api/quizzes/load-quiz`             | `GET`           | public                       | `quizzes`, `quiz_questions`                              | `useQuiz.ts` (`/quizzes` hub, `/quizzes/hazards`, quiz editor)                                                         |
 | `/api/quizzes/save-quiz`             | `POST`          | `requireAdmin`               | `quizzes`, `quiz_questions`                              | `useQuizEditor.ts` (`/quizzes/[quizId]/edit` save)                                                                     |
-| `/api/quizzes/progress`              | `GET`, `POST`,  | `requireUser`                | `user_quiz_progress`                                     | `useQuizProgress.ts` (`/quizzes/hazards` submit + leaderboard opt-in), `app/dashboard/page.tsx` (Quizzes stat card)    |
-| ^^^^^                                | `PATCH`         | ^^^^^                        | ^^^^^                                                    | `app/certificate/page.tsx` (quiz-pass check)                                                                           |
+| `/api/quizzes/progress`              | `GET`, `POST`,  | `requireUser`                | `user_quiz_progress`, `modules`,                         | `useQuizProgress.ts` (`/quizzes/hazards` submit + leaderboard opt-in), `app/dashboard/page.tsx` (Quizzes stat card)    |
+| ^^^^^                                | `PATCH`         | ^^^^^                        | `user_module_progress` (lock check on `POST`)            | `app/certificate/page.tsx` (quiz-pass check)                                                                           |
 | `/api/quizzes/leaderboard`           | `GET`           | `requireUser`                | `user_quiz_progress`, `profiles`                         | `app/quizzes/leaderboard/page.tsx`                                                                                     |
 | `/api/feedback`                      | `POST`          | `requireUser`                | `feedback`, `profiles` (email lookup)                    | `app/feedback/page.tsx`                                                                                                |
 | `/api/admin/feedback`                | `GET`           | `requireAdmin`               | `feedback`                                               | `app/admin/feedback/page.tsx`                                                                                          |
@@ -272,6 +274,9 @@ The reader page tracks live, per-user progress via `useModuleProgress` (`hooks/m
 - A "Module completed" banner with a Restart Module button once `currentProgress >= 100` — restart asks for confirmation (`window.confirm`), then `PATCH`es with `{ module_id, action: "restart" }` and resets local progress back to 0.
 	A `restartPendingRef` guard also suppresses the section-visibility observer until the user scrolls down past 20px, so the scroll-to-top that follows a restart doesn't immediately re-trigger progress on section 1.
 
+A module counts as completed — for the quiz lock, the certificate page and the listing cards alike — when its row has `status === "done"` or `progress >= 100`.
+	Completing every module in a topic unlocks that topic's quiz (see "Quiz lock"); restarting a completed module (`action: "restart"`) resets it to 0%, which locks the quiz again until the module is finished again.
+
 ---
 
 ## Quizzes & Certificate
@@ -331,10 +336,45 @@ This route's `select` grant on `quizzes`/`quiz_questions` for `service_role` (se
 
 ### Quizzes hub (`/quizzes`)
 
-A grid of quiz cards (`app/quizzes/page.tsx`, built from the shared `HubCard` component) — the Hazards quiz, built from `QUIZ_TITLE`/`QUIZ_SLUG`/`questionhazards.length` in `lib/questionhazards.ts`, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
+A grid of quiz cards (`app/quizzes/page.tsx`, built from the shared `HubCard` component) — the Hazards quiz, built from the `useQuiz` data (`quizData.title`, `quizData.description`, `quizData.questions.length`) and gated by the quiz lock below, and a Student Leaderboard card linking to `/quizzes/leaderboard` (see below).
+
+### Quiz lock
+
+The Hazards quiz is available only once the signed-in user has completed every module in the `hazards` topic (five with the bundled content).
+	`QUIZ_TOPIC` in `lib/questionhazards.ts` names that topic.
+	The rule applies to every account — there's no role-based bypass, admins included — and it only controls access to attempting the quiz; a stored result in `user_quiz_progress` is never touched by it.
+
+**Client (`hooks/useQuizLock.ts`):** `useQuizLock(topic, defaults, user, loading)` returns `{ locked, ready, doneCount, totalCount }`.
+- **Module list:** `GET /api/modules/load-modules?topic=...`.
+	A non-empty live list replaces `defaults` entirely, so modules added in Supabase are counted automatically;
+	an empty list or a failed request falls back to `defaults` (`hazardModules` from `lib/modules/hazards.ts`).
+- **Progress:** `GET /api/modules/progress?topic=...` with the Firebase bearer token.
+	A row is done when `isProgressDone(row)` — `status === 'done'` or `progress >= 100`, the same rule `useModules` applies (exported from the hook).
+- **State:** `ready` stays `false` while logged out or `loading`, and until both lookups settle.
+	`locked = ready && doneCount < totalCount`, so `locked` is `false` while not ready — callers wait for `ready` before treating that as unlocked.
+- **Fails closed:** if progress can't be loaded (non-OK response or a thrown error) no module counts as done and the quiz is locked.
+	A module-list failure falls back to `defaults` instead.
+- **Freshness:** both lookups use `cache: 'no-store'` and re-run whenever a page using the hook mounts or `topic`, `defaults`, `user` or `loading` change.
+	`defaults` is in the effect's dependency array, so it must be a module-scope constant (like `QUIZ_DEFAULTS` for `useQuiz`).
+
+**Hub card (`/quizzes`):** while locked, the Hazards card gets `locked` and `lockedReason` — a 🔒 icon, the description "Complete all N hazards modules to unlock this quiz (X of N done).", and the link text "🔒 Locked".
+	`HubCard` renders a non-clickable `div` (`.hub-card-locked`: dimmed, `cursor: not-allowed`, `aria-disabled="true"`, the message as a `title` tooltip) instead of a `Link`.
+	The admin ✏️ Edit tab is independent of the lock and still appears.
+
+**Attempt page (`/quizzes/hazards`):** after the standard login redirect it renders nothing until `ready`.
+	If locked, it shows the `.quiz-blocked` panel ("This quiz is locked", with the done count) and an effect calls `router.replace('/quizzes')`.
+	Otherwise the quiz renders normally.
+
+**Server (`lib/progressLock.ts`):** `isQuizLockedForUser(uid, topic)` resolves the topic's module ids from `modules` (anon client), falling back to `hazardModules` for `hazards` and `[]` for any other topic.
+	With no module ids it returns `false` (unlocked).
+	Otherwise it reads the user's `user_module_progress` rows for the topic (service-role client) and returns `true` unless every module id has a done row, using the same done rule as the hook.
+	A lookup error returns `true` (fails closed) and is logged.
+	`POST /api/quizzes/progress` calls it after validating the score and before reading or writing `user_quiz_progress`, and responds `403 { ok: false, error: "This quiz is locked until every hazards module is completed." }` when locked.
+	`GET` and `PATCH` aren't gated: `GET` returns only the caller's own record, and `PATCH` 404s without an existing record.
 
 ### Taking a quiz (`/quizzes/hazards`)
 
+- **Access:** the attempt page renders the quiz only once every `hazards` module is done (see "Quiz lock"); a result submitted while locked is rejected by the server with a 403.
 - **Randomisation:** the set of questions presented for an attempt is drawn via `drawQuizPool` — every `isCore` question plus a random sample of the rest, up to the quiz's `poolSize` (or the full bank if `poolSize` is null).
 	Both question order and each question's option order are then shuffled (Fisher–Yates method) on load and on retry, with `correctIndex` remapped to follow its option.
 	A retry draws a fresh pool rather than reshuffling the same one.
