@@ -89,3 +89,8 @@
 	.hub-grid      { grid-template-columns: 1fr; }
 	.hub-card-wrap { margin-bottom: 8px; }
 }
+/* Locked card (e.g. quiz whose required modules aren't done) — not clickable */
+.hub-card-locked {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
