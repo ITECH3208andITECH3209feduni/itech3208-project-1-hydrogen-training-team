@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase";
 import { requireUser } from "@/lib/firebase/authUser";
+import { isQuizLockedForUser } from "@/lib/progressLock";
+import { QUIZ_TOPIC } from "@/lib/questionhazards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +85,16 @@ export async function POST(request: NextRequest) {
                         "score must be between 0 and 100",
                 },
                 { status: 400 }
+            );
+        }
+
+        if (await isQuizLockedForUser(uid, QUIZ_TOPIC)) {
+            return NextResponse.json(
+                {
+                    ok: false,
+                    error: "This quiz is locked until every hazards module is completed.",
+                },
+                { status: 403 }
             );
         }
 

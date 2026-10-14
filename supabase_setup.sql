@@ -143,7 +143,7 @@ create table public.user_quiz_progress (
   last_attempted_at   timestamptz null,
   created_at          timestamptz not null default now(),
   constraint user_quiz_progress_pkey primary key (id),
-  constraint user_quiz_progress_uid_quiz_unique unique (uid, quiz_id)
+  constraint user_quiz_progress_uid_quiz_unique unique (uid, quiz_id),
   constraint fk_user_quiz_progress foreign key (uid) references public.profiles (uid) on delete cascade
 );
 

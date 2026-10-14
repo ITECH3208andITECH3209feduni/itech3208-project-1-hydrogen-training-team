@@ -14,6 +14,9 @@ interface HubCardProps {
 	notice?: string;
 	/** Admin-only edit tab, shown attached to the card's bottom edge. */
 	editHref?: string;
+	/** Renders a non-clickable card, e.g. a quiz whose modules aren't finished yet. */
+	locked?: boolean;
+	lockedReason?: string;
 }
 
 export default function HubCard({
@@ -24,9 +27,11 @@ export default function HubCard({
 	linkText,
 	notice,
 	editHref,
+	locked = false,
+	lockedReason,
 }: HubCardProps) {
-	const card = (
-		<Link href={href} className="hub-card card-hover-tint">
+	const content = (
+		<>
 			<div className="hub-card-icon">{icon}</div>
 
 			<div className="hub-card-body">
@@ -36,6 +41,16 @@ export default function HubCard({
 			</div>
 
 			<div className="hub-card-link">{linkText}</div>
+		</>
+	);
+
+	const card = locked ? (
+		<div className="hub-card hub-card-locked" title={lockedReason} aria-disabled="true">
+			{content}
+		</div>
+	) : (
+		<Link href={href} className="hub-card card-hover-tint">
+			{content}
 		</Link>
 	);
 

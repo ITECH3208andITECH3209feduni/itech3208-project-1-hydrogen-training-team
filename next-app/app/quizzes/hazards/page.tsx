@@ -7,9 +7,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useQuiz, drawQuizPool } from '@/hooks/quizzes/useQuiz';
+import { useQuizLock } from '@/hooks/useQuizLock';
+import { hazardModules } from '@/lib/modules/hazards';
 import { useQuizProgress } from '@/hooks/quizzes/useQuizProgress';
 import {
     QUIZ_SLUG,
+    QUIZ_TOPIC,
     QUIZ_DEFAULTS,
     QuizQuestion,
 } from '@/lib/questionhazards';
@@ -48,6 +51,13 @@ function shuffleOptions(questions: QuizQuestion[]): QuizQuestion[] {
 export default function HazardsQuizPage() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { locked, ready: lockReady, doneCount, totalCount } = useQuizLock(QUIZ_TOPIC, hazardModules, user, loading);
+
+    useEffect(() => {
+        if (!loading && user && lockReady && locked) {
+            router.replace('/quizzes');
+        }
+    }, [loading, user, lockReady, locked, router]);
 
     const { quizData, loadStatus, usingDefaults } = useQuiz(QUIZ_SLUG, QUIZ_DEFAULTS);
     const { title, passThreshold, questions } = quizData;
@@ -97,6 +107,25 @@ export default function HazardsQuizPage() {
     if (!user) {
         router.replace('/login');
         return null;
+    }
+
+    if (!lockReady) {
+        return null;
+    }
+
+    if (locked) {
+        return (
+            <main className="main">
+                <div className="quiz-blocked">
+                    <h1>This quiz is locked</h1>
+                    <p>
+                        Complete all {totalCount} hazards modules to unlock this quiz
+                        ({doneCount} of {totalCount} done).{' '}
+                        Redirecting you back to Quizzes…
+                    </p>
+                </div>
+            </main>
+        );
     }
 
     // Loading message while retrieving live data

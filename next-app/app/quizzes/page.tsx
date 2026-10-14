@@ -7,12 +7,16 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useQuiz } from '@/hooks/quizzes/useQuiz';
-import { QUIZ_SLUG, QUIZ_DEFAULTS } from '@/lib/questionhazards';
+import { useQuizLock } from '@/hooks/useQuizLock';
+import { hazardModules } from '@/lib/modules/hazards';
+import { QUIZ_SLUG, QUIZ_TOPIC, QUIZ_DEFAULTS } from '@/lib/questionhazards';
 import HubCard from '@/components/HubCard';
 
 export default function QuizzesPage() {
         const { user, loading, permissions } = useAuth();
         const router = useRouter();
+        const { locked, doneCount, totalCount } = useQuizLock(QUIZ_TOPIC, hazardModules, user, loading);
+        const lockMessage = `Complete all ${totalCount} hazards modules to unlock this quiz (${doneCount} of ${totalCount} done).`;
 
         const { quizData, usingDefaults } = useQuiz(QUIZ_SLUG, QUIZ_DEFAULTS);
 
@@ -34,10 +38,12 @@ export default function QuizzesPage() {
                                 {/* Hydrogen Hazards Quiz */}
                                 <HubCard
                                         href={`/quizzes/${QUIZ_SLUG}`}
-                                        icon="⚠️"
+                                        icon={locked ? '🔒' : '⚠️'}
                                         title={quizData.title}
-                                        desc={`${quizData.description} — ${quizData.questions.length} questions.`}
-                                        linkText="Start Quiz →"
+                                        desc={locked ? lockMessage : `${quizData.description} — ${quizData.questions.length} questions.`}
+                                        linkText={locked ? '🔒 Locked' : 'Start Quiz →'}
+                                        locked={locked}
+                                        lockedReason={lockMessage}
                                         notice={usingDefaults ? 'Showing default questions' : undefined}
                                         editHref={permissions?.canManageUsers ? `/quizzes/${QUIZ_SLUG}/edit` : undefined}
                                 />
